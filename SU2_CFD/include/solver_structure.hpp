@@ -4711,7 +4711,7 @@ public:
 	 * \param[in] geometry - Geometrical definition of the problem.
 	 * \param[in] config - Definition of the particular problem.
 	 */
-	void SetBC_NonUniform(CGeometry *geometry, CConfig *config);
+	void SetBC_NonUniform(CGeometry *geometry, CConfig *config, unsigned short val_marker);
 	/*!
 	 * \brief Set inlet normal velocity.
 	 * \param[in] value      - turboperformance value to set.

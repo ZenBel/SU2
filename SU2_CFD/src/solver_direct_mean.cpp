@@ -833,13 +833,17 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
     }
   }
 
-  if (config->GetBoolNonUniformBC())
-  	SetBC_NonUniform(geometry, config);
 
-  if (config->GetBoolTurboNonUniformBC())
-  	SetBC_NonUniform(geometry, config);
+  /*--- Initialize the Non-Uniform boundary conditions ---*/
+
+  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++){
+	  if ((config->GetBoolNonUniformBC() || config->GetBoolTurboNonUniformBC()) && (config->GetMarker_All_KindBC(iMarker) == 38 )){
+		  /* Marker 38 is the NONUNIFORM_BOUNDAY marker */
+		  SetBC_NonUniform(geometry, config, iMarker);
+	  }
+  }
+
   /*--- Initialize the cauchy critera array for fixed CL mode ---*/
-
   if (config->GetFixed_CL_Mode())
 
     Cauchy_Serie = new su2double [config->GetCauchy_Elems()+1];
@@ -8592,7 +8596,8 @@ void CEulerSolver::BC_Far_Field(CGeometry *geometry, CSolver **solver_container,
 }
 
 void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
-    CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
+                              CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
+
   unsigned short iDim, iVar, jVar, kVar;
   unsigned long iVertex, iPoint, Point_Normal;
   su2double P_Total, T_Total, P_static, T_static, Rho_static, *Mach, *Flow_Dir, Area, UnitNormal[3];
@@ -8611,7 +8616,7 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
   bool gravity = (config->GetGravityForce());
   bool tkeNeeded = (((config->GetKind_Solver() == RANS )|| (config->GetKind_Solver() == DISC_ADJ_RANS)) &&
                     (config->GetKind_Turb_Model() == SST));
-  
+
   su2double *Normal, *FlowDirMix, TangVelocity, NormalVelocity;
   Normal = new su2double[nDim];
   Velocity_i = new su2double[nDim];
@@ -8633,7 +8638,7 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
     P_Tensor[iVar] = new su2double[nVar];
     invP_Tensor[iVar] = new su2double[nVar];
   }
-  
+
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
 
   	V_boundary= GetCharacPrimVar(val_marker, iVertex);
@@ -8669,9 +8674,7 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
   			Velocity2_i += Velocity_i[iDim]*Velocity_i[iDim];
   		}
 
-
   		Density_i = node[iPoint]->GetDensity();
-
   		Energy_i = node[iPoint]->GetEnergy();
   		StaticEnergy_i = Energy_i - 0.5*Velocity2_i;
 
@@ -8700,7 +8703,7 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
 				T_Total  = config->GetRiemann_Var2(Marker_Tag);
 				Flow_Dir = config->GetRiemann_FlowDir(Marker_Tag);
 
-        /*--- Non-dim. the inputs if necessary. ---*/
+				/*--- Non-dim. the inputs if necessary. ---*/
 				P_Total /= config->GetPressure_Ref();
 				T_Total /= config->GetTemperature_Ref();
 
@@ -8708,6 +8711,7 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
 				FluidModel->SetTDState_PT(P_Total, T_Total);
 				Enthalpy_e = FluidModel->GetStaticEnergy()+ FluidModel->GetPressure()/FluidModel->GetDensity();
 				Entropy_e = FluidModel->GetEntropy();
+
 				/* --- Compute the boundary state u_e --- */
 				Velocity2_e = Velocity2_i;
 				if (nDim == 2){
@@ -9133,12 +9137,13 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
 }
 
 
-void CEulerSolver::SetBC_NonUniform(CGeometry *geometry, CConfig *config){
+void CEulerSolver::SetBC_NonUniform(CGeometry *geometry, CConfig *config, unsigned short val_marker){
 
   /*--- Initialize NonUniform Boundary condition from external input file ---*/
   string text_line;
   ifstream input_file;
   string input_filename = config->GetNonUniformBC_FileName();
+  string Marker_Tag         = config->GetMarker_All_TagBound(val_marker);
 
   input_file.open(input_filename.data(), ios::in);
   if (input_file.fail()) {
@@ -9155,63 +9160,104 @@ void CEulerSolver::SetBC_NonUniform(CGeometry *geometry, CConfig *config){
   getline (input_file, text_line);
   istringstream point_line(text_line);
   point_line >> InputPoints;
-  while (getline (input_file, text_line)) {
-  	istringstream point_line(text_line);
-  	point_line >> CoordIn >> Var1In >> Var2In >> FlowDir_x >> FlowDir_y >> FlowDir_z;
-  	InputCoord.push_back(CoordIn);
-  	InputVar1.push_back(Var1In);
-  	InputVar2.push_back(Var2In);
-  	InputFlowDir_x.push_back(FlowDir_x);
-  	InputFlowDir_y.push_back(FlowDir_y);
-  	InputFlowDir_z.push_back(FlowDir_z);
-  }
-  input_file.close();
 
-  /*---  Number of points in input file ---*/
-  NonUniformBC_InputPoints  = InputPoints;
-  /*---  Boundary Coordinate input ---*/
-  NonUniformBC_Coord = InputCoord;
-  /*---  First variable input from file to assign at boundary ---*/
-  NonUniformBC_Var1 = InputVar1;
-  /*---  Second variable input from file to assign at boundary ---*/
-  NonUniformBC_Var2 = InputVar2;
-  /*---  Input flow direction ---*/
-  NonUniformBC_FlowDir_x = InputFlowDir_x;
-  NonUniformBC_FlowDir_y = InputFlowDir_y;
-  NonUniformBC_FlowDir_z = InputFlowDir_z;
+  switch(config->GetKind_Data_NonUniform(Marker_Tag))
+  	  {
+  	  	  case TOTAL_CONDITIONS_PT: case DENSITY_VELOCITY:
+  	  		  while (getline (input_file, text_line)) {
+  	  			istringstream point_line(text_line);
+				point_line >> CoordIn >> Var1In >> Var2In >> FlowDir_x >> FlowDir_y >> FlowDir_z;
+				InputCoord.push_back(CoordIn);
+				InputVar1.push_back(Var1In);
+				InputVar2.push_back(Var2In);
+				InputFlowDir_x.push_back(FlowDir_x);
+				InputFlowDir_y.push_back(FlowDir_y);
+				InputFlowDir_z.push_back(FlowDir_z);
+  	  		  	}
+  	  		  input_file.close();
 
-  /*---  Check if input file is sorted ---*/
-  if (InputCoord[1]<InputCoord[0]) {
-  	cout << "The input file " << input_filename.data() << " is not sorted in ascending order!"<< endl;
-  	exit(EXIT_FAILURE);
-  }
-  /*---  Compute first derivatives   ---*/
-  dVar1_1 = (InputVar1[1]-InputVar1[0])/(InputCoord[1]-InputCoord[0]);
-  dVar1_N = (InputVar1[InputPoints-1]-InputVar1[InputPoints])/(InputCoord[InputPoints-1]-InputCoord[InputPoints]);
-  NonUniformBC_d2Var1.resize(InputPoints);
-  dVar2_1 = (InputVar2[1]-InputVar2[0])/(InputCoord[1]-InputCoord[0]);
-  dVar2_N = (InputVar2[InputPoints-1]-InputVar2[InputPoints])/(InputCoord[InputPoints-1]-InputCoord[InputPoints]);
-  NonUniformBC_d2Var2.resize(InputPoints);
-  dFlowDir_x1 = (InputFlowDir_x[1]-InputFlowDir_x[0])/(InputCoord[1]-InputCoord[0]);
-  dFlowDir_xN = (InputFlowDir_x[InputPoints-1]-InputFlowDir_x[InputPoints])/(InputCoord[InputPoints-1]-InputCoord[InputPoints]);
-  NonUniformBC_d2FlowDir_x.resize(InputPoints);
-  dFlowDir_y1 = (InputFlowDir_y[1]-InputFlowDir_y[0])/(InputCoord[1]-InputCoord[0]);
-  dFlowDir_yN = (InputFlowDir_y[InputPoints-1]-InputFlowDir_y[InputPoints])/(InputCoord[InputPoints-1]-InputCoord[InputPoints]);
-  NonUniformBC_d2FlowDir_y.resize(InputPoints);
-  dFlowDir_z1 = (InputFlowDir_z[1]-InputFlowDir_z[0])/(InputCoord[1]-InputCoord[0]);
-  dFlowDir_zN = (InputFlowDir_z[InputPoints-1]-InputFlowDir_z[InputPoints])/(InputCoord[InputPoints-1]-InputCoord[InputPoints]);
-  NonUniformBC_d2FlowDir_z.resize(InputPoints);
+			  /*---  Number of points in input file ---*/
+			  NonUniformBC_InputPoints = InputPoints;
+			  /*---  Boundary Coordinate input ---*/
+			  NonUniformBC_Coord = InputCoord;
+			  /*---  First variable input from file to assign at boundary ---*/
+			  NonUniformBC_Var1 = InputVar1;
+			  /*---  Second variable input from file to assign at boundary ---*/
+			  NonUniformBC_Var2 = InputVar2;
+			  /*---  Input flow direction ---*/
+			  NonUniformBC_FlowDir_x = InputFlowDir_x;
+			  NonUniformBC_FlowDir_y = InputFlowDir_y;
+			  NonUniformBC_FlowDir_z = InputFlowDir_z;
 
-  geometry->SetSpline(InputCoord, InputVar1, InputPoints, dVar1_1, dVar1_N, NonUniformBC_d2Var1);
-  geometry->SetSpline(InputCoord, InputVar2, InputPoints, dVar2_1, dVar2_N, NonUniformBC_d2Var2);
-  geometry->SetSpline(InputCoord, InputFlowDir_x, InputPoints, dFlowDir_x1, dFlowDir_xN, NonUniformBC_d2FlowDir_x);
-  geometry->SetSpline(InputCoord, InputFlowDir_y, InputPoints, dFlowDir_y1, dFlowDir_yN, NonUniformBC_d2FlowDir_y);
-  geometry->SetSpline(InputCoord, InputFlowDir_z, InputPoints, dFlowDir_z1, dFlowDir_zN, NonUniformBC_d2FlowDir_z);
+			  /*---  Check if input file is sorted ---*/
+			  if (InputCoord[1]<InputCoord[0]) {
+				cout << "The input file " << input_filename.data() << " is not sorted in ascending order!"<< endl;
+				exit(EXIT_FAILURE);
+			  }
+			  /*---  Compute first derivatives   ---*/
+			  dVar1_1 = (InputVar1[1]-InputVar1[0])/(InputCoord[1]-InputCoord[0]);
+			  dVar1_N = (InputVar1[InputPoints-2]-InputVar1[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+			  NonUniformBC_d2Var1.resize(InputPoints);
+			  dVar2_1 = (InputVar2[1]-InputVar2[0])/(InputCoord[1]-InputCoord[0]);
+			  dVar2_N = (InputVar2[InputPoints-2]-InputVar2[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+			  NonUniformBC_d2Var2.resize(InputPoints);
+			  dFlowDir_x1 = (InputFlowDir_x[1]-InputFlowDir_x[0])/(InputCoord[1]-InputCoord[0]);
+			  dFlowDir_xN = (InputFlowDir_x[InputPoints-2]-InputFlowDir_x[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+			  NonUniformBC_d2FlowDir_x.resize(InputPoints);
+			  dFlowDir_y1 = (InputFlowDir_y[1]-InputFlowDir_y[0])/(InputCoord[1]-InputCoord[0]);
+			  dFlowDir_yN = (InputFlowDir_y[InputPoints-2]-InputFlowDir_y[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+			  NonUniformBC_d2FlowDir_y.resize(InputPoints);
+			  dFlowDir_z1 = (InputFlowDir_z[1]-InputFlowDir_z[0])/(InputCoord[1]-InputCoord[0]);
+			  dFlowDir_zN = (InputFlowDir_z[InputPoints-2]-InputFlowDir_z[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+			  NonUniformBC_d2FlowDir_z.resize(InputPoints);
 
+			  geometry->SetSpline(InputCoord, InputVar1, InputPoints, dVar1_1, dVar1_N, NonUniformBC_d2Var1);
+			  geometry->SetSpline(InputCoord, InputVar2, InputPoints, dVar2_1, dVar2_N, NonUniformBC_d2Var2);
+			  geometry->SetSpline(InputCoord, InputFlowDir_x, InputPoints, dFlowDir_x1, dFlowDir_xN, NonUniformBC_d2FlowDir_x);
+			  geometry->SetSpline(InputCoord, InputFlowDir_y, InputPoints, dFlowDir_y1, dFlowDir_yN, NonUniformBC_d2FlowDir_y);
+			  geometry->SetSpline(InputCoord, InputFlowDir_z, InputPoints, dFlowDir_z1, dFlowDir_zN, NonUniformBC_d2FlowDir_z);
+			  break;
+
+  	  	case STATIC_PRESSURE:
+	  		  while (getline (input_file, text_line)) {
+	  			  istringstream point_line(text_line);
+	  			  point_line >> CoordIn >> Var1In;
+	  			  InputCoord.push_back(CoordIn);
+	  			  InputVar1.push_back(Var1In);
+	  		  	}
+	  		  input_file.close();
+
+			  /*---  Number of points in input file ---*/
+			  NonUniformBC_InputPoints = InputPoints;
+			  /*---  Boundary Coordinate input ---*/
+			  NonUniformBC_Coord = InputCoord;
+			  /*---  First variable input from file to assign at boundary ---*/
+			  NonUniformBC_Var1 = InputVar1;
+
+			  /*---  Check if input file is sorted ---*/
+			  if (InputCoord[1]<InputCoord[0]) {
+				cout << "The input file " << input_filename.data() << " is not sorted in ascending order!"<< endl;
+				exit(EXIT_FAILURE);
+			  }
+
+			  /*---  Compute first derivatives   ---*/
+			  dVar1_1 = (InputVar1[1]-InputVar1[0])/(InputCoord[1]-InputCoord[0]);
+			  dVar1_N = (InputVar1[InputPoints-2]-InputVar1[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+			  NonUniformBC_d2Var1.resize(InputPoints);
+
+			  geometry->SetSpline(InputCoord, InputVar1, InputPoints, dVar1_1, dVar1_N, NonUniformBC_d2Var1);
+			  break;
+
+        default:
+			  cout << "Warning! Invalid type of Non Uniform BC option!" << endl;
+			  exit(EXIT_FAILURE);
+			  break;
+	}
 }
 
 void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container,
-                              CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
+                                 CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
+
   unsigned short iDim, iVar, jVar, kVar;
   unsigned long iVertex, iPoint, Point_Normal;
   su2double P_Total, T_Total, *Flow_Dir, Area, UnitNormal[3];
@@ -9222,7 +9268,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
   su2double **P_Tensor, **invP_Tensor, *Lambda_i, **Jacobian_b, **DubDu, *dw, *u_e, *u_i, *u_b;
   su2double *gridVel;
   su2double *V_boundary, *V_domain, *S_boundary, *S_domain;
-  su2double  yCoord, y_0, y_min, y_max, y_perio, yPitch, Physical_dt, Physical_t, t_perio, Period, Boundary_Vel;
+  su2double  y_Coord, x_Coord, Coord, y_0, y_min, y_max, y_perio, yPitch, Physical_dt, Physical_t, t_perio, Period, Boundary_Vel;
 
   bool implicit             = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
   bool grid_movement        = config->GetGrid_Movement();
@@ -9235,7 +9281,6 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
   su2double *Normal, TangVelocity, NormalVelocity;
   Normal = new su2double[nDim];
-
   Velocity_i = new su2double[nDim];
   Velocity_b = new su2double[nDim];
   Velocity_e = new su2double[nDim];
@@ -9256,46 +9301,33 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
   	invP_Tensor[iVar] = new su2double[nVar];
   }
 
+
 /*--- TO BE GENERALIZED FOR RADIAL TURBOMACHINERY 3D ---*/
 
-  /*--- Calculation of Physical time step for unsteady simulation ---*/
-  if (spectral_method) {
-
-  	/*--- time interval using nTimeInstances ---*/
-  	Physical_dt  = (su2double)config->GetSpectralMethod_Period()/(su2double)(config->GetnTimeInstances());
-
-  	/*--- Non-dimensionalization of time step.  ---*/
-  	Physical_dt /= config->GetTime_Ref();
-  	Physical_t  = config->GetiZone()*Physical_dt;
-  }
-  else {
-  	Physical_dt = (su2double)config->GetDelta_UnstTimeND();
-  	Physical_t  = (config->GetExtIter())*Physical_dt;
-  }
-  if (config->GetUnsteady_Simulation() == 0) Physical_t = 0;
-
-  /*--- Compute max and min y at boundary ---*/
-  y_min =  HUGE_VAL;
-  y_max = -HUGE_VAL;
-  for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
-  	iPoint = geometry->vertex[val_marker][iVertex]->GetNode();
-  	/*--- Check if the node belongs to the domain (i.e., not a halo node) ---*/
-  	if (geometry->node[iPoint]->GetCoord(nDim-1) < y_min){
-  		y_min = geometry->node[iPoint]->GetCoord(nDim-1);
-  	}
-  	else{
-  		if (geometry->node[iPoint]->GetDomain())
-  			y_max = geometry->node[iPoint]->GetCoord(nDim-1);
-  	}
-  }
+// /*--- Calculation of Physical time step for unsteady simulation ---*/
+//  if (spectral_method) {
+//
+//  	/*--- time interval using nTimeInstances ---*/
+//  	Physical_dt  = (su2double)config->GetSpectralMethod_Period()/(su2double)(config->GetnTimeInstances());
+//
+// 	/*--- Non-dimensionalization of time step.  ---*/
+//  	Physical_dt /= config->GetTime_Ref();
+//  	Physical_t  = config->GetiZone()*Physical_dt;
+//  }
+//  else {
+//  	Physical_dt = (su2double)config->GetDelta_UnstTimeND();
+//  	Physical_t  = (config->GetExtIter())*Physical_dt;
+//  }
+//  if (config->GetUnsteady_Simulation() == 0) Physical_t = 0;
 
    /*--- Loop over all the vertices on this boundary marker ---*/
 
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
 
-  	V_boundary= GetCharacPrimVar(val_marker, iVertex);
-
+  	V_boundary = GetCharacPrimVar(val_marker, iVertex);
   	iPoint = geometry->vertex[val_marker][iVertex]->GetNode();
+
+  	//cout << geometry->node[iPoint]->GetCoord(nDim-1) << endl; //prints the y coordinate
 
   	/*--- Check if the node belongs to the domain (i.e., not a halo node) ---*/
   	if (geometry->node[iPoint]->GetDomain()) {
@@ -9328,7 +9360,6 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
 
   		Density_i = node[iPoint]->GetDensity();
-
   		Energy_i = node[iPoint]->GetEnergy();
   		StaticEnergy_i = Energy_i - 0.5*Velocity2_i;
 
@@ -9346,42 +9377,21 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
   		for (iDim = 0; iDim < nDim; iDim++)
   			ProjVelocity_i += Velocity_i[iDim]*UnitNormal[iDim];
 
-      //        	xCoord = geometry->node[iPoint]->GetCoord(nDim-2);
-      yCoord = geometry->node[iPoint]->GetCoord(nDim-1);
-//      for testing scaling effects -- TO BE REMOVED
-      yCoord *= 100.;
-      yPitch = fabs(y_max - y_min);
-      yPitch *=  100;
+      x_Coord = geometry->node[iPoint]->GetCoord(nDim-2);
+      y_Coord = geometry->node[iPoint]->GetCoord(nDim-1);
 
       /*--- Build the external state u_e from boundary data and internal node ---*/
       switch(config->GetKind_Data_NonUniform(Marker_Tag))
       {
         case TOTAL_CONDITIONS_PT:
 
-        	/*--- HARDCODED FOR TEST ONLY!! ---*/
-//        	Period  = 0.0048429906542056074;
-        	Period  = 0.0049065420560747662;
-        	Period /= config->GetTime_Ref();
-        	Boundary_Vel  = 21.4;
-        	Boundary_Vel /= config->GetVelocity_Ref();
-        	y_0 = y_min*100 + NonUniformBC_Coord[0];
-
-        	t_perio = fmod(SU2_TYPE::GetValue(Physical_t), SU2_TYPE::GetValue(Period));
-        	y_perio = fmod(SU2_TYPE::GetValue(Boundary_Vel*t_perio + (yCoord - y_0)), SU2_TYPE::GetValue(yPitch));
-
-
         	/*--- Retrieve the specified total conditions for this boundary. ---*/
-        	P_Total = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_d2Var1, NonUniformBC_InputPoints, y_perio);
-        	if (gravity) {
-        		P_Total -= geometry->node[iPoint]->GetCoord(nDim-1)*STANDART_GRAVITY;/// check in which case is true (only freesurface?)
-        	}
+        	P_Total = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_d2Var1, NonUniformBC_InputPoints, x_Coord);
+        	T_Total  = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var2, NonUniformBC_d2Var2, NonUniformBC_InputPoints, x_Coord);
+        	Flow_Dir[0] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_x, NonUniformBC_d2FlowDir_x, NonUniformBC_InputPoints, x_Coord);
+        	Flow_Dir[1] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_y, NonUniformBC_d2FlowDir_y, NonUniformBC_InputPoints, x_Coord);
+        	Flow_Dir[2] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_z, NonUniformBC_d2FlowDir_z, NonUniformBC_InputPoints, x_Coord);
 
-        	T_Total  = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var2, NonUniformBC_d2Var2, NonUniformBC_InputPoints, y_perio);
-        	Flow_Dir[0] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_x, NonUniformBC_d2FlowDir_x, NonUniformBC_InputPoints, y_perio);
-        	Flow_Dir[1] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_y, NonUniformBC_d2FlowDir_y, NonUniformBC_InputPoints, y_perio);
-        	Flow_Dir[2] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_z, NonUniformBC_d2FlowDir_z, NonUniformBC_InputPoints, y_perio);
-
-        	//					P_Total = config->GetNonUniform_Var1(Marker_Tag)*(1+0.1*sin(2*PI_NUMBER/config->GetSpectralMethod_Period()*Physical_t));
         	/*--- Non-dim. the inputs if necessary. ---*/
         	P_Total /= config->GetPressure_Ref();
         	T_Total /= config->GetTemperature_Ref();
@@ -9391,17 +9401,19 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
           FluidModel->SetTDState_PT(P_Total, T_Total);
           Enthalpy_e = FluidModel->GetStaticEnergy()+ FluidModel->GetPressure()/FluidModel->GetDensity();
           Entropy_e = FluidModel->GetEntropy();
+
           /* --- Compute the boundary state u_e --- */
           Velocity2_e = Velocity2_i;
-          if (nDim == 2){
-            NormalVelocity= -sqrt(Velocity2_e)*Flow_Dir[0];
-            TangVelocity= -sqrt(Velocity2_e)*Flow_Dir[1];
-            Velocity_e[0]= UnitNormal[0]*NormalVelocity - UnitNormal[1]*TangVelocity;
-            Velocity_e[1]= UnitNormal[1]*NormalVelocity + UnitNormal[0]*TangVelocity;
-          }else{
+          //if (nDim == 2){
+            //NormalVelocity= -sqrt(Velocity2_e)*Flow_Dir[0];
+            //TangVelocity= -sqrt(Velocity2_e)*Flow_Dir[1];
+            //Velocity_e[0]= UnitNormal[0]*NormalVelocity - UnitNormal[1]*TangVelocity;
+            //Velocity_e[1]= UnitNormal[1]*NormalVelocity + UnitNormal[0]*TangVelocity;
+          //}else{
             for (iDim = 0; iDim < nDim; iDim++)
               Velocity_e[iDim] = sqrt(Velocity2_e)*Flow_Dir[iDim];
-          }
+          //}
+
           StaticEnthalpy_e = Enthalpy_e - 0.5 * Velocity2_e;
           FluidModel->SetTDState_hs(StaticEnthalpy_e, Entropy_e);
           Density_e = FluidModel->GetDensity();
@@ -9412,6 +9424,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
         case STATIC_PRESSURE:
           /*--- Retrieve the staic pressure for this boundary. ---*/
+          Pressure_e = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_d2Var1, NonUniformBC_InputPoints, x_Coord);
           Pressure_e = config->GetNonUniform_Var1(Marker_Tag);
           Pressure_e /= config->GetPressure_Ref();
           Density_e = Density_i;
@@ -9428,12 +9441,13 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
 
         case DENSITY_VELOCITY:
-          su2double VelMag_e;
-
+            su2double VelMag_e;
         	/*--- Retrieve the specified density and velocity magnitude ---*/
-        	Density_e  = config->GetRiemann_Var1(Marker_Tag);
-        	VelMag_e   = config->GetRiemann_Var2(Marker_Tag);
-        	Flow_Dir = config->GetRiemann_FlowDir(Marker_Tag);
+        	Density_e  = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_d2Var1, NonUniformBC_InputPoints, x_Coord);
+        	VelMag_e   = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var2, NonUniformBC_d2Var2, NonUniformBC_InputPoints, x_Coord);
+           	Flow_Dir[0] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_x, NonUniformBC_d2FlowDir_x, NonUniformBC_InputPoints, x_Coord);
+            Flow_Dir[1] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_y, NonUniformBC_d2FlowDir_y, NonUniformBC_InputPoints, x_Coord);
+            Flow_Dir[2] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_z, NonUniformBC_d2FlowDir_z, NonUniformBC_InputPoints, x_Coord);
 
         	/*--- Non-dim. the inputs if necessary. ---*/
         	Density_e /= config->GetDensity_Ref();
@@ -9449,7 +9463,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
           cout << "Warning! Invalid type of Non Uniform BC option!" << endl;
           exit(EXIT_FAILURE);
           break;
-          
+
       }
 
       /*--- Compute P (matrix of right eigenvectors) ---*/
@@ -16825,10 +16839,15 @@ CNSSolver::CNSSolver(CGeometry *geometry, CConfig *config, unsigned short iMesh)
     }
   }
 
-  if (config->GetBoolNonUniformBC() || config->GetBoolTurboNonUniformBC())
-  	SetBC_NonUniform(geometry, config);
-  /*--- Initialize the cauchy critera array for fixed CL mode ---*/
+  /*--- Initialize NonUniform boundary condition ---*/
+  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++){
+	  if ((config->GetBoolNonUniformBC() || config->GetBoolTurboNonUniformBC()) && (config->GetMarker_All_KindBC(iMarker) == 38 )){
+		  /* Marker 38 is the NONUNIFORM_BOUNDAY marker */
+		  SetBC_NonUniform(geometry, config, iMarker);
+	  }
+  }
 
+  /*--- Initialize the cauchy critera array for fixed CL mode ---*/
   if (config->GetFixed_CL_Mode())
 
     Cauchy_Serie = new su2double [config->GetCauchy_Elems()+1];

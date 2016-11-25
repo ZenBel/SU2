@@ -142,18 +142,18 @@ void CIntegration::Space_Integration(CGeometry *geometry,
       			solver_container[MainSolver]->BC_Outlet(geometry, solver_container, numerics[CONV_BOUND_TERM], numerics[VISC_BOUND_TERM], config, iMarker);
       	break;
       case NONUNIFORM_BOUNDARY:
-      	nonuniform_inflow = (config->GetKind_Data_TurboNonUniform(config->GetMarker_All_TagBound(iMarker)) == TOTAL_CONDITIONS_PT
-      			&& config->GetKind_Data_TurboNonUniform(config->GetMarker_All_TagBound(iMarker)) == DENSITY_VELOCITY);
+      	//nonuniform_inflow = (config->GetKind_Data_NonUniform(config->GetMarker_All_TagBound(iMarker)) == TOTAL_CONDITIONS_PT);
       	if (MainSolver == FLOW_SOL)
       		solver_container[MainSolver]->BC_NonUniform(geometry, solver_container, numerics[CONV_BOUND_TERM], numerics[VISC_BOUND_TERM], config, iMarker);
-      	else if (MainSolver == TURB_SOL && nonuniform_inflow)
+      	else if (MainSolver == TURB_SOL && config->GetKind_Data_NonUniform(config->GetMarker_All_TagBound(iMarker)) == TOTAL_CONDITIONS_PT)
+      		solver_container[MainSolver]->BC_Inlet(geometry, solver_container, numerics[CONV_BOUND_TERM], numerics[VISC_BOUND_TERM], config, iMarker);
+      	else if (MainSolver == TURB_SOL && config->GetKind_Data_NonUniform(config->GetMarker_All_TagBound(iMarker)) == DENSITY_VELOCITY)
       		solver_container[MainSolver]->BC_Inlet(geometry, solver_container, numerics[CONV_BOUND_TERM], numerics[VISC_BOUND_TERM], config, iMarker);
       	else if (MainSolver == TURB_SOL && config->GetKind_Data_NonUniform(config->GetMarker_All_TagBound(iMarker)) == STATIC_PRESSURE)
       		solver_container[MainSolver]->BC_Outlet(geometry, solver_container, numerics[CONV_BOUND_TERM], numerics[VISC_BOUND_TERM], config, iMarker);
       	break;
       case TURBO_NONUNIFORM_BOUNDARY:
-      	nonuniform_inflow = (config->GetKind_Data_TurboNonUniform(config->GetMarker_All_TagBound(iMarker)) == TOTAL_CONDITIONS_PT
-      			&& config->GetKind_Data_TurboNonUniform(config->GetMarker_All_TagBound(iMarker)) == DENSITY_VELOCITY);
+      	nonuniform_inflow = (config->GetKind_Data_TurboNonUniform(config->GetMarker_All_TagBound(iMarker)) == TOTAL_CONDITIONS_PT);
       	if (MainSolver == FLOW_SOL)
       		solver_container[MainSolver]->BC_TurboNonUniform(geometry, solver_container, numerics[CONV_BOUND_TERM], numerics[VISC_BOUND_TERM], config, iMarker);
       	else if (MainSolver == TURB_SOL && nonuniform_inflow)

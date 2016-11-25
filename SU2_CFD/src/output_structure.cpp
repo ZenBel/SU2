@@ -5759,7 +5759,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
       			if (config[val_iZone]->GetBoolNonUniformBC()){
       				if(config[val_iZone]->GetKind_Data_NonUniform(inMarker_Tag) == TOTAL_CONDITIONS_PT) inlet  = true;
       				if(config[val_iZone]->GetKind_Data_NonUniform(outMarker_Tag) == STATIC_PRESSURE) 	  outlet = true;
-      				if(config[val_iZone]->GetKind_Data_NonUniform(outMarker_Tag) == MIXING_OUT) 				mixing = true;
+      				if(config[val_iZone]->GetKind_Data_NonUniform(outMarker_Tag) == DENSITY_VELOCITY) 				inlet = true;
       			}
       			if (config[val_iZone]->GetBoolTurboNonUniformBC()){
       				if(config[val_iZone]->GetKind_Data_TurboNonUniform(inMarker_Tag) == TOTAL_CONDITIONS_PT) inlet  = true;

@@ -808,8 +808,8 @@ enum RIEMANN_TYPE {
   MIXING_IN = 7, /*!< \brief User does not specify anything information are retrieved from the other domain */
   MIXING_OUT = 8, /*!< \brief User does not specify anything information are retrieved from the other domain */
   SUPERSONIC_OUTFLOW = 9,
-	RADIAL_EQUILIBRIUM = 10,
-	GLOBAL_STATIC_PRESSURE = 11
+  RADIAL_EQUILIBRIUM = 10,
+  GLOBAL_STATIC_PRESSURE = 11
 };
 
 static const map<string, RIEMANN_TYPE> Riemann_Map = CCreateMap<string, RIEMANN_TYPE>
