@@ -839,7 +839,8 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++){
 	  if ((config->GetBoolNonUniformBC() || config->GetBoolTurboNonUniformBC()) && (config->GetMarker_All_KindBC(iMarker) == 38 )){
 		  /* Marker 38 is the NONUNIFORM_BOUNDAY marker */
-		  SetBC_NonUniform(geometry, config, iMarker);
+		  string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+		  SetBC_NonUniform(geometry, config, iMarker, Marker_Tag);
 	  }
   }
 
@@ -5106,15 +5107,15 @@ void CEulerSolver::TurboPerformance(CConfig *config, CGeometry *geometry){
                 alphaIn_BC = atan(ExtAverageTurboVelocity[iMarker][0][1]/ExtAverageTurboVelocity[iMarker][0][0]);
               }
 
-              if(config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
-              	P_Total  = config->GetNonUniform_Var1(Marker_Tag);
-              	T_Total  = config->GetNonUniform_Var2(Marker_Tag);
-              	FlowDir = config->GetNonUniform_FlowDir(Marker_Tag);
-              	alphaIn_BC = atan(FlowDir[1]/FlowDir[0]);
-              	P_Total /= config->GetPressure_Ref();
-              	T_Total /= config->GetTemperature_Ref();
-
-              }
+//              if(config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+//              	P_Total  = config->GetNonUniform_Var1(Marker_Tag);
+//              	T_Total  = config->GetNonUniform_Var2(Marker_Tag);
+//              	FlowDir = config->GetNonUniform_FlowDir(Marker_Tag);
+//              	alphaIn_BC = atan(FlowDir[1]/FlowDir[0]);
+//              	P_Total /= config->GetPressure_Ref();
+//              	T_Total /= config->GetTemperature_Ref();
+//
+//              }
             }
 
 
@@ -5199,10 +5200,10 @@ void CEulerSolver::TurboPerformance(CConfig *config, CGeometry *geometry){
               pressureOut_BC /= config->GetPressure_Ref();
 
             }
-            if(config->GetBoolNonUniformBC()){
-            	pressureOut_BC  = config->GetNonUniform_Var1(Marker_Tag);
-            	pressureOut_BC /= config->GetPressure_Ref();
-            }
+//            if(config->GetBoolNonUniformBC()){
+//            	pressureOut_BC  = config->GetNonUniform_Var1(Marker_Tag);
+//            	pressureOut_BC /= config->GetPressure_Ref();
+//            }
           }
           else{
 //            cout << " OUTLET BC convergence can't be checked "<<endl;
@@ -5571,14 +5572,14 @@ void CEulerSolver::TurboPerformanceSpanwise(CConfig *config, CGeometry *geometry
                         alphaIn_BC = atan(ExtAverageTurboVelocity[iMarker][0][1]/ExtAverageTurboVelocity[iMarker][0][0]);
                       }
 
-                      if(config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
-                      	P_Total  = config->GetNonUniform_Var1(Marker_Tag);
-                      	T_Total  = config->GetNonUniform_Var2(Marker_Tag);
-                      	FlowDir = config->GetNonUniform_FlowDir(Marker_Tag);
-                      	alphaIn_BC = atan(FlowDir[1]/FlowDir[0]);
-                      	P_Total /= config->GetPressure_Ref();
-                      	T_Total /= config->GetTemperature_Ref();
-                      }
+//                      if(config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+//                      	P_Total  = config->GetNonUniform_Var1(Marker_Tag);
+//                      	T_Total  = config->GetNonUniform_Var2(Marker_Tag);
+//                      	FlowDir = config->GetNonUniform_FlowDir(Marker_Tag);
+//                      	alphaIn_BC = atan(FlowDir[1]/FlowDir[0]);
+//                      	P_Total /= config->GetPressure_Ref();
+//                      	T_Total /= config->GetTemperature_Ref();
+//                      }
                     }
 
 
@@ -5665,10 +5666,10 @@ void CEulerSolver::TurboPerformanceSpanwise(CConfig *config, CGeometry *geometry
                       pressureOut_BC /= config->GetPressure_Ref();
 
                     }
-                    if(config->GetBoolNonUniformBC()){
-                    	pressureOut_BC  = config->GetNonUniform_Var1(Marker_Tag);
-                    	pressureOut_BC /= config->GetPressure_Ref();
-                    }
+//                    if(config->GetBoolNonUniformBC()){
+//                    	pressureOut_BC  = config->GetNonUniform_Var1(Marker_Tag);
+//                    	pressureOut_BC /= config->GetPressure_Ref();
+//                    }
                   }
                   else{
 //                    cout << " OUTLET BC convergence can't be checked "<<endl;
@@ -9137,13 +9138,15 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
 }
 
 
-void CEulerSolver::SetBC_NonUniform(CGeometry *geometry, CConfig *config, unsigned short val_marker){
+void CEulerSolver::SetBC_NonUniform(CGeometry *geometry, CConfig *config, unsigned short val_marker, string val_marker1){
 
   /*--- Initialize NonUniform Boundary condition from external input file ---*/
   string text_line;
   ifstream input_file;
-  string input_filename = config->GetNonUniformBC_FileName();
   string Marker_Tag         = config->GetMarker_All_TagBound(val_marker);
+  cout << Marker_Tag << " " << val_marker << endl;
+  string input_filename = config->GetNonUniform_file(val_marker1);
+  cout << input_filename << endl;
 
   input_file.open(input_filename.data(), ios::in);
   if (input_file.fail()) {
@@ -9173,6 +9176,7 @@ void CEulerSolver::SetBC_NonUniform(CGeometry *geometry, CConfig *config, unsign
 				InputFlowDir_x.push_back(FlowDir_x);
 				InputFlowDir_y.push_back(FlowDir_y);
 				InputFlowDir_z.push_back(FlowDir_z);
+				cout << CoordIn << " " << Var1In << " " << Var2In << " " << FlowDir_x << " " << FlowDir_y << " " << FlowDir_z << endl;
   	  		  	}
   	  		  input_file.close();
 
@@ -9358,7 +9362,6 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
   			Velocity2_i += Velocity_i[iDim]*Velocity_i[iDim];
   		}
 
-
   		Density_i = node[iPoint]->GetDensity();
   		Energy_i = node[iPoint]->GetEnergy();
   		StaticEnergy_i = Energy_i - 0.5*Velocity2_i;
@@ -9385,16 +9388,16 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
       {
         case TOTAL_CONDITIONS_PT:
 
-        	/*--- Retrieve the specified total conditions for this boundary. ---*/
-        	P_Total = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_d2Var1, NonUniformBC_InputPoints, x_Coord);
-        	T_Total  = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var2, NonUniformBC_d2Var2, NonUniformBC_InputPoints, x_Coord);
-        	Flow_Dir[0] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_x, NonUniformBC_d2FlowDir_x, NonUniformBC_InputPoints, x_Coord);
-        	Flow_Dir[1] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_y, NonUniformBC_d2FlowDir_y, NonUniformBC_InputPoints, x_Coord);
-        	Flow_Dir[2] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_z, NonUniformBC_d2FlowDir_z, NonUniformBC_InputPoints, x_Coord);
+          /*--- Retrieve the specified total conditions for this boundary. ---*/
+          P_Total = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_d2Var1, NonUniformBC_InputPoints, x_Coord);
+          T_Total  = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var2, NonUniformBC_d2Var2, NonUniformBC_InputPoints, x_Coord);
+          Flow_Dir[0] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_x, NonUniformBC_d2FlowDir_x, NonUniformBC_InputPoints, x_Coord);
+          Flow_Dir[1] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_y, NonUniformBC_d2FlowDir_y, NonUniformBC_InputPoints, x_Coord);
+          Flow_Dir[2] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_z, NonUniformBC_d2FlowDir_z, NonUniformBC_InputPoints, x_Coord);
 
-        	/*--- Non-dim. the inputs if necessary. ---*/
-        	P_Total /= config->GetPressure_Ref();
-        	T_Total /= config->GetTemperature_Ref();
+          /*--- Non-dim. the inputs if necessary. ---*/
+          P_Total /= config->GetPressure_Ref();
+          T_Total /= config->GetTemperature_Ref();
 
 
           /* --- Computes the total state --- */
@@ -9425,7 +9428,6 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
         case STATIC_PRESSURE:
           /*--- Retrieve the staic pressure for this boundary. ---*/
           Pressure_e = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_d2Var1, NonUniformBC_InputPoints, x_Coord);
-          Pressure_e = config->GetNonUniform_Var1(Marker_Tag);
           Pressure_e /= config->GetPressure_Ref();
           Density_e = Density_i;
 
@@ -16843,7 +16845,8 @@ CNSSolver::CNSSolver(CGeometry *geometry, CConfig *config, unsigned short iMesh)
   for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++){
 	  if ((config->GetBoolNonUniformBC() || config->GetBoolTurboNonUniformBC()) && (config->GetMarker_All_KindBC(iMarker) == 38 )){
 		  /* Marker 38 is the NONUNIFORM_BOUNDAY marker */
-		  SetBC_NonUniform(geometry, config, iMarker);
+		  string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+		  SetBC_NonUniform(geometry, config, iMarker, Marker_Tag);
 	  }
   }
 

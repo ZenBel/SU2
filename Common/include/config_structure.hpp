@@ -216,6 +216,7 @@ private:
 	*Marker_Inlet,					/*!< \brief Inlet flow markers. */
 	*Marker_Riemann,					/*!< \brief Riemann markers. */
 	*Marker_NonUniform,  /*!< \brief NonUniformBC markers. */
+	*NonUniform_filename,
 	*Marker_TurboNonUniform,  /*!< \brief TurboNonUniformBC markers. */
 	*Marker_NRBC,					/*!< \brief NRBC markers. */
 	*Marker_Supersonic_Inlet,					/*!< \brief Supersonic inlet flow markers. */
@@ -241,8 +242,6 @@ private:
 	su2double *Inlet_Ttotal;    /*!< \brief Specified total temperatures for inlet boundaries. */
 	su2double *Riemann_Var1, *Riemann_Var2;    /*!< \brief Specified values for Riemann boundary. */
 	su2double **Riemann_FlowDir;  /*!< \brief Specified flow direction vector (unit vector) for Riemann boundaries. */
-	su2double *NonUniform_Var1, *NonUniform_Var2;    /*!< \brief Specified values for Riemann boundary. */
-	su2double **NonUniform_FlowDir;  /*!< \brief Specified flow direction vector (unit vector) for Riemann boundaries. */
 	su2double *TurboNonUniform_BoundaryVel;    /*!< \brief Specified values for Omega in TurboNonUniform boundary. */
 	su2double *NRBC_Var1, *NRBC_Var2, *RelaxFactorAverage, *RelaxFactorFourier;    /*!< \brief Specified values for NRBC boundary. */
 	su2double **NRBC_FlowDir;  /*!< \brief Specified flow direction vector (unit vector) for NRBC boundaries. */
@@ -538,7 +537,6 @@ private:
 	string Mesh_FileName,			/*!< \brief Mesh input file. */
 	Mesh_Out_FileName,				/*!< \brief Mesh output file. */
 	Solution_FlowFileName,			/*!< \brief Flow solution input file. */
-	NonUniformBC_FileName,			/*!< \brief Non Uniform BC solution input file. */
 	Solution_LinFileName,			/*!< \brief Linearized flow solution input file. */
 	Solution_AdjFileName,			/*!< \brief Adjoint solution input file for drag functional. */
 	Solution_FEMFileName,			/*!< \brief Adjoint solution input file for drag functional. */
@@ -974,11 +972,10 @@ private:
   }
 
   template <class Tenum>
-  void addNonUniformOption(const string name, unsigned short & nMarker_NonUniform, string * & Marker_NonUniform, unsigned short* & option_field, const map<string, Tenum> & enum_map,
-  		  su2double* & var1, su2double* & var2, su2double** & FlowDir) {
+  void addNonUniformOption(const string name, unsigned short & nMarker_NonUniform, string * & Marker_NonUniform, unsigned short* & option_field, const map<string, Tenum> & enum_map, string * & NonUniform_filename) {
     assert(option_map.find(name) == option_map.end());
     all_options.insert(pair<string, bool>(name, true));
-    COptionBase* val = new COptionNonUniform<Tenum>(name, nMarker_NonUniform, Marker_NonUniform, option_field, enum_map, var1, var2, FlowDir);
+    COptionBase* val = new COptionNonUniform<Tenum>(name, nMarker_NonUniform, Marker_NonUniform, option_field, enum_map, NonUniform_filename);
     option_map.insert(pair<string, COptionBase *>(name, val));
   }
 
@@ -4036,12 +4033,6 @@ public:
 	string GetResidual_FileName(void);
 
 	/*!
-	 * \brief Get the name of the file with the solution of the flow problem.
-	 * \return Name of the file with the solution of the flow problem.
-	 */
-	string GetNonUniformBC_FileName(void);
-
-	/*!
 	 * \brief Get the format of the input/output grid.
 	 * \return Format of the input/output grid.
 	 */
@@ -5093,26 +5084,12 @@ public:
 	unsigned short GetKind_Data_Riemann(string val_marker);
 
 	/*!
-	 * \brief Get the var 1 at NonUniform boundary.
+	 * \brief Get the input file name of the NonUniform boundary condition.
 	 * \param[in] val_marker - Index corresponding to the NonUniform boundary.
-	 * \return The var1
-	 */
-	su2double GetNonUniform_Var1(string val_marker);
-
-	/*!
-	 * \brief Get the var 2 at NonUniform boundary.
-	 * \param[in] val_marker - Index corresponding to the NonUniform boundary.
-	 * \return The var2
+	 * \return NonUniform_FileName
 	 */
 
-	su2double GetNonUniform_Var2(string val_marker);
-
-	/*!
-	 * \brief Get the Flowdir at NonUniform boundary.
-	 * \param[in] val_marker - Index corresponding to the NonUniform boundary.
-	 * \return The Flowdir
-	 */
-	su2double* GetNonUniform_FlowDir(string val_marker);
+	string GetNonUniform_file(string val_marker);
 
 	/*!
 	 * \brief Get Kind Data of NonUniform boundary.

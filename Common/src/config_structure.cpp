@@ -295,6 +295,7 @@ void CConfig::SetPointersNull(void) {
   Marker_CfgFile_KindBC = NULL;   Marker_All_SendRecv = NULL;       Marker_All_PerBound = NULL;
   Marker_FSIinterface = NULL;     Marker_All_FSIinterface=NULL;     Marker_Riemann = NULL;
   Marker_Load = NULL;             Marker_NonUniform=NULL;           Marker_TurboNonUniform=NULL;
+  NonUniform_filename = NULL;
   /*--- Boundary Condition settings ---*/
 
   Dirichlet_Value = NULL;         Exhaust_Temperature_Target = NULL;
@@ -371,7 +372,6 @@ void CConfig::SetPointersNull(void) {
   
   Riemann_FlowDir= NULL;
   NRBC_FlowDir = NULL;
-  NonUniform_FlowDir = NULL;
   ActDisk_Origin= NULL;
   CoordFFDBox= NULL;
   DegreeFFDBox= NULL;
@@ -383,8 +383,6 @@ void CConfig::SetPointersNull(void) {
   Riemann_Var1 = NULL;
   Riemann_Var2 = NULL;
   Kind_Data_NonUniform = NULL;
-  NonUniform_Var1 = NULL;
-  NonUniform_Var2 = NULL;
   Kind_Data_TurboNonUniform = NULL;
   TurboNonUniform_BoundaryVel = NULL;
   Kind_Data_NRBC = NULL;
@@ -671,11 +669,9 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   /*!\brief MARKER_RIEMANN \n DESCRIPTION: Riemann boundary marker(s) with the following formats, a unit vector.
    * \n OPTIONS: See \link Riemann_Map \endlink. The variables indicated by the option and the flow direction unit vector must be specified. \ingroup Config*/
   addRiemannOption("MARKER_RIEMANN", nMarker_Riemann, Marker_Riemann, Kind_Data_Riemann, Riemann_Map, Riemann_Var1, Riemann_Var2, Riemann_FlowDir);
-  /*!\brief MARKER_NONUNIFORM \n DESCRIPTION: NonUniform boundary marker(s) with the following formats, a unit vector.
-   * \n OPTIONS: See \link Riemann_Map \endlink. The variables indicated by the option and the flow direction unit vector must be specified. \ingroup Config*/
-  addNonUniformOption("MARKER_NONUNIFORM", nMarker_NonUniform, Marker_NonUniform, Kind_Data_NonUniform, NonUniform_Map, NonUniform_Var1, NonUniform_Var2, NonUniform_FlowDir);
-  /*!\brief SOLUTION_FLOW_FILENAME \n DESCRIPTION: Restart flow input file (the file output under the filename set by RESTART_FLOW_FILENAME) \n DEFAULT: solution_flow.dat \ingroup Config */
-  addStringOption("NONUNIFORM_BC_FILENAME", NonUniformBC_FileName, string("nonuniform_boundary.dat"));
+  /*!\brief MARKER_NONUNIFORM \n DESCRIPTION: NonUniform boundary marker(s).
+   * \n OPTIONS: See \link Riemann_Map \endlink. \ingroup Config*/
+  addNonUniformOption("MARKER_NONUNIFORM", nMarker_NonUniform, Marker_NonUniform, Kind_Data_NonUniform, NonUniform_Map, NonUniform_filename);
   /*!\brief MARKER_TURBONONUNIFORM \n DESCRIPTION: TurboNonUniform boundary marker(s) with the following formats, a unit vector.
    * \n OPTIONS: See \link Riemann_Map \endlink. The variables indicated by the option and the flow direction unit vector must be specified. \ingroup Config*/
   addTurboNonUniformOption("MARKER_TURBONONUNIFORM", nMarker_TurboNonUniform, Marker_TurboNonUniform, Kind_Data_TurboNonUniform, TurboNonUniform_Map, TurboNonUniform_BoundaryVel);
@@ -4490,7 +4486,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
   if (nMarker_NonUniform != 0) {
       cout << "NonUniform boundary marker(s): ";
       for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++) {
-        cout << Marker_NonUniform[iMarker_NonUniform];
+        cout << Marker_NonUniform[iMarker_NonUniform] << " ("<< NonUniform_filename[iMarker_NonUniform] << ")";
         if (iMarker_NonUniform < nMarker_NonUniform-1) cout << ", ";
         else cout <<"."<< endl;
     }
@@ -5122,12 +5118,6 @@ CConfig::~CConfig(void) {
     delete [] NRBC_FlowDir;
   }
   
-  if (NonUniform_FlowDir != NULL) {
-    for (iMarker = 0; iMarker < nMarker_NonUniform; iMarker++)
-      delete [] NonUniform_FlowDir[iMarker];
-    delete [] NonUniform_FlowDir;
-  }
-
   if (Load_Sine_Dir != NULL) {
     for (iMarker = 0; iMarker < nMarker_Load_Sine; iMarker++)
       delete [] Load_Sine_Dir[iMarker];
@@ -5248,8 +5238,6 @@ CConfig::~CConfig(void) {
   if (Riemann_Var1 != NULL) delete [] Riemann_Var1;
   if (Riemann_Var2 != NULL) delete [] Riemann_Var2;
   if (Kind_Data_NonUniform != NULL) delete [] Kind_Data_NonUniform;
-  if (NonUniform_Var1 != NULL) delete [] NonUniform_Var1;
-  if (NonUniform_Var2 != NULL) delete [] NonUniform_Var2;
   if (Kind_Data_TurboNonUniform != NULL) delete [] Kind_Data_TurboNonUniform;
   if (TurboNonUniform_BoundaryVel != NULL) delete [] TurboNonUniform_BoundaryVel;
   if (Kind_Data_NRBC != NULL) delete [] Kind_Data_NRBC;
@@ -5259,6 +5247,7 @@ CConfig::~CConfig(void) {
   if (Marker_TurboBoundOut != NULL) delete [] Marker_TurboBoundOut;
   if (Marker_Riemann != NULL) delete [] Marker_Riemann;
   if (Marker_NonUniform != NULL) delete [] Marker_NonUniform;
+  if (NonUniform_filename != NULL) delete [] NonUniform_filename;
   if (Marker_TurboNonUniform != NULL) delete [] Marker_TurboNonUniform;
   if (Marker_NRBC != NULL) delete [] Marker_NRBC;
  
@@ -5780,25 +5769,11 @@ unsigned short CConfig::GetKind_Data_Riemann(string val_marker) {
 }
 
 
-su2double CConfig::GetNonUniform_Var1(string val_marker) {
+string CConfig::GetNonUniform_file(string val_marker) {
   unsigned short iMarker_NonUniform;
   for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
     if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
-  return NonUniform_Var1[iMarker_NonUniform];
-}
-
-su2double CConfig::GetNonUniform_Var2(string val_marker) {
-  unsigned short iMarker_NonUniform;
-  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
-    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
-  return NonUniform_Var2[iMarker_NonUniform];
-}
-
-su2double* CConfig::GetNonUniform_FlowDir(string val_marker) {
-  unsigned short iMarker_NonUniform;
-  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
-    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
-  return NonUniform_FlowDir[iMarker_NonUniform];
+  return NonUniform_filename[iMarker_NonUniform];
 }
 
 unsigned short CConfig::GetKind_Data_NonUniform(string val_marker) {
