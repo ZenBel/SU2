@@ -7812,6 +7812,7 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
       stringstream  point_line(text_line);
       
       if (geometry->GetnDim() == 2) point_line >> iPoint >> XCoord >> YCoord >> Pressure >> PressureCoeff;
+      //cout << point_line << " " << iPoint << " " << XCoord << " " << YCoord << " " << Pressure << " " << PressureCoeff << endl;
       if (geometry->GetnDim() == 3) point_line >> iPoint >> XCoord >> YCoord >> ZCoord >> Pressure >> PressureCoeff;
       
       if (PointInDomain[iPoint]) {

@@ -3521,11 +3521,13 @@ protected:
   vector<su2double> NonUniformBC_Coord,
 	NonUniformBC_Var1,
 	NonUniformBC_Var2,
+	NonUniformBC_Var3,
   NonUniformBC_FlowDir_x,
 	NonUniformBC_FlowDir_y,
 	NonUniformBC_FlowDir_z,
   NonUniformBC_d2Var1,
 	NonUniformBC_d2Var2,
+	NonUniformBC_d2Var3,
 	NonUniformBC_d2FlowDir_x,
 	NonUniformBC_d2FlowDir_y,
 	NonUniformBC_d2FlowDir_z;

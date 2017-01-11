@@ -2620,7 +2620,7 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
   
   if (compressible) {
     
-    for (iMarker = 0; iMarker < nMarker; iMarker++) {
+	  for (iMarker = 0; iMarker < nMarker; iMarker++) {
       Sens_BPress[iMarker] = 0.0;
       if (config->GetMarker_All_KindBC(iMarker) == OUTLET_FLOW){
 
@@ -2703,6 +2703,7 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
             if (nDim == 2) { dH_drw = 0.0; dH_drE = (1 + dp_drE)/r; }
             else { dH_drw = dp_drw/r; dH_drE = (1 + dp_drE)/r; }
             
+            /*---Evaluate the flux Jacobian by deriving with respect to the conservative variables [r, ru, rv, rw, rE] ---*/
             if (nDim == 2) {
               Jacobian_j[0][0] = 0.0;
               Jacobian_j[1][0] = Area*UnitNormal[0];
