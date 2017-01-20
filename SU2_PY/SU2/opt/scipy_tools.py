@@ -175,7 +175,7 @@ def obj_df(x,project):
             dobj[idv] = dobj[idv]+this_dv_dobj;
             idv+=1
     dobj = array( dobj )
-    
+
     return dobj
 
 def con_ceq(x,project):

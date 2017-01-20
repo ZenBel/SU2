@@ -196,8 +196,8 @@ class State(ordered_bunch):
                 pull.append(value)
         
         #: for each filename
-        if (config.has_key('MARKER_NONUNIFORM')):
-            pull.append( config['NONUNIFORM_BC_FILENAME'] )
+        #if (config.has_key('MARKER_NONUNIFORM')):
+        #    pull.append( config['NONUNIFORM_BC_FILENAME'] )
         
         
         return pull,link
@@ -230,6 +230,7 @@ class State(ordered_bunch):
         adjoint_name  = config.SOLUTION_ADJ_FILENAME
         targetea_name = 'TargetEA.dat'
         targetcp_name = 'TargetCp.dat'
+        nubc_filename = 'general.bc'
         targetheatflux_name = 'TargetHeatFlux.dat'
 
         adj_map = get_adjointSuffix()
@@ -290,6 +291,9 @@ class State(ordered_bunch):
         # heat flux inverse design
         if 'INV_DESIGN_HEATFLUX' in special_cases:
           register_file('TARGET_HEATFLUX',targetheatflux_name)
+          
+        if (config.has_key('MARKER_NONUNIFORM')):
+            register_file( 'NUBC_FILE', nubc_filename )
         
         return
     

@@ -463,6 +463,9 @@ int main(int argc, char *argv[]) {
       else if (config_container[ZONE_0]->GetDesign_Variable(iDV) == CUSTOM and rank==MASTER_NODE)
         cout <<"Custom design variable will be used in external script" << endl;
 
+      else if (config_container[ZONE_0]->GetDesign_Variable(iDV) == NUBC_DV and rank==MASTER_NODE)
+        cout <<"NUBC design variable will be used in external script" << endl;
+
       /*--- Design variable not implement ---*/
       
       else {

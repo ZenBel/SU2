@@ -123,6 +123,14 @@ def projection( config, state={}, step = 1e-3 ):
                 if (konfig.DV_KIND[idv] == 'CUSTOM'):
                     raw_gradients[idv] = 0.0
                     custom_dv = custom_dv+1
+                    
+    if ('NUBC_DV' in konfig.DV_KIND):
+        n_dv = len(raw_gradients)
+        nubc_dv = 1
+        for idv in range(n_dv):
+            if (konfig.DV_KIND[idv] == 'NUBC_DV'):
+                raw_gradients[idv] = 0.0    #Set gradients of NUBC_DV to zero.
+                nubc_dv = nubc_dv + 1
     
     # Write Gradients
     data_plot = su2util.ordered_bunch()

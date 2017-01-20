@@ -1193,7 +1193,8 @@ enum ENUM_PARAM {
   NACA_4DIGITS = 16,	         /*!< \brief The four digits NACA airfoil family as design variables. */
   AIRFOIL = 17,		           /*!< \brief Airfoil definition as design variables. */
   SURFACE_FILE = 18,		     /*!< Nodal coordinates set using a surface file. */
-  CUSTOM = 19                /*!< 'CUSTOM' for use in external python analysis. */
+  CUSTOM = 19,                /*!< 'CUSTOM' for use in external python analysis. */
+  NUBC_DV = 20					/*!< 'NUBC_DV' design variables of the NUBC_DV boundary condition. */
 };
 static const map<string, ENUM_PARAM> Param_Map = CCreateMap<string, ENUM_PARAM>
 ("FFD_SETTING", FFD_SETTING)
@@ -1215,7 +1216,8 @@ static const map<string, ENUM_PARAM> Param_Map = CCreateMap<string, ENUM_PARAM>
 ("PARABOLIC", PARABOLIC)
 ("AIRFOIL", AIRFOIL)
 ("SURFACE_FILE", SURFACE_FILE)
-("CUSTOM",CUSTOM);
+("CUSTOM",CUSTOM)
+("NUBC_DV", NUBC_DV);
 
 /*!
  * \brief types of solvers for solving linear systems
@@ -2132,6 +2134,7 @@ public:
         case FFD_THICKNESS: nParamDV = 3; break;
         case SURFACE_FILE: nParamDV = 0; break;
         case CUSTOM: nParamDV = 1; break;
+        case NUBC_DV: nParamDV = 5; break;
         default : {
           string newstring;
           newstring.append(this->name);

@@ -14,7 +14,7 @@ def downstream_function(config, state ):
     if config.DV_KIND[iDV] == 'OTHER':
       nvar = nvar+1
   d_in = [0.0]*nvar
-  obj = objective(config, state,d_in)
+  obj = objective(config, state, d_in)
   print " objective ", obj
   return obj
 

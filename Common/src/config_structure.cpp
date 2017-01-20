@@ -3722,6 +3722,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
           case FFD_CAMBER:            cout << "FFD (camber) <-> "; break;
           case FFD_THICKNESS:         cout << "FFD (thickness) <-> "; break;
           case CUSTOM:                cout << "Custom DV <-> "; break;
+          case NUBC_DV:                cout << "NUBC DV <-> "; break;
         }
         
         for (iMarker_DV = 0; iMarker_DV < nMarker_DV; iMarker_DV++) {
@@ -3755,6 +3756,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
             (Design_Variable[iDV] ==  FFD_ROTATION) ||
             (Design_Variable[iDV] ==  FFD_CONTROL_SURFACE) ) nParamDV = 7;
         if (Design_Variable[iDV] ==  CUSTOM) nParamDV = 1;
+        if (Design_Variable[iDV] ==  NUBC_DV) nParamDV = 5;
 
         for (unsigned short iParamDV = 0; iParamDV < nParamDV; iParamDV++) {
 

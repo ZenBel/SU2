@@ -3073,6 +3073,9 @@ void CSurfaceMovement::SetSurface_Deformation(CGeometry *geometry, CConfig *conf
   else if (config->GetDesign_Variable(0) == CUSTOM && rank == MASTER_NODE)
     cout <<"Custom design variable will be used in external script" << endl;
   
+  else if (config->GetDesign_Variable(0) == NUBC_DV && rank == MASTER_NODE)
+    cout <<"NUBC design variable will be used in external script" << endl;
+
   /*--- Design variable not implement ---*/
 
   else {

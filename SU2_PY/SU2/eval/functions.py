@@ -230,7 +230,7 @@ def aerodynamics( config, state=None ):
         pull.append( files['TARGET_HEATFLUX'] )
         
     if (config.has_key('MARKER_NONUNIFORM')):
-        pull.append( config['NONUNIFORM_BC_FILENAME'] )
+        pull.append( files['NUBC_FILE'] )
 
 
     # output redirection

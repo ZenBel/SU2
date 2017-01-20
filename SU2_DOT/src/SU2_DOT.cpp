@@ -440,13 +440,19 @@ void SetProjection_FD(CGeometry *geometry, CConfig *config, CSurfaceMovement *su
 	if (rank == MASTER_NODE)
        	  cout <<"Custom design variable will be used in external script" << endl;
       }
+
+      else if (config->GetDesign_Variable(iDV) == NUBC_DV){
+	if (rank == MASTER_NODE)
+       	  cout <<"NUBC_DV: this design variable will be used in exteral script" << endl;
+      }
+
       /*--- Design variable not implement ---*/
 
       else { cout << "Design Variable not implement yet" << endl; }
 
       /*--- Load the delta change in the design variable (finite difference step). ---*/
 
-    delta_eps = config->GetDV_Value(iDV);
+    delta_eps = config->GetDV_Value(iDV);   // design variable step
     my_Gradient = 0.0; Gradient[iDV][0] = 0.0;
       
       /*--- Reset update points ---*/
@@ -462,24 +468,24 @@ void SetProjection_FD(CGeometry *geometry, CConfig *config, CSurfaceMovement *su
           if ((iPoint < geometry->GetnPointDomain()) && UpdatePoint[iPoint]) {
 
             Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
-            VarCoord = geometry->vertex[iMarker][iVertex]->GetVarCoord();
+            VarCoord = geometry->vertex[iMarker][iVertex]->GetVarCoord(); //Get the value of the coordinate variation due to a surface modification.
             Sensitivity = geometry->vertex[iMarker][iVertex]->GetAuxVar();
 
-              dS = 0.0;
+            dS = 0.0;
             for (iDim = 0; iDim < geometry->GetnDim(); iDim++) {
                 dS += Normal[iDim]*Normal[iDim];
-                deps[iDim] = VarCoord[iDim] / delta_eps;
+                deps[iDim] = VarCoord[iDim] / delta_eps; // Scale coordinate variation by design variable step
               }
-              dS = sqrt(dS);
+              dS = sqrt(dS); // area of the cell
 
               dalpha_deps = 0.0;
             for (iDim = 0; iDim < geometry->GetnDim(); iDim++) {
-                dalpha[iDim] = Normal[iDim] / dS;
-                dalpha_deps -= dalpha[iDim]*deps[iDim];
+                dalpha[iDim] = Normal[iDim] / dS; // unit normal
+                dalpha_deps -= dalpha[iDim]*deps[iDim]; //projection along normal of the coordinate variation
               }
 
               my_Gradient += Sensitivity*dalpha_deps;
-              UpdatePoint[iPoint] = false;
+                            UpdatePoint[iPoint] = false;
             }
           }
         }

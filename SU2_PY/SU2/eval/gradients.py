@@ -135,13 +135,28 @@ def gradient( func_name, method, config, state=None ):
         
         if ('CUSTOM' in config.DV_KIND and 'OUTFLOW_GENERALIZED' in config.OBJECTIVE_FUNCTION ):
             import downstream_function
+            # chaingrad is a vector containing the gradients of the OF with respect to the primitive variables and the custom_dv's.
             chaingrad = downstream_function.downstream_gradient(config,state)
             n_dv = len(grads[func_name_string])
             custom_dv=1
+            # Update the gradients of the OF w.r.t. the custom_dv 
             for idv in range(n_dv):
                 if (config.DV_KIND[idv] == 'CUSTOM'):
-                    grads[func_name_string][idv] = chaingrad[4+custom_dv]
+                    grads[func_name_string][idv] = chaingrad[4+custom_dv]   # the '4' is there because in downstream_function.downstream_gradient 
+                                                                            #the first 5 elements are other tyep of gradients
                     custom_dv = custom_dv+1
+        
+        if ('NUBC_DV' in config.DV_KIND ):
+            import nubc_function
+            chaingrad = nubc_function.nubc_gradient(config,state)
+            # grads[func_name_string] is a vector containing the gradients of the OF w.r.t. the design variables
+            n_dv = len(grads[func_name_string]) # number of design variables
+            nubc_dv = 1
+            # Update the gradients of the OF w.r.t. the nubc_dv 
+            for idv in range(n_dv):
+                if (config.DV_KIND[idv] == 'NUBC_DV'):
+                    grads[func_name_string][idv] = chaingrad[4+nubc_dv]
+                    nubc_dv = nubc_dv + 1
         # store
         state['GRADIENTS'].update(grads)
 
@@ -149,6 +164,7 @@ def gradient( func_name, method, config, state=None ):
 
     # prepare output
     grads_out = state['GRADIENTS'][func_name_string]
+    print grads_out
 
     return copy.deepcopy(grads_out)
 
@@ -273,8 +289,9 @@ def adjoint( func_name, config, state=None ):
     # files: target heat flux coefficient
     if 'INV_DESIGN_HEATFLUX' in special_cases:
         pull.append(files['TARGET_HEATFLUX'])
+    
     if (config.has_key('MARKER_NONUNIFORM')):
-        pull.append( config['NONUNIFORM_BC_FILENAME'] )
+        pull.append( files['NUBC_FILE']  )
 
     # output redirection
     with redirect_folder( ADJ_NAME, pull, link ) as push:
@@ -562,8 +579,15 @@ def findiff( config, state=None, step=1e-4 ):
         import downstream_function
         chaingrad = downstream_function.downstream_gradient(config,state)
         custom_dv=1
+        
+        # Use NUBC_DV as design variable
+    if ('NUBC_DV' in konfig.DV_KIND ):
+        import nubc_function
+        chaingrad = nubc_function.nubc_gradient(config,state)
+        nubc_dv=1  
+        
     if (config.has_key('MARKER_NONUNIFORM')):
-        pull.append( config['NONUNIFORM_BC_FILENAME'] )
+        pull.append( files['NUBC_FILE']  )
             
     # output redirection
     with redirect_folder('FINDIFF',pull,link) as push:

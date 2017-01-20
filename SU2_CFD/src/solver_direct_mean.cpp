@@ -9270,6 +9270,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
   su2double *gridVel;
   su2double *V_boundary, *V_domain, *S_boundary, *S_domain;
   su2double  y_Coord, x_Coord, Coord, y_0, y_min, y_max, y_perio, yPitch, Physical_dt, Physical_t, t_perio, Period, Boundary_Vel;
+  su2double VelMag_e;
 
   bool implicit             = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
   bool grid_movement        = config->GetGrid_Movement();
@@ -9420,10 +9421,11 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 			  StaticEnergy_e = FluidModel->GetStaticEnergy();
 			  Energy_e = StaticEnergy_e + 0.5 * Velocity2_e;
 			  if (tkeNeeded) Energy_e += GetTke_Inf();
+
+			  //TODO Setting quantities possibly needed for optimization
 		  }
 
 			else if (config->GetKind_Data_NonUniform(Marker_Tag) == DENSITY_VELOCITY){
-				su2double VelMag_e;
 				/*--- Retrieve the specified density and velocity magnitude ---*/
 				Density_e  = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_d2Var1, NonUniformBC_InputPoints, x_Coord);
 				VelMag_e   = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var2, NonUniformBC_d2Var2, NonUniformBC_InputPoints, x_Coord);
@@ -9435,10 +9437,18 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 				Density_e /= config->GetDensity_Ref();
 				VelMag_e /= config->GetVelocity_Ref();
 
+				Energy_e = Energy_i;
+				StaticEnergy_e = Energy_i;
+
 				for (iDim = 0; iDim < nDim; iDim++)
 					Velocity_e[iDim] = VelMag_e*Flow_Dir[iDim];
-				Energy_e = Energy_i;
+					StaticEnergy_e -= Velocity_e[iDim]*Velocity_e[iDim];
+
+				FluidModel->SetTDState_rhoe(Density_e, StaticEnergy_e);
+				Pressure_e = FluidModel->GetPressure();
+
 				cout << "Executing DENSITY_VELOCITY " << Velocity_e[0] << " " << Velocity_e[1] << " " << Density_e << endl;
+
 			}
         }
 
@@ -9459,6 +9469,12 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
             Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
           }
           Energy_e = FluidModel->GetStaticEnergy() + 0.5*Velocity2_e;
+
+          /*--- Setting to zero other quantities possibly needed for optimization ---*/
+          VelMag_e = 0.0;
+          Flow_Dir[0] = 0.0;
+          Flow_Dir[1] = 0.0;
+          Flow_Dir[2] = 0.0;
         }
 
         else {
@@ -9475,7 +9491,18 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 			Energy_e = Energy_i;
 			StaticEnergy_e = StaticEnergy_i;
 			Enthalpy_e = Enthalpy_i;
+
+			//TODO Setting quantities possibly needed for optimization
         }
+
+      /*---Storing the values of the external state (to be used in solver_adjoint_mean.cpp) ---*/
+	  node[iPoint]->SetDensity_e(Density_e);
+	  node[iPoint]->SetEnergy_e(Energy_e);
+	  node[iPoint]->SetVelMag_e(VelMag_e);
+	  node[iPoint]->SetFlowDirX_e(Flow_Dir[0]);
+	  node[iPoint]->SetFlowDirY_e(Flow_Dir[1]);
+	  node[iPoint]->SetFlowDirZ_e(Flow_Dir[2]);
+	  node[iPoint]->SetPressure_e(Pressure_e);
 
       /*--- Compute P (matrix of right eigenvectors) ---*/
       conv_numerics->GetPMatrix(&Density_i, Velocity_i, &SoundSpeed_i, &Enthalpy_i, &Chi_i, &Kappa_i, UnitNormal, P_Tensor);
@@ -9516,7 +9543,6 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
       {
         dw[iVar] = 0;
         for (jVar = 0; jVar < nVar; jVar++)
-          cout << "aaa " <<  u_e[jVar] << endl;
           dw[iVar] += invP_Tensor[iVar][jVar] * (u_e[jVar] - u_i[jVar]);
       }
 
@@ -9552,9 +9578,9 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
       Kappa_b = FluidModel->GetdPde_rho() / Density_b;
       Chi_b = FluidModel->GetdPdrho_e() - Kappa_b * StaticEnergy_b;
 
-      cout << Density_i << " " << Velocity_i[0] << " " << Velocity_i[1] << " " << Energy_i << " " << Pressure_i << endl;
-      cout << Density_e << " " << Velocity_e[0] << " " << Velocity_e[1] << " " << Energy_e << " " << Pressure_e << endl;
-      cout << Density_b << " " << Velocity_b[0] << " " << Velocity_b[1] << " " << Energy_b << " " << Pressure_b << endl;
+      //cout << Density_i << " " << Velocity_i[0] << " " << Velocity_i[1] << " " << Energy_i << " " << Pressure_i << endl;
+      //cout << Density_e << " " << Velocity_e[0] << " " << Velocity_e[1] << " " << Energy_e << " " << Pressure_e << endl;
+      //cout << Density_b << " " << Velocity_b[0] << " " << Velocity_b[1] << " " << Energy_b << " " << Pressure_b << endl;
 
       /*--- Compute the residuals ---*/
       conv_numerics->GetInviscidProjFlux(&Density_b, Velocity_b, &Pressure_b, &Enthalpy_b, Normal, Residual);
@@ -9599,7 +9625,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
             {
               if (Lambda_i[kVar]<0)
             	/* Derivative of the boundary state with respect to the internal state:
-            	 * u_b = u_i + P*inv(P)(u_e-u_i) --> Dub/Dui = 1 + P*inv(P)(0-1) = 1 - P*inv(P) */
+            	 * u_b = u_i + P*Lambda*inv(P)(u_e-u_i) --> Dub/Dui = 1 + P*inv(P)(0-1) = 1 - P*inv(P) */
                 DubDu[iVar][jVar] -= P_Tensor[iVar][kVar] * invP_Tensor[kVar][jVar];
             }
           }
