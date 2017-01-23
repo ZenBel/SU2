@@ -164,7 +164,6 @@ def gradient( func_name, method, config, state=None ):
 
     # prepare output
     grads_out = state['GRADIENTS'][func_name_string]
-    print grads_out
 
     return copy.deepcopy(grads_out)
 
