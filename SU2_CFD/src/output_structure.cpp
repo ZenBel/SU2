@@ -813,6 +813,44 @@ void COutput::SetSurfaceCSV_Adjoint(CConfig *config, CGeometry *geometry, CSolve
 #endif
 }
 
+void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *AdjSolver, CSolver *FlowSolution, unsigned long iExtIter, unsigned short val_iZone) {
+
+  /*--- Print sensitivities values to file: SensNUBC_file.csv ---*/
+  unsigned long iPoint, iVertex, Global_Index;
+  su2double xCoord, yCoord;
+  unsigned short iMarker;
+  char cstr[200], buffer[50];
+  ofstream SensNUBC_file;
+
+  strcpy (cstr, "SensNUBC_file");
+  SPRINTF (buffer, ".csv");
+  strcat(cstr, buffer);
+  SensNUBC_file.precision(15);
+  SensNUBC_file.open(cstr, ios::out);
+
+  if (geometry->GetnDim() == 2) {
+    SensNUBC_file <<  "\"Point\",\"SensNUBC_Density\",\"SensNUBC_VelMag\",\"SensNUBC_Pressure\",\"SensNUBC_FlowDirX\",\"SensNUBC_FlowDirY\",\"x_coord\",\"y_coord\"";
+    SensNUBC_file << "\n";
+
+    for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+      if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY)
+        for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+        	iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+        	Global_Index = geometry->node[iPoint]->GetGlobalIndex();
+        	xCoord = geometry->node[iPoint]->GetCoord(0);
+        	yCoord = geometry->node[iPoint]->GetCoord(1);
+
+        	SensNUBC_file << scientific << Global_Index << ", " << "SensDens" << ", " << "SensVel" << ", "
+        			      << "SensPres" << ", " << "SensFdX" << ", " << "SensFdY" <<", " << xCoord <<", "<< yCoord;
+        	SensNUBC_file << "\n";
+        }
+    }
+  }
+
+  SensNUBC_file.close();
+
+}
+
 void COutput::MergeConnectivity(CConfig *config, CGeometry *geometry, unsigned short val_iZone) {
   
   int rank = MASTER_NODE;
@@ -6877,7 +6915,10 @@ void COutput::SetResult_Files(CSolver ****solver_container, CGeometry ***geometr
         
 
       case ADJ_EULER : case ADJ_NAVIER_STOKES : case ADJ_RANS : case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
-        if (Wrt_Csv) SetSurfaceCSV_Adjoint(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][ADJFLOW_SOL], solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
+        if (Wrt_Csv) {
+        	SetSurfaceCSV_Adjoint(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][ADJFLOW_SOL], solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
+        	SetSensNUBC_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][ADJFLOW_SOL], solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
+        }
         break;
         
     }

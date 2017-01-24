@@ -2649,7 +2649,8 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
 
             SoundSpeed = solver_container[FLOW_SOL]->node[iPoint]->GetSoundSpeed();
             if (Vn<SoundSpeed and Vn>0){
-              /*TODO: MDO compatible*/
+              /*
+*/
               Sens_BPress[iMarker]+=Psi[nDim+1]*(SoundSpeed*SoundSpeed-Vn*Vn)/(Vn*Gamma_Minus_One);
               if (config->GetKind_ObjFunc()==AVG_OUTLET_PRESSURE)
                 Sens_BPress[iMarker]+=1;
@@ -2764,315 +2765,242 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
             /*--- NUBC sensitivity (Implemented only for Ideal gases)---*/
             if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY) {
 
-            su2double *Velocity_i, Velocity2_i, Enthalpy_i, Energy_i, StaticEnergy_i, Density_i, Kappa_i, Chi_i, Pressure_i, SoundSpeed_i, ProjVelocity_i;
-            Velocity_i = new su2double[nDim];
-            su2double **P_Tensor, **invP_Tensor;
-            unsigned short iVar, jVar, kVar;
-            P_Tensor = new su2double*[nVar];
-            invP_Tensor = new su2double*[nVar];
-            for (iVar = 0; iVar < nVar; iVar++)
-            {
-            	P_Tensor[iVar] = new su2double[nVar];
-            	invP_Tensor[iVar] = new su2double[nVar];
-            }
-            su2double *gridVel, *Lambda_i;
-            Lambda_i = new su2double[nVar];
+				su2double *Velocity_i, Velocity2_i, Enthalpy_i, Energy_i, StaticEnergy_i, Density_i, Kappa_i, Chi_i, Pressure_i, SoundSpeed_i, ProjVelocity_i;
+				Velocity_i = new su2double[nDim];
+				su2double **P_Tensor, **invP_Tensor;
+				unsigned short iVar, jVar, kVar;
+				P_Tensor = new su2double*[nVar];
+				invP_Tensor = new su2double*[nVar];
+				for (iVar = 0; iVar < nVar; iVar++)
+				{
+					P_Tensor[iVar] = new su2double[nVar];
+					invP_Tensor[iVar] = new su2double[nVar];
+				}
+				su2double *gridVel, *Lambda_i;
+				Lambda_i = new su2double[nVar];
 
 
-            /*--- Define internal state ---*/
-            Density_i = solver_container[FLOW_SOL]->node[iPoint]->GetDensity();
-            Velocity2_i = 0.0; ProjVelocity_i = 0.0;
-      		for (iDim=0; iDim < nDim; iDim++){
-      			Velocity_i[iDim] = solver_container[FLOW_SOL]->node[iPoint]->GetVelocity(iDim);
-      			Velocity2_i += Velocity_i[iDim]*Velocity_i[iDim];
-      			ProjVelocity_i += Velocity_i[iDim]*UnitNormal[iDim];
-      		}
-      		Energy_i = solver_container[FLOW_SOL]->node[iPoint]->GetEnergy();
-			StaticEnergy_i = Energy_i - 0.5*Velocity2_i;
+				/*--- Define internal state ---*/
+				Density_i = solver_container[FLOW_SOL]->node[iPoint]->GetDensity();
+				Velocity2_i = 0.0; ProjVelocity_i = 0.0;
+				for (iDim=0; iDim < nDim; iDim++){
+					Velocity_i[iDim] = solver_container[FLOW_SOL]->node[iPoint]->GetVelocity(iDim);
+					Velocity2_i += Velocity_i[iDim]*Velocity_i[iDim];
+					ProjVelocity_i += Velocity_i[iDim]*UnitNormal[iDim];
+				}
+				Energy_i = solver_container[FLOW_SOL]->node[iPoint]->GetEnergy();
+				StaticEnergy_i = Energy_i - 0.5*Velocity2_i;
 
-			/*---Implemented only for Ideal gases [inspired on code in CEulerSolver::BC_Nonuniform]---*/
-	  		Pressure_i = solver_container[FLOW_SOL]->node[iPoint]->GetPressure();
-	  		Enthalpy_i = Energy_i + Pressure_i/Density_i;
-	  		SoundSpeed_i = solver_container[FLOW_SOL]->node[iPoint]->GetSoundSpeed();
-	  		Kappa_i = Gamma_Minus_One*Density_i/Density_i;
-	  		Chi_i = Gamma_Minus_One*StaticEnergy_i - Kappa_i * StaticEnergy_i;
+				/*---Implemented only for Ideal gases [inspired on code in CEulerSolver::BC_Nonuniform]---*/
+				Pressure_i = solver_container[FLOW_SOL]->node[iPoint]->GetPressure();
+				Enthalpy_i = Energy_i + Pressure_i/Density_i;
+				SoundSpeed_i = solver_container[FLOW_SOL]->node[iPoint]->GetSoundSpeed();
+				Kappa_i = Gamma_Minus_One*Density_i/Density_i;
+				Chi_i = Gamma_Minus_One*StaticEnergy_i - Kappa_i * StaticEnergy_i;
 
-	  		/*--- Compute P (matrix of right eigenvectors) ---*/
-	        numerics->GetPMatrix(&Density_i, Velocity_i, &SoundSpeed_i, &Enthalpy_i, &Chi_i, &Kappa_i, UnitNormal, P_Tensor);
+				/*--- Compute P (matrix of right eigenvectors) ---*/
+				numerics->GetPMatrix(&Density_i, Velocity_i, &SoundSpeed_i, &Enthalpy_i, &Chi_i, &Kappa_i, UnitNormal, P_Tensor);
 
-	        /*--- Compute inverse P (matrix of left eigenvectors)---*/
-	        numerics->GetPMatrix_inv(invP_Tensor, &Density_i, Velocity_i, &SoundSpeed_i, &Chi_i, &Kappa_i, UnitNormal);
+				/*--- Compute inverse P (matrix of left eigenvectors)---*/
+				numerics->GetPMatrix_inv(invP_Tensor, &Density_i, Velocity_i, &SoundSpeed_i, &Chi_i, &Kappa_i, UnitNormal);
 
-	        /*--- eigenvalues contribution due to grid motion ---*/
-	        if (grid_movement){
-	          gridVel = geometry->node[iPoint]->GetGridVel();
-	          su2double ProjGridVel = 0.0;
-	          for (iDim = 0; iDim < nDim; iDim++)
-	            ProjGridVel   += gridVel[iDim]*UnitNormal[iDim];
-	          ProjVelocity_i -= ProjGridVel;
-	        }
+				/*--- eigenvalues contribution due to grid motion ---*/
+				if (grid_movement){
+				  gridVel = geometry->node[iPoint]->GetGridVel();
+				  su2double ProjGridVel = 0.0;
+				  for (iDim = 0; iDim < nDim; iDim++)
+					ProjGridVel   += gridVel[iDim]*UnitNormal[iDim];
+				  ProjVelocity_i -= ProjGridVel;
+				}
 
-	        /*--- Flow eigenvalues ---*/
-	        for (iDim = 0; iDim < nDim; iDim++)
-	          Lambda_i[iDim] = ProjVelocity_i;
-	        Lambda_i[nVar-2] = ProjVelocity_i + SoundSpeed_i;
-	        Lambda_i[nVar-1] = ProjVelocity_i - SoundSpeed_i;
+				/*--- Flow eigenvalues ---*/
+				for (iDim = 0; iDim < nDim; iDim++)
+				  Lambda_i[iDim] = ProjVelocity_i;
+				Lambda_i[nVar-2] = ProjVelocity_i + SoundSpeed_i;
+				Lambda_i[nVar-1] = ProjVelocity_i - SoundSpeed_i;
 
-	        /*--- Compute Dub_cDue_c (derivative of conservative variables of boundary state
-	         * w.r.t. conservative variables of external state: u_b = u+i + P*Lambda*invP(u_e-u_i) )---*/
+				/*--- Compute Dub_cDue_c (derivative of conservative variables of boundary state
+				 * w.r.t. conservative variables of external state: u_b = u+i + P*Lambda*invP(u_e-u_i) )---*/
 
-	        /*--- Initialize Dub_cDue_b ---*/
-	        su2double **Dub_cDue_b;
-	        Dub_cDue_b = new su2double*[nVar];
+				/*--- Initialize Dub_cDue_b ---*/
+				su2double **Dub_cDue_b;
+				Dub_cDue_b = new su2double*[nVar];
 
-	        for (iVar = 0; iVar < nVar; iVar++) {Dub_cDue_b[iVar] = new su2double[nVar];}
+				for (iVar = 0; iVar < nVar; iVar++) {Dub_cDue_b[iVar] = new su2double[nVar];}
 
-	        for (iVar=0; iVar<nVar; iVar++)
-	        {
-	          for (jVar=0; jVar<nVar; jVar++)
-	          {
-	            for (kVar=0; kVar<nVar; kVar++)
-	            {
-	              if (Lambda_i[kVar]<0){
-	                Dub_cDue_b[iVar][jVar] += P_Tensor[iVar][kVar] * invP_Tensor[kVar][jVar];
-	              }
-	            }
-	          }
-	        }
-
-	        /*--- Compute Due_cDue_p (derivative of conservative variables of external state
-	         * w.r.t. primitive variables of external state)---*/
-
-	        /*--- Initialization ---*/
-	        su2double **Due_cDue_p;
-	        Dub_cDue_b = new su2double*[nVar];
-	        for (iVar = 0; iVar < nVar; iVar++) {Dub_cDue_b[iVar] = new su2double[nVar];}
-	        string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
-	        su2double P_Total, T_Total, *Flow_Dir, Enthalpy_e, Entropy_e, VelMag, *Velocity_e, Density_e, StaticEnergy_e, Energy_e, Pressure_e;
-	        bool tkeNeeded = (((config->GetKind_Solver() == RANS )|| (config->GetKind_Solver() == DISC_ADJ_RANS)) &&
-	                          (config->GetKind_Turb_Model() == SST));
-	        Velocity_e = new su2double[nDim];
-	        Flow_Dir = new su2double[nDim];
-	        Due_cDue_p = new su2double*[nVar];
-	        for (iVar = 0; iVar < nVar; iVar++)
-	        {
-	          Due_cDue_p[iVar] = new su2double[nVar];
-	        }
-
-	        /*--- Retrieve external state u_e ---*/
-//	        cout << "Density_e = "<< solver_container[FLOW_SOL]->node[iPoint]->GetDensity_e() << ", at iPoint = " << iPoint << endl;
-//	        cout << "Energy_e = "<< solver_container[FLOW_SOL]->node[iPoint]->GetEnergy_e() << ", at iPoint = " << iPoint << endl;
-//	        cout << "VelMag_e = "<< solver_container[FLOW_SOL]->node[iPoint]->GetVelMag_e() << ", at iPoint = " << iPoint << endl;
-//	        cout << "FlowDirX = "<< solver_container[FLOW_SOL]->node[iPoint]->GetFlowDirX_e() << ", at iPoint = " << iPoint << endl;
-//	        cout << "FlowDirY = "<< solver_container[FLOW_SOL]->node[iPoint]->GetFlowDirY_e() << ", at iPoint = " << iPoint << endl;
-//	        cout << "FlowDirZ = "<< solver_container[FLOW_SOL]->node[iPoint]->GetFlowDirZ_e() << ", at iPoint = " << iPoint << endl;
-
-	        VelMag = solver_container[FLOW_SOL]->node[iPoint]->GetVelMag_e();
-	        Flow_Dir[0] = solver_container[FLOW_SOL]->node[iPoint]->GetFlowDirX_e();
-	        Flow_Dir[1] = solver_container[FLOW_SOL]->node[iPoint]->GetFlowDirY_e();
-	        Velocity_e[0] = VelMag * Flow_Dir[0];
-	        Velocity_e[1] = VelMag * Flow_Dir[1];
-	        if (nDim == 3) {
-	        	Flow_Dir[2] = solver_container[FLOW_SOL]->node[iPoint]->GetFlowDirZ_e();
-	        	Velocity_e[2] = VelMag * Flow_Dir[2];
-	        }
-	        Energy_e = solver_container[FLOW_SOL]->node[iPoint]->GetEnergy_e();
-	        Density_e = solver_container[FLOW_SOL]->node[iPoint]->GetDensity_e();
-	        Pressure_e = solver_container[FLOW_SOL]->node[iPoint]->GetPressure_e();
-
-	        if (nDim == 2) {
-	        	Due_cDue_p[0][0] = 1.0;
-				Due_cDue_p[1][0] = Velocity_e[0];
-				Due_cDue_p[2][0] = Velocity_e[1];
-				Due_cDue_p[3][0] = Energy_e;
-
-				Due_cDue_p[0][1] = 0.0;
-				Due_cDue_p[1][1] = Density_e;
-				Due_cDue_p[2][1] = 0.0;
-				Due_cDue_p[3][1] = Density_e*Velocity_e[0];
-
-				Due_cDue_p[0][2] = 0.0;
-				Due_cDue_p[1][2] = 0.0;
-				Due_cDue_p[2][2] = Density_e;
-				Due_cDue_p[3][2] = Density_e*Velocity_e[1];
-
-				Due_cDue_p[0][3] = 0.0;
-				Due_cDue_p[1][3] = 0.0;
-				Due_cDue_p[2][3] = 0.0;
-				Due_cDue_p[3][3] = 1/Gamma_Minus_One;
-	        }
-
-	        /*--- Compute Due_pD(designVar) (derivative of primitive variables of external state
-	         * w.r.t. design variables)---*/
-
-	        if (nDim == 2){ StaticEnergy_e = Energy_e - 0.5*(Velocity[0]*Velocity[0] + Velocity[1]*Velocity[1]);}
-	        if (nDim == 3){ StaticEnergy_e = Energy_e - 0.5*(Velocity[0]*Velocity[0] + Velocity[1]*Velocity[1] + Velocity[2]*Velocity[2]);}
-
-//	        if (ProjVelocity_i < 0.0) {
-//				if (config->GetKind_Data_NonUniform(Marker_Tag) == DENSITY_VELOCITY){
-					su2double **Due_pDdv;
-					Due_pDdv = new su2double*[nVar];
-					nubcDV = 5; //note that '5' corresponds to the number of DV (Density_e, VelMag, Pressure_e, FlowDirX, FlowDirY)
-					for (iVar = 0; iVar < nVar; iVar++)
+				for (iVar=0; iVar<nVar; iVar++)
+				{
+				  for (jVar=0; jVar<nVar; jVar++)
+				  {
+					for (kVar=0; kVar<nVar; kVar++)
 					{
-					  Due_pDdv[iVar] = new su2double[nubcDV];
-					}
-					if (nDim == 2) {
-
-						/*--- derivative w.r.t. density ---*/
-						Due_pDdv[0][0] = 1.0;
-						Due_pDdv[1][0] = 0.0;
-						Due_pDdv[2][0] = 0.0;
-						Due_pDdv[3][0] = Gamma_Minus_One*StaticEnergy_e;
-
-						/*---Derivative w.r.t. velocity magnitude ---*/
-						Due_pDdv[0][1] = 0.0;
-						Due_pDdv[1][1] = Flow_Dir[0];
-						Due_pDdv[2][1] = Flow_Dir[1];
-						Due_pDdv[3][1] = -Gamma_Minus_One*Density_e*VelMag*(Flow_Dir[0]*Flow_Dir[0] + Flow_Dir[1]*Flow_Dir[1]);
-
-						/*---Derivative w.r.t. pressure ---*/
-						Due_pDdv[0][2] = 1/(Gamma_Minus_One*StaticEnergy_e);
-						Due_pDdv[1][2] = - 1/sqrt(2*Energy_e - Velocity[1]*Velocity[1] - 2*Pressure_e/(Density_e*Gamma_Minus_One)) *(1/(Density_e*Gamma_Minus_One));
-						Due_pDdv[2][2] = - 1/sqrt(2*Energy_e - Velocity[0]*Velocity[0] - 2*Pressure_e/(Density_e*Gamma_Minus_One)) *(1/(Density_e*Gamma_Minus_One));
-						Due_pDdv[3][2] = 1.0;
-
-						/*---Derivative w.r.t. x flow direction ---*/
-						Due_pDdv[0][3] = 0.0;
-						Due_pDdv[1][3] = VelMag;
-						Due_pDdv[2][3] = 0.0;
-						Due_pDdv[3][3] = -Gamma_Minus_One*Density_e*VelMag*VelMag*Flow_Dir[0];
-
-						/*---Derivative w.r.t. y flow direction ---*/
-						Due_pDdv[0][4] = 0.0;
-						Due_pDdv[1][4] = 0.0;
-						Due_pDdv[2][4] = VelMag;
-						Due_pDdv[3][4] = -Gamma_Minus_One*Density_e*VelMag*VelMag*Flow_Dir[1];
-
-					}
-
-
-					/*--- Compute dR/dD for each surface point (CAREFUL WITH MATRICES OPERATIONS HERE)---*/
-
-					/*--- dR/dD = dR/dUb_c * dUb_c/dUe_c* dUe_c/dUe_p* dUe_p/dD = Jacobian_j * dUb_c/dUe_c * B = A * B ---*/
-
-					su2double **B;
-					B = new su2double*[nVar];
-					for (iVar = 0; iVar < nVar; iVar++) {B[iVar] = new su2double[nubcDV];} //B is a [nVar]x[nDv] matrix
-
-					for (iVar=0; iVar<nVar; iVar++)
-					{
-					  for (jVar=0; jVar<nubcDV; jVar++)
-					  {
-						for (kVar=0; kVar<nVar; kVar++)
-						{
-							B[iVar][jVar] += Due_cDue_p[iVar][kVar] * Due_pDdv[kVar][jVar];
-						}
+					  if (Lambda_i[kVar]<0){
+						Dub_cDue_b[iVar][jVar] += P_Tensor[iVar][kVar] * invP_Tensor[kVar][jVar];
 					  }
 					}
+				  }
+				}
 
-					su2double **A;
-					A = new su2double*[nVar];
-					for (iVar = 0; iVar < nVar; iVar++) {A[iVar] = new su2double[nVar];}
+				/*--- Compute Due_cDue_p (derivative of conservative variables of external state
+				 * w.r.t. primitive variables of external state)---*/
 
-					for (iVar=0; iVar<nVar; iVar++)
+				/*--- Initialization ---*/
+				su2double **Due_cDue_p;
+				Dub_cDue_b = new su2double*[nVar];
+				for (iVar = 0; iVar < nVar; iVar++) {Dub_cDue_b[iVar] = new su2double[nVar];}
+				string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+				su2double P_Total, T_Total, *Flow_Dir, Enthalpy_e, Entropy_e, VelMag, *Velocity_e, Density_e, StaticEnergy_e, Energy_e, Pressure_e;
+				bool tkeNeeded = (((config->GetKind_Solver() == RANS )|| (config->GetKind_Solver() == DISC_ADJ_RANS)) &&
+								  (config->GetKind_Turb_Model() == SST));
+				Velocity_e = new su2double[nDim];
+				Flow_Dir = new su2double[nDim];
+				Due_cDue_p = new su2double*[nVar];
+				for (iVar = 0; iVar < nVar; iVar++)
+				{
+				  Due_cDue_p[iVar] = new su2double[nVar];
+				}
+
+				/*--- Retrieve external state u_e ---*/
+				VelMag = solver_container[FLOW_SOL]->node[iPoint]->GetVelMag_e();
+				Flow_Dir[0] = solver_container[FLOW_SOL]->node[iPoint]->GetFlowDirX_e();
+				Flow_Dir[1] = solver_container[FLOW_SOL]->node[iPoint]->GetFlowDirY_e();
+				Velocity_e[0] = VelMag * Flow_Dir[0];
+				Velocity_e[1] = VelMag * Flow_Dir[1];
+				if (nDim == 3) {
+					Flow_Dir[2] = solver_container[FLOW_SOL]->node[iPoint]->GetFlowDirZ_e();
+					Velocity_e[2] = VelMag * Flow_Dir[2];
+				}
+				Energy_e = solver_container[FLOW_SOL]->node[iPoint]->GetEnergy_e();
+				Density_e = solver_container[FLOW_SOL]->node[iPoint]->GetDensity_e();
+				Pressure_e = solver_container[FLOW_SOL]->node[iPoint]->GetPressure_e();
+
+				if (nDim == 2) {
+					Due_cDue_p[0][0] = 1.0;
+					Due_cDue_p[1][0] = Velocity_e[0];
+					Due_cDue_p[2][0] = Velocity_e[1];
+					Due_cDue_p[3][0] = Energy_e;
+
+					Due_cDue_p[0][1] = 0.0;
+					Due_cDue_p[1][1] = Density_e;
+					Due_cDue_p[2][1] = 0.0;
+					Due_cDue_p[3][1] = Density_e*Velocity_e[0];
+
+					Due_cDue_p[0][2] = 0.0;
+					Due_cDue_p[1][2] = 0.0;
+					Due_cDue_p[2][2] = Density_e;
+					Due_cDue_p[3][2] = Density_e*Velocity_e[1];
+
+					Due_cDue_p[0][3] = 0.0;
+					Due_cDue_p[1][3] = 0.0;
+					Due_cDue_p[2][3] = 0.0;
+					Due_cDue_p[3][3] = 1/Gamma_Minus_One;
+				}
+
+				/*--- Compute Due_pD(designVar) (derivative of primitive variables of external state
+				 * w.r.t. design variables)---*/
+
+				if (nDim == 2){ StaticEnergy_e = Energy_e - 0.5*(Velocity[0]*Velocity[0] + Velocity[1]*Velocity[1]);}
+				if (nDim == 3){ StaticEnergy_e = Energy_e - 0.5*(Velocity[0]*Velocity[0] + Velocity[1]*Velocity[1] + Velocity[2]*Velocity[2]);}
+
+				su2double **Due_pDdv;
+				Due_pDdv = new su2double*[nVar];
+				nubcDV = 5; //note that '5' corresponds to the number of DV (Density_e, VelMag, Pressure_e, FlowDirX, FlowDirY)
+				for (iVar = 0; iVar < nVar; iVar++)
+				{
+				  Due_pDdv[iVar] = new su2double[nubcDV];
+				}
+				if (nDim == 2) {
+
+					/*--- derivative w.r.t. density ---*/
+					Due_pDdv[0][0] = 1.0;
+					Due_pDdv[1][0] = 0.0;
+					Due_pDdv[2][0] = 0.0;
+					Due_pDdv[3][0] = Gamma_Minus_One*StaticEnergy_e;
+
+					/*---Derivative w.r.t. velocity magnitude ---*/
+					Due_pDdv[0][1] = 0.0;
+					Due_pDdv[1][1] = Flow_Dir[0];
+					Due_pDdv[2][1] = Flow_Dir[1];
+					Due_pDdv[3][1] = -Gamma_Minus_One*Density_e*VelMag*(Flow_Dir[0]*Flow_Dir[0] + Flow_Dir[1]*Flow_Dir[1]);
+
+					/*---Derivative w.r.t. pressure ---*/
+					Due_pDdv[0][2] = 0.0;
+					Due_pDdv[1][2] = 0.0;
+					Due_pDdv[2][2] = 0.0;
+					Due_pDdv[3][2] = 1.0;
+
+					/*---Derivative w.r.t. x flow direction ---*/
+					Due_pDdv[0][3] = 0.0;
+					Due_pDdv[1][3] = VelMag;
+					Due_pDdv[2][3] = 0.0;
+					Due_pDdv[3][3] = -Gamma_Minus_One*Density_e*VelMag*VelMag*Flow_Dir[0];
+
+					/*---Derivative w.r.t. y flow direction ---*/
+					Due_pDdv[0][4] = 0.0;
+					Due_pDdv[1][4] = 0.0;
+					Due_pDdv[2][4] = VelMag;
+					Due_pDdv[3][4] = -Gamma_Minus_One*Density_e*VelMag*VelMag*Flow_Dir[1];
+
+				}
+
+
+				/*--- Compute dR/dD for each surface point (CAREFUL WITH MATRICES OPERATIONS HERE)---*/
+
+				/*--- dR/dD = dR/dUb_c * dUb_c/dUe_c* dUe_c/dUe_p* dUe_p/dD = Jacobian_j * dUb_c/dUe_c * B = A * B ---*/
+
+				su2double **B;
+				B = new su2double*[nVar];
+				for (iVar = 0; iVar < nVar; iVar++) {B[iVar] = new su2double[nubcDV];} //B is a [nVar]x[nDv] matrix
+
+				for (iVar=0; iVar<nVar; iVar++)
+				{
+				  for (jVar=0; jVar<nubcDV; jVar++)
+				  {
+					for (kVar=0; kVar<nVar; kVar++)
 					{
-					  for (jVar=0; jVar<nVar; jVar++)
-					  {
-						for (kVar=0; kVar<nVar; kVar++)
-						{
-							A[iVar][jVar] += Jacobian_j[iVar][kVar] * Dub_cDue_b[kVar][jVar];
-						}
-					  }
+						B[iVar][jVar] += Due_cDue_p[iVar][kVar] * Due_pDdv[kVar][jVar];
 					}
+				  }
+				}
 
-					su2double **dRdD;
-					dRdD = new su2double*[nVar];
-					for (iVar = 0; iVar < nVar; iVar++) {dRdD[iVar] = new su2double[nubcDV];}
+				su2double **A;
+				A = new su2double*[nVar];
+				for (iVar = 0; iVar < nVar; iVar++) {A[iVar] = new su2double[nVar];}
 
-					for (iVar=0; iVar<nVar; iVar++)
+				for (iVar=0; iVar<nVar; iVar++)
+				{
+				  for (jVar=0; jVar<nVar; jVar++)
+				  {
+					for (kVar=0; kVar<nVar; kVar++)
 					{
-					  for (jVar=0; jVar<nubcDV; jVar++)
-					  {
-						for (kVar=0; kVar<nVar; kVar++)
-						{
-							dRdD[iVar][jVar] += A[iVar][kVar] * B[kVar][jVar];
-						}
-					  }
+						A[iVar][jVar] += Jacobian_j[iVar][kVar] * Dub_cDue_b[kVar][jVar];
 					}
+				  }
+				}
 
-			        su2double *SensNUBC;
-			        SensNUBC = new su2double[nVar];  // SensNUBC is a 1xnDV vector.
-		            for (iPos = 0; iPos < nubcDV; iPos++) {
-		              for (jPos = 0; jPos < nVar; jPos++) {
-		                SensNUBC[iPos] += Psi[jPos] * dRdD[jPos][iPos];
-		                //cout << SensNUBC[iPos] << endl;
-		              }
-		            }
-//				}
-//	        }
+				su2double **dRdD;
+				dRdD = new su2double*[nVar];
+				for (iVar = 0; iVar < nVar; iVar++) {dRdD[iVar] = new su2double[nubcDV];}
 
-//          /*--- OUTFLOW CONDITIONS ---*/
-//	        if (ProjVelocity_i > 0.0) {
-//	        	su2double *Due_pDdv;
-//	        	Due_pDdv = new su2double[nVar];
-//	        	cout << "Static pressure!" <<endl;
-//	        	if (nDim == 2) {
-//	        		/*--- derivative w.r.t. static pressure ---*/
-//	        		Due_pDdv[0] = 1.0;
-//					Due_pDdv[1] = 0.0;
-//					Due_pDdv[2] = 0.0;
-//					Due_pDdv[3] = Gamma_Minus_One*StaticEnergy_e;
-//	        	}
-//
-//		        /*--- Compute dR/dD for each surface point (CAREFUL WITH MATRICES OPERATIONS HERE)---*/
-//
-//		        /*--- dR/dD = dR/dUb_c * dUb_c/dUe_c* dUe_c/dUe_p* dUe_p/dD = Jacobian_j * dUb_c/dUe_c * B = A * B ---*/
-//
-//		        su2double *B;
-//		        B = new su2double[nVar];
-//
-//		        for (iVar=0; iVar<nVar; iVar++)
-//		        {
-//		          for (jVar=0; jVar<nVar; jVar++)
-//		          {
-//		            B[iVar] += Due_cDue_p[iVar][jVar] * Due_pDdv[jVar];
-//		          }
-//		        }
-//
-//		        su2double **A;
-//		        A = new su2double*[nVar];
-//		        for (iVar = 0; iVar < nVar; iVar++) {A[iVar] = new su2double[nVar];}
-//
-//		        for (iVar=0; iVar<nVar; iVar++)
-//		        {
-//		          for (jVar=0; jVar<nVar; jVar++)
-//		          {
-//		            for (kVar=0; kVar<nVar; kVar++)
-//		            {
-//		                A[iVar][jVar] += Jacobian_j[iVar][kVar] * Dub_cDue_b[kVar][jVar];
-//		            }
-//		          }
-//		        }
-//
-//		        su2double *dRdD;
-//		        dRdD = new su2double[nVar];
-//		        for (iVar=0; iVar<nVar; iVar++)
-//		        {
-//		          for (jVar=0; jVar<nVar; jVar++)
-//		          {
-//		            dRdD[iVar] += A[iVar][jVar] * B[jVar];
-//		          }
-//		        }
-//
-//		        /*--- Compute Psi*dR/dD ---*/
-//		        su2double SensNUBC;
-//	            for (iPos = 0; iPos < nVar; iPos++) {
-//	                SensNUBC += Psi[iPos] * dRdD[iPos];
-//	            }
-//
-//	        }
+				for (iVar=0; iVar<nVar; iVar++)
+				{
+				  for (jVar=0; jVar<nubcDV; jVar++)
+				  {
+					for (kVar=0; kVar<nVar; kVar++)
+					{
+						dRdD[iVar][jVar] += A[iVar][kVar] * B[kVar][jVar];
+					}
+				  }
+				}
 
+				su2double *SensNUBC;
+				SensNUBC = new su2double[nVar];  // SensNUBC is a 1xnDV vector.
+				for (iPos = 0; iPos < nubcDV; iPos++) {
+				  for (jPos = 0; jPos < nVar; jPos++) {
+					SensNUBC[iPos] += Psi[jPos] * dRdD[jPos][iPos];
+				  //cout << SensNUBC[iPos] << endl;
+				  }
+				}
             }
             
             /*--- Mach number sensitivity ---*/

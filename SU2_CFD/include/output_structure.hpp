@@ -217,6 +217,17 @@ public:
 	 */
 	void SetSurfaceCSV_Adjoint(CConfig *config, CGeometry *geometry, CSolver *AdjSolver, CSolver *FlowSolution, unsigned long iExtIter, unsigned short val_iZone);
 
+	/*!
+	 * \brief Create and write the file with the Sensitivity of the quantities of the NUBC.
+	 * \param[in] config - Definition of the particular problem.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] AdjSolution - Adjoint solution.
+	 * \param[in] FlowSolution - Flow solution.
+	 * \param[in] iExtIter - Current external (time) iteration.
+	 * \param[in] val_iZone - Current zone number in the grid file.
+	 */
+	void SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *AdjSolver, CSolver *FlowSolution, unsigned long iExtIter, unsigned short val_iZone);
+
   /*!
 	 * \brief Merge the geometry into a data structure used for output file writing.
 	 * \param[in] config - Definition of the particular problem.
