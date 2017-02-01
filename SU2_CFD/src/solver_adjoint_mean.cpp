@@ -488,7 +488,7 @@ void CAdjEulerSolver::Set_MPI_Solution(CGeometry *geometry, CConfig *config) {
       Buffer_Receive_U = new su2double [nBufferR_Vector];
       Buffer_Send_U = new su2double[nBufferS_Vector];
       
-      /*--- Copy the solution that should be sended ---*/
+      /*--- Copy the solution that should be sent ---*/
       for (iVertex = 0; iVertex < nVertexS; iVertex++) {
         iPoint = geometry->vertex[MarkerS][iVertex]->GetNode();
         for (iVar = 0; iVar < nVar; iVar++)
@@ -1210,7 +1210,8 @@ void CAdjEulerSolver::SetForceProj_Vector(CGeometry *geometry, CSolver **solver_
             CpTarget = solver_container[FLOW_SOL]->GetCPressureTarget(iMarker, iVertex);
             Area = sqrt(Normal[0]*Normal[0] + Normal[1]*Normal[1]);
             if (nDim == 3) Area = sqrt(Normal[0]*Normal[0] + Normal[1]*Normal[1] + Normal[2]*Normal[2]);
-            ForceProj_Vector[0] += -obj_weight*2.0*(Cp-CpTarget)*Normal[0]/Area; ForceProj_Vector[1] += -obj_weight*2.0*(Cp-CpTarget)*Normal[1]/Area;
+            ForceProj_Vector[0] += -obj_weight*2.0*(Cp-CpTarget)*Normal[0]/Area;
+            ForceProj_Vector[1] += -obj_weight*2.0*(Cp-CpTarget)*Normal[1]/Area;
             if (nDim == 3) ForceProj_Vector[2] += -obj_weight*2.0*(Cp-CpTarget)*Normal[2]/Area;
             break;
           case MOMENT_X_COEFFICIENT :
@@ -2878,7 +2879,7 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
 					Due_cDue_p[0][0] = 1.0;
 					Due_cDue_p[1][0] = Velocity_e[0];
 					Due_cDue_p[2][0] = Velocity_e[1];
-					Due_cDue_p[3][0] = Energy_e;
+					Due_cDue_p[3][0] = 0.5 * (Velocity_e[0]*Velocity_e[0] + Velocity_e[1]*Velocity_e[1]);
 
 					Due_cDue_p[0][1] = 0.0;
 					Due_cDue_p[1][1] = Density_e;
@@ -2899,8 +2900,8 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
 				/*--- Compute Due_pD(designVar) (derivative of primitive variables of external state
 				 * w.r.t. design variables)---*/
 
-				if (nDim == 2){ StaticEnergy_e = Energy_e - 0.5*(Velocity[0]*Velocity[0] + Velocity[1]*Velocity[1]);}
-				if (nDim == 3){ StaticEnergy_e = Energy_e - 0.5*(Velocity[0]*Velocity[0] + Velocity[1]*Velocity[1] + Velocity[2]*Velocity[2]);}
+				if (nDim == 2){ StaticEnergy_e = Energy_e - 0.5*(Velocity_e[0]*Velocity_e[0] + Velocity_e[1]*Velocity_e[1]);}
+				if (nDim == 3){ StaticEnergy_e = Energy_e - 0.5*(Velocity_e[0]*Velocity_e[0] + Velocity_e[1]*Velocity_e[1] + Velocity_e[2]*Velocity_e[2]);}
 
 				su2double **Due_pDdv;
 				Due_pDdv = new su2double*[nVar];
@@ -2909,13 +2910,14 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
 				{
 				  Due_pDdv[iVar] = new su2double[nubcDV];
 				}
+
 				if (nDim == 2) {
 
 					/*--- derivative w.r.t. density ---*/
 					Due_pDdv[0][0] = 1.0;
 					Due_pDdv[1][0] = 0.0;
 					Due_pDdv[2][0] = 0.0;
-					Due_pDdv[3][0] = Gamma_Minus_One*StaticEnergy_e;
+					Due_pDdv[3][0] = Gamma_Minus_One*StaticEnergy_e; //when DENSITY_VELOCITY: StatiEnergy_e = Energy_i - 0.5*(Velocity_e[0]*Velocity_e[0] + Velocity_e[1]*Velocity_e[1])
 
 					/*---Derivative w.r.t. velocity magnitude ---*/
 					Due_pDdv[0][1] = 0.0;
@@ -2963,6 +2965,7 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
 				  }
 				}
 
+
 				su2double **A;
 				A = new su2double*[nVar];
 				for (iVar = 0; iVar < nVar; iVar++) {A[iVar] = new su2double[nVar];}
@@ -2998,9 +3001,17 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
 				for (iPos = 0; iPos < nubcDV; iPos++) {
 				  for (jPos = 0; jPos < nVar; jPos++) {
 					SensNUBC[iPos] += Psi[jPos] * dRdD[jPos][iPos];
-				  //cout << SensNUBC[iPos] << endl;
 				  }
 				}
+
+
+				// NOTE: SensNUBC_* below declared similarly to CSensitivity
+				node[iPoint]->SetSensNUBC_Density(SensNUBC[0]);
+				node[iPoint]->SetSensNUBC_VelMag(SensNUBC[1]);
+				node[iPoint]->SetSensNUBC_Pressure(SensNUBC[2]);
+				node[iPoint]->SetSensNUBC_FlowDirX(SensNUBC[3]);
+				node[iPoint]->SetSensNUBC_FlowDirY(SensNUBC[4]);
+
             }
             
             /*--- Mach number sensitivity ---*/
@@ -4920,7 +4931,7 @@ void CAdjEulerSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
 
         if (Vn > SoundSpeed) {
           /*--- Objective-dependent additions to energy term ---*/
-          Vn_Exit = Vn; /* Vn_Exit comes from Reiman conditions in subsonic case*/
+          Vn_Exit = Vn; /* Vn_Exit comes from Riemann conditions in subsonic case*/
           Vn_rel = Vn_Exit-ProjGridVel;
           /* Repeated term */
           a1 = Gamma_Minus_One/(Vn_rel*Vn_rel-SoundSpeed*SoundSpeed);

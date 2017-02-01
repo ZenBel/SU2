@@ -443,7 +443,7 @@ void SetProjection_FD(CGeometry *geometry, CConfig *config, CSurfaceMovement *su
 
       else if (config->GetDesign_Variable(iDV) == NUBC_DV){
 	if (rank == MASTER_NODE)
-       	  cout <<"NUBC_DV: this design variable will be used in exteral script" << endl;
+       	  cout <<"NUBC_DV: this design variable will be used in external script" << endl;
       }
 
       /*--- Design variable not implement ---*/

@@ -148,15 +148,18 @@ def gradient( func_name, method, config, state=None ):
         
         if ('NUBC_DV' in config.DV_KIND ):
             import nubc_function
-            chaingrad = nubc_function.nubc_gradient(config,state)
+            chaingrad = nubc_function.nubc_gradient()
             # grads[func_name_string] is a vector containing the gradients of the OF w.r.t. the design variables
-            n_dv = len(grads[func_name_string]) # number of design variables
-            nubc_dv = 1
+            n_dv = len(grads[func_name_string]) # number of design variables                   
+            nubc_dv = 0
+#===============================================================================
+# ### Right now the values stored in chaingrad are those at the mesh points but we want them to be those at the points defined in general.bc
+#===============================================================================
             # Update the gradients of the OF w.r.t. the nubc_dv 
             for idv in range(n_dv):
                 if (config.DV_KIND[idv] == 'NUBC_DV'):
-                    grads[func_name_string][idv] = chaingrad[4+nubc_dv]
-                    nubc_dv = nubc_dv + 1
+                    grads[func_name_string][idv] = chaingrad[nubc_dv]
+                    nubc_dv += 1
         # store
         state['GRADIENTS'].update(grads)
 
@@ -290,7 +293,8 @@ def adjoint( func_name, config, state=None ):
         pull.append(files['TARGET_HEATFLUX'])
     
     if (config.has_key('MARKER_NONUNIFORM')):
-        pull.append( files['NUBC_FILE']  )
+        pull.append( files['NUBC_FILE'])
+        pull.append(files['NUBC_CONFIG_FILE'])
 
     # output redirection
     with redirect_folder( ADJ_NAME, pull, link ) as push:
@@ -579,14 +583,15 @@ def findiff( config, state=None, step=1e-4 ):
         chaingrad = downstream_function.downstream_gradient(config,state)
         custom_dv=1
         
-        # Use NUBC_DV as design variable
+    # Use NUBC_DV as design variable
     if ('NUBC_DV' in konfig.DV_KIND ):
         import nubc_function
         chaingrad = nubc_function.nubc_gradient(config,state)
         nubc_dv=1  
         
     if (config.has_key('MARKER_NONUNIFORM')):
-        pull.append( files['NUBC_FILE']  )
+        pull.append( files['NUBC_FILE'])
+        pull.append(files['NUBC_CONFIG_FILE'])
             
     # output redirection
     with redirect_folder('FINDIFF',pull,link) as push:

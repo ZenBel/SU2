@@ -231,6 +231,7 @@ class State(ordered_bunch):
         targetea_name = 'TargetEA.dat'
         targetcp_name = 'TargetCp.dat'
         nubc_filename = 'general.bc'
+        nubc_configfile_script = 'writeConfigFileNUBC.py'
         targetheatflux_name = 'TargetHeatFlux.dat'
 
         adj_map = get_adjointSuffix()
@@ -294,6 +295,7 @@ class State(ordered_bunch):
           
         if (config.has_key('MARKER_NONUNIFORM')):
             register_file( 'NUBC_FILE', nubc_filename )
+            register_file( 'NUBC_CONFIG_FILE', nubc_configfile_script)
         
         return
     

@@ -40,6 +40,7 @@ bin_SCRIPTS = \
     package_tests.py \
     patient_designspace.py \
     shape_optimization.py \
+    shape_optimizationNUBC.py \
     merge_solution.py \
     set_ffd_design_var.py \
     compute_polar.py \

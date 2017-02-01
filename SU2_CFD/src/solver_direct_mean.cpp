@@ -9438,16 +9438,20 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 				VelMag_e /= config->GetVelocity_Ref();
 
 				Energy_e = Energy_i;
-				StaticEnergy_e = Energy_i;
-
-				for (iDim = 0; iDim < nDim; iDim++)
+				Velocity2_e = 0;
+				for (iDim = 0; iDim < nDim; iDim++){
 					Velocity_e[iDim] = VelMag_e*Flow_Dir[iDim];
-					StaticEnergy_e -= Velocity_e[iDim]*Velocity_e[iDim];
+					Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
+				}
+
+				StaticEnergy_e = Energy_i - 0.5*Velocity2_e;
+				cout << Energy_e << ", " << 0.5*(Velocity_e[0]*Velocity_e[0] + Velocity_e[1]*Velocity_e[1]) << ", "<< StaticEnergy_e <<endl;
 
 				FluidModel->SetTDState_rhoe(Density_e, StaticEnergy_e);
 				Pressure_e = FluidModel->GetPressure();
 
-				cout << "Executing DENSITY_VELOCITY " << Velocity_e[0] << " " << Velocity_e[1] << " " << Density_e << endl;
+				cout << "Executing DENSITY_VELOCITY " << endl;
+				//cout << Density_e << ", " << VelMag_e << ", " << Pressure_e << ", " << Flow_Dir[0] << ", " << Flow_Dir[1] << endl;
 
 			}
         }
@@ -9457,7 +9461,6 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
           /*--- Retrieve the staic pressure for this boundary. ---*/
           Pressure_e = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var3, NonUniformBC_d2Var3, NonUniformBC_InputPoints, x_Coord);
-          cout << "Executing STATIC_PRESSURE " << Pressure_e <<  endl;
           Pressure_e /= config->GetPressure_Ref();
           Density_e = Density_i;
 
@@ -9471,10 +9474,13 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
           Energy_e = FluidModel->GetStaticEnergy() + 0.5*Velocity2_e;
 
           /*--- Setting to zero other quantities possibly needed for optimization ---*/
-          VelMag_e = 0.0;
-          Flow_Dir[0] = 0.0;
-          Flow_Dir[1] = 0.0;
+          VelMag_e = sqrt(Velocity_e[0]*Velocity_e[0] + Velocity_e[1]*Velocity_e[1]);
+          Flow_Dir[0] = Velocity_e[0]/VelMag_e;
+          Flow_Dir[1] = Velocity_e[1]/VelMag_e;
           Flow_Dir[2] = 0.0;
+
+          cout << "Executing STATIC_PRESSURE " << endl;
+          //cout << Density_e << ", " << VelMag_e << ", " << Pressure_e << ", " << Flow_Dir[0] << ", " << Flow_Dir[1] << endl;
         }
 
         else {

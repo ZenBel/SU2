@@ -230,7 +230,8 @@ def aerodynamics( config, state=None ):
         pull.append( files['TARGET_HEATFLUX'] )
         
     if (config.has_key('MARKER_NONUNIFORM')):
-        pull.append( files['NUBC_FILE'] )
+        pull.append( files['NUBC_FILE'])
+        pull.append(files['NUBC_CONFIG_FILE'])
 
 
     # output redirection
@@ -270,6 +271,11 @@ def aerodynamics( config, state=None ):
     if 'OUTFLOW_GENERALIZED' in config.OBJECTIVE_FUNCTION:    
         import downstream_function
         state['FUNCTIONS']['OUTFLOW_GENERALIZED']=downstream_function.downstream_function(config,state)
+        
+    if 'INVERSE_DESIGN_PRESSURE' in config.OBJECTIVE_FUNCTION and 'NUBC_DV' in config.DV_KIND :    
+        import nubc_function
+        print "objective", state['FUNCTIONS']['INVERSE_DESIGN_PRESSURE']
+        print "functions.py"
 
     return funcs
 

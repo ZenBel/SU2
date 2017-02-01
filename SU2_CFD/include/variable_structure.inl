@@ -215,6 +215,26 @@ inline void CVariable::SetPressure_e(su2double val_pressure_e) { Pressure_e = va
 
 inline su2double CVariable::GetPressure_e(void) { return Pressure_e; }
 
+inline void CVariable::SetSensNUBC_Density(su2double val_sens_nubc_density) { SensNUBC_Density = val_sens_nubc_density; }
+
+inline su2double CVariable::GetSensNUBC_Density(void) { return SensNUBC_Density; }
+
+inline void CVariable::SetSensNUBC_VelMag(su2double val_sens_nubc_velmag) { SensNUBC_VelMag = val_sens_nubc_velmag; }
+
+inline su2double CVariable::GetSensNUBC_VelMag(void) { return SensNUBC_VelMag; }
+
+inline void CVariable::SetSensNUBC_Pressure(su2double val_sens_nubc_pressure) { SensNUBC_Pressure = val_sens_nubc_pressure; }
+
+inline su2double CVariable::GetSensNUBC_Pressure(void) { return SensNUBC_Pressure; }
+
+inline void CVariable::SetSensNUBC_FlowDirX(su2double val_sens_nubc_flowdirx) { SensNUBC_FlowDirX = val_sens_nubc_flowdirx; }
+
+inline su2double CVariable::GetSensNUBC_FlowDirX(void) { return SensNUBC_FlowDirX; }
+
+inline void CVariable::SetSensNUBC_FlowDirY(su2double val_sens_nubc_flowdiry) { SensNUBC_FlowDirY = val_sens_nubc_flowdiry; }
+
+inline su2double CVariable::GetSensNUBC_FlowDirY(void) { return SensNUBC_FlowDirY; }
+
 inline void CVariable::SetDelta_Time(su2double val_delta_time) { Delta_Time = val_delta_time; }
 
 inline void CVariable::SetDelta_Time(su2double val_delta_time, unsigned short iSpecies) {  }
