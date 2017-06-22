@@ -2946,7 +2946,7 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
 				}
 
 
-				/*--- Compute dR/dD for each surface point (CAREFUL WITH MATRICES OPERATIONS HERE)---*/
+				/*--- Compute dR/dD for each surface point ---*/
 
 				/*--- dR/dD = dR/dUb_c * dUb_c/dUe_c* dUe_c/dUe_p* dUe_p/dD = Jacobian_j * dUb_c/dUe_c * B = A * B ---*/
 
@@ -4623,6 +4623,285 @@ void CAdjEulerSolver::BC_Supersonic_Outlet(CGeometry *geometry, CSolver **solver
   
 }
 
+void CAdjEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container,
+		CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
+
+  unsigned short iVar, iDim;
+  unsigned long iVertex, iPoint, Point_Normal;
+  su2double Velocity[3], bcn, phin, Area, UnitNormal[3], ProjVelocity_i, ProjGridVel, *GridVel, Pressure_boundary=0.0,
+		    Density=0.0, Vn=0.0, Pressure = 0.0, SoundSpeed = 0.0, Entropy = 0.0, Riemann = 0.0, Vn_boundary = 0.0,
+			Vn_rel = 0.0, Velocity2 = 0.0;
+  su2double *V_boundary, *V_domain, *Velocity_i, *Normal, *Psi_domain, *Psi_boundary;
+  su2double a1=0.0, a2=0.0; /*Placeholder terms to simplify expressions/ repeated terms*/
+  bool implicit = (config->GetKind_TimeIntScheme_AdjFlow() == EULER_IMPLICIT);
+  bool compressible = (config->GetKind_Regime() == COMPRESSIBLE);
+  bool incompressible = (config->GetKind_Regime() == INCOMPRESSIBLE);
+  bool freesurface = (config->GetKind_Regime() == FREESURFACE);
+  bool grid_movement = config->GetGrid_Movement();
+  string Marker_Tag = config->GetMarker_All_TagBound(val_marker);
+
+  Normal = new su2double[nDim];
+  Psi_domain = new su2double[nVar];
+  Psi_boundary = new su2double[nVar];
+
+  /*--- Loop over all the vertices on this boundary marker ---*/
+
+  for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
+    iPoint = geometry->vertex[val_marker][iVertex]->GetNode();
+
+    /*--- Check that the node belongs to the domain (i.e., not a halo node) ---*/
+
+    if (geometry->node[iPoint]->GetDomain()) {
+
+        /*--- Normal vector for this vertex (negate for outward convention) ---*/
+
+        geometry->vertex[val_marker][iVertex]->GetNormal(Normal);
+        for (iDim = 0; iDim < nDim; iDim++) Normal[iDim] = -Normal[iDim];
+        conv_numerics->SetNormal(Normal);
+
+        Area = 0.0;
+        for (iDim = 0; iDim < nDim; iDim++)
+          Area += Normal[iDim]*Normal[iDim];
+        Area = sqrt (Area);
+
+        for (iDim = 0; iDim < nDim; iDim++)
+          UnitNormal[iDim] = Normal[iDim]/Area;
+
+        /*--- Allocate the value at the inlet ---*/
+
+        V_boundary = solver_container[FLOW_SOL]->GetCharacPrimVar(val_marker, iVertex);
+
+        /*--- Retrieve solution at the boundary node ---*/
+
+        V_domain = solver_container[FLOW_SOL]->node[iPoint]->GetPrimitive(); /*--- should be the same as Velocity_i, need to check this ---*/
+
+        /*--- Adjoint flow solution at the boundary ---*/
+
+        for (iVar = 0; iVar < nVar; iVar++)
+          Psi_domain[iVar] = node[iPoint]->GetSolution(iVar);
+
+  		/* --- Compute the internal state u_i --- */
+
+  		ProjVelocity_i = 0.0;
+  		for (iDim=0; iDim < nDim; iDim++){
+  			Velocity_i[iDim] = solver_container[FLOW_SOL]->node[iPoint]->GetVelocity(iDim);
+  			ProjVelocity_i += Velocity_i[iDim]*UnitNormal[iDim];
+  		}
+  		cout << "Vn_i = " << ProjVelocity_i << endl;
+
+  		/*--- Distinguish between outflow and inflow ---*/
+
+        if (ProjVelocity_i < 0.0) {
+      	  cout << "Inflow conditions"<< endl;
+
+      	  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+      		  cout << "Adjoint BC for TOTAL_CONDITIONS_PT not implemented yet"  << endl;
+      		  break;
+      		  //TODO: Implement adjoint boundary conditions for this case.
+      	  }
+
+      	  else if (config->GetKind_Data_NonUniform(Marker_Tag) == DENSITY_VELOCITY){
+
+              /*--- Retrieve current adjoint solution values at the boundary ---*/
+              for (iVar = 0; iVar < nVar; iVar++)
+                Psi_boundary[iVar] = node[iPoint]->GetSolution(iVar);
+
+              /*--- Some terms needed for the adjoint BC ---*/
+              bcn = 0.0; phin = 0.0;
+              for (iDim = 0; iDim < nDim; iDim++) {
+                bcn  -= (Gamma/Gamma_Minus_One)*Velocity_i[iDim]*UnitNormal[iDim];
+                phin += Psi_domain[iDim+1]*UnitNormal[iDim];
+              }
+
+              /*--- Extra boundary term for grid movement ---*/
+              if (grid_movement) {
+                ProjGridVel = 0.0;
+                GridVel = geometry->node[iPoint]->GetGridVel();
+                for (iDim = 0; iDim < nDim; iDim++)
+                  ProjGridVel += GridVel[iDim]*UnitNormal[iDim];
+                bcn -= (1.0/Gamma_Minus_One)*ProjGridVel;
+              }
+
+              /*--- Impose value for PsiE based on hand-derived expression. ---*/
+              Psi_boundary[nVar-1] = -phin*(1.0/bcn);
+
+              break;
+      	  }
+      	}
+
+        /*--- Outflow at the NUBC (implemented only for subsonic case) ---*/
+        else if (ProjVelocity_i > 0.0) {
+        	cout << "Outflow conditions"<< endl;
+
+        	/*--- Retrieve the specified back pressure for this outlet, Non-dim. the inputs if necessary. ---*/
+
+        	Pressure_boundary = solver_container[FLOW_SOL]->node[iPoint]->GetPressure_e();
+        	Pressure_boundary = Pressure_boundary/config->GetPressure_Ref();
+
+            /*--- Check whether the flow is supersonic at the exit. The type
+             of boundary update depends on this. ---*/
+
+            Density = V_domain[nDim+2];
+            Vn = 0.0;
+            for (iDim = 0; iDim < nDim; iDim++) {
+              Velocity[iDim] = V_domain[iDim+1]; /*--- is this equal to Velocity_i ???---*/
+              Vn += Velocity[iDim]*UnitNormal[iDim];
+            }
+
+            /*--- Extra boundary term for grid movement ---*/
+            if (grid_movement) {
+              su2double *GridVel = geometry->node[iPoint]->GetGridVel();
+              for (iDim = 0; iDim < nDim; iDim++)
+                ProjGridVel += GridVel[iDim]*UnitNormal[iDim];
+            }
+
+            Pressure = V_domain[nDim+1];
+            SoundSpeed = sqrt(Pressure*Gamma/Density);
+
+            /*--- Set Adjoint variables to 0 initially ---*/
+            for (iVar = 0; iVar < nVar; iVar++) {
+              Psi_boundary[iVar] = 0.0;
+            }
+
+            if (Vn > SoundSpeed) {
+            	cout << "Adjoint NUBC for supersonic outlet not implemented yet" << endl;
+            	break;
+            	//TODO: implement adjoint NUBC for supersonic outlet.
+            }
+
+            else{
+            	/*---Subsonic Case: Psi-rhoE term from volume, objective-specific terms which are common
+    		     * between subsonic and supersonic cases are added later  ---*/
+
+            	/*--- Compute Riemann constant ---*/
+    		    Entropy = Pressure*pow(1.0/Density, Gamma);
+    		    Riemann = Vn + 2.0*SoundSpeed/Gamma_Minus_One;
+
+    		    /*--- Compute the new fictitious state at the outlet ---*/
+    		    Density    = pow(Pressure_boundary/Entropy,1.0/Gamma);
+    		    SoundSpeed = sqrt(Gamma*Pressure_boundary/Density);
+    		    Vn_boundary    = Riemann - 2.0*SoundSpeed/Gamma_Minus_One;
+    		    /*--- Update velocity terms ---*/
+    		    Vn_rel  = Vn_boundary-ProjGridVel;
+
+    		    Velocity2  = 0.0;
+    		    for (iDim = 0; iDim < nDim; iDim++) {
+    			  Velocity[iDim] = Velocity[iDim] + (Vn_boundary-Vn)*UnitNormal[iDim];
+    			  Velocity2 += Velocity[iDim]*Velocity[iDim];
+    		    }
+
+    	        /*--- Extra boundary term for grid movement ---*/
+
+    	        if (grid_movement) {
+    	          ProjGridVel = 0.0;
+    	          su2double *GridVel = geometry->node[iPoint]->GetGridVel();
+    	          for (iDim = 0; iDim < nDim; iDim++)
+    	            ProjGridVel += GridVel[iDim]*UnitNormal[iDim];
+    	        }
+
+    	        /*--- Impose values for PsiRho & Phi using PsiE from domain. ---*/
+
+    	        Psi_boundary[nVar-1] = Psi_domain[nVar-1];
+            }
+
+            /*--- When Psi_outlet[nVar-1] is not 0, the other terms of Psi_outlet must be updated
+            This occurs when subsonic, or for certain objective functions ---*/
+
+            if ( Psi_boundary[nVar-1]!=0.0 ){
+              /*--- Shorthand for repeated term in the boundary conditions ---*/
+              a1 = 0.0;
+              if (Vn!=0.0)
+                a1 = SoundSpeed*SoundSpeed/Gamma_Minus_One/Vn;
+              Psi_boundary[0] += Psi_boundary[nVar-1]*(Velocity2*0.5+Vn_rel*a1);
+              for (iDim = 0; iDim < nDim; iDim++) {
+                Psi_boundary[iDim+1] += -Psi_boundary[nVar-1]*(a1*UnitNormal[iDim] + Velocity[iDim]);
+              }
+            }
+        }
+
+        if (incompressible || freesurface) {
+        	cout << "Adjoint NUBC not implemented yet for incompressible/freesurface cases"<< endl;
+        	break;
+        	//TODO: implement adjoint NUBC for these cases.
+        }
+
+        /*--- Set the flow and adjoint states in the solver ---*/
+
+        conv_numerics->SetPrimitive(V_domain, V_boundary);
+        conv_numerics->SetAdjointVar(Psi_domain, Psi_boundary);
+
+        /*--- Grid Movement ---*/
+
+        if (grid_movement)
+          conv_numerics->SetGridVel(geometry->node[iPoint]->GetGridVel(),
+              geometry->node[iPoint]->GetGridVel());
+
+        conv_numerics->ComputeResidual(Residual_i, Residual_j, Jacobian_ii, Jacobian_ij,
+            Jacobian_ji, Jacobian_jj, config);
+
+        /*--- Add and Subtract Residual ---*/
+
+        LinSysRes.SubtractBlock(iPoint, Residual_i);
+
+	    /*--- Implicit contribution to the residual ---*/
+
+	    if (implicit)
+		  Jacobian.SubtractBlock(iPoint, iPoint, Jacobian_ii);
+
+	    /*--- Viscous residual contribution, it doesn't work ---*/
+
+	    if (config->GetViscous()) {
+
+		  /*--- Set laminar and eddy viscosity at the infinity ---*/
+		  if (compressible) {
+		    V_boundary[nDim+5] = solver_container[FLOW_SOL]->node[iPoint]->GetLaminarViscosity();
+		    V_boundary[nDim+6] = solver_container[FLOW_SOL]->node[iPoint]->GetEddyViscosity();
+		  }
+		  if (incompressible || freesurface) {
+		    V_boundary[nDim+3] = solver_container[FLOW_SOL]->node[iPoint]->GetLaminarViscosityInc();
+		    V_boundary[nDim+4] = solver_container[FLOW_SOL]->node[iPoint]->GetEddyViscosityInc();
+		  }
+
+		  /*--- Points in edge, coordinates and normal vector---*/
+		  visc_numerics->SetNormal(Normal);
+		  visc_numerics->SetCoord(geometry->node[iPoint]->GetCoord(), geometry->node[Point_Normal]->GetCoord());
+
+
+		  /*--- Conservative variables w/o reconstruction and adjoint variables w/o reconstruction---*/
+
+		  visc_numerics->SetPrimitive(V_domain, V_boundary);
+		  visc_numerics->SetAdjointVar(Psi_domain, Psi_boundary);
+
+		  /*--- Turbulent kinetic energy ---*/
+		  if (config->GetKind_Turb_Model() == SST)
+		    visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0), solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
+
+
+		  /*--- Gradient and limiter of Adjoint Variables ---*/
+
+		  visc_numerics->SetAdjointVarGradient(node[iPoint]->GetGradient(), node[iPoint]->GetGradient());
+
+		  /*--- Compute residual ---*/
+
+		  visc_numerics->ComputeResidual(Residual_i, Residual_j, Jacobian_ii, Jacobian_ij, Jacobian_ji, Jacobian_jj, config);
+
+		  /*--- Update adjoint viscous residual ---*/
+
+		  LinSysRes.SubtractBlock(iPoint, Residual_i);
+
+		  if (implicit)
+		    Jacobian.SubtractBlock(iPoint, iPoint, Jacobian_ii);
+
+        }
+      }
+    }
+
+    /*--- Free locally allocated memory ---*/
+
+    delete [] Normal;
+    delete [] Psi_domain; delete [] Psi_boundary;
+}
+
 void CAdjEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
   
   unsigned short iVar, iDim;
@@ -4640,7 +4919,8 @@ void CAdjEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container, 
   string Marker_Tag = config->GetMarker_All_TagBound(val_marker);
   
   Normal = new su2double[nDim];
-  Psi_domain = new su2double[nVar]; Psi_inlet = new su2double[nVar];
+  Psi_domain = new su2double[nVar];
+  Psi_inlet = new su2double[nVar];
   
   /*--- Loop over all the vertices on this boundary marker ---*/
   
@@ -4841,7 +5121,8 @@ void CAdjEulerSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
   string Monitoring_Tag;
   unsigned short jMarker=0, iMarker_Monitoring=0;
 
-  Psi_domain = new su2double [nVar]; Psi_outlet = new su2double [nVar];
+  Psi_domain = new su2double [nVar];
+  Psi_outlet = new su2double [nVar];
   Normal = new su2double[nDim];
 
   /*--- Identify marker monitoring index ---*/
@@ -4914,6 +5195,7 @@ void CAdjEulerSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
           Velocity2 += Velocity[iDim]*Velocity[iDim];
           Vn += Velocity[iDim]*UnitNormal[iDim];
         }
+
         /*--- Extra boundary term for grid movement ---*/
         if (grid_movement) {
           su2double *GridVel = geometry->node[iPoint]->GetGridVel();
@@ -4975,7 +5257,7 @@ void CAdjEulerSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
           Entropy = Pressure*pow(1.0/Density, Gamma);
           Riemann = Vn + 2.0*SoundSpeed/Gamma_Minus_One;
 
-          /*--- Compute the new fictious state at the outlet ---*/
+          /*--- Compute the new fictitious state at the outlet ---*/
           Density    = pow(P_Exit/Entropy,1.0/Gamma);
           SoundSpeed = sqrt(Gamma*P_Exit/Density);
           Vn_Exit    = Riemann - 2.0*SoundSpeed/Gamma_Minus_One;

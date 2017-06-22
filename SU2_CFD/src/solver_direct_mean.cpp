@@ -13116,7 +13116,7 @@ void CEulerSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
       /*--- Current solution at this boundary node ---*/
       V_domain = node[iPoint]->GetPrimitive();
 
-      /*--- Build the fictitious intlet state based on characteristics ---*/
+      /*--- Build the fictitious inlet state based on characteristics ---*/
       if (compressible) {
 
       	/*--- Retrieve the specified back pressure for this outlet. ---*/
