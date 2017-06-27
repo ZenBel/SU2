@@ -28,12 +28,15 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with SU2. If not, see <http://www.gnu.org/licenses/>.
  */
-
+#include <fenv.h>
 #include "../include/SU2_CFD.hpp"
 
 using namespace std;
 
 int main(int argc, char *argv[]) {
+
+  /*--- Line to help gdb debug in presence of Nan's---*/
+  feenableexcept(FE_INVALID | FE_OVERFLOW);
   
   unsigned short nZone, nDim;
   char config_file_name[MAX_STRING_SIZE];

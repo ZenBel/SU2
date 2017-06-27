@@ -9368,7 +9368,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
   		cout << "Vn_i = " << ProjVelocity_i << endl;
 
   		Density_i = node[iPoint]->GetDensity();
-  		//cout << Density_i <<" "<< V_domain[nDim+2] << " "<< GetDensity_Inf() << endl;
+  		cout << Density_i <<" "<< V_domain[nDim+2] << " "<< GetDensity_Inf() << endl;
   		Energy_i = node[iPoint]->GetEnergy();
   		StaticEnergy_i = Energy_i - 0.5*Velocity2_i;
 
@@ -9594,16 +9594,16 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
       //cout << Density_e << " " << Velocity_e[0] << " " << Velocity_e[1] << " " << Energy_e << " " << Pressure_e << endl;
       //cout << Density_b << " " << Velocity_b[0] << " " << Velocity_b[1] << " " << Energy_b << " " << Pressure_b << endl;
 
-//      /*--- Primitive variables, using the derived quantities ---*/
-//	  V_boundary[0] = Temperature_b;
-//	  for (iDim = 0; iDim < nDim; iDim++)
-//		V_boundary[iDim+1] = Velocity_b[iDim];
-//	  V_boundary[nDim+1] = Pressure_b;
-//	  V_boundary[nDim+2] = Density_b;
-//	  V_boundary[nDim+3] = Enthalpy_b;
-//
-//	  /*--- Set various quantities in the solver class ---*/
-//	  conv_numerics->SetPrimitive(V_domain, V_boundary);
+      /*--- Primitive variables, using the derived quantities ---*/
+	  V_boundary[0] = Temperature_b;
+	  for (iDim = 0; iDim < nDim; iDim++)
+		V_boundary[iDim+1] = Velocity_b[iDim];
+	  V_boundary[nDim+1] = Pressure_b;
+	  V_boundary[nDim+2] = Density_b;
+	  V_boundary[nDim+3] = Enthalpy_b;
+
+	  /*--- Set various quantities in the solver class ---*/
+	  conv_numerics->SetPrimitive(V_domain, V_boundary);
 
       /*--- Compute the residuals ---*/
       conv_numerics->GetInviscidProjFlux(&Density_b, Velocity_b, &Pressure_b, &Enthalpy_b, Normal, Residual);

@@ -4643,6 +4643,7 @@ void CAdjEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_contai
   Normal = new su2double[nDim];
   Psi_domain = new su2double[nVar];
   Psi_boundary = new su2double[nVar];
+  Velocity_i = new su2double[nDim];
 
   cout << "Executing adjoint NUBC" << endl;
 
@@ -4674,8 +4675,8 @@ void CAdjEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_contai
         V_boundary = solver_container[FLOW_SOL]->GetCharacPrimVar(val_marker, iVertex);
 
         /*--- Retrieve solution at the boundary node ---*/
-
-        V_domain = solver_container[FLOW_SOL]->node[iPoint]->GetPrimitive(); /*--- should be the same as Velocity_i, need to check this ---*/
+        /*--- Note: it is the same as the values at the internal state (_i) ---*/
+        V_domain = solver_container[FLOW_SOL]->node[iPoint]->GetPrimitive();
 
         /*--- Adjoint flow solution at the boundary ---*/
 
@@ -4727,7 +4728,6 @@ void CAdjEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_contai
               /*--- Impose value for PsiE based on hand-derived expression. ---*/
               Psi_boundary[nVar-1] = -phin*(1.0/bcn);
 
-              break;
       	  }
       	}
 

@@ -256,7 +256,7 @@ void CUpwRoe_AdjFlow::ComputeResidual (su2double *val_residual_i, su2double *val
 	if (implicit) {
     
 		/*--- Prepare variables for use in matrix routines ---*/
-    
+		//cout << "V_i[nDim+2] = "<< V_i[nDim+2] << ", V_j[nDim+2] = "<< V_j[nDim+2] <<endl;
 		RoeDensity = V_i[nDim+2]*sqrt(V_j[nDim+2]/V_i[nDim+2]);
 		RoeSoundSpeed = c;
 		UnitNormal[0] = nx;  UnitNormal[1] = ny;  if (nDim == 3 ) UnitNormal[2] = nz;
