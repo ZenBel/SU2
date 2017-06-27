@@ -6784,7 +6784,7 @@ public:
 	 * \param[in] val_marker - Surface marker where the boundary condition is applied.
 	 */
 	void BC_NonUniform(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config,
-			           unsigned short val_marker)
+			           unsigned short val_marker);
     
 	/*!
 	 * \brief Impose the inlet boundary condition.

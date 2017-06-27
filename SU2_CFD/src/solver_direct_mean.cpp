@@ -9351,6 +9351,12 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
   		for (iDim = 0; iDim < nDim; iDim++)
   			UnitNormal[iDim] = Normal[iDim]/Area;
 
+  		/*--- Retrieve solution at this boundary node ---*/
+  		/*--- Note: This is equal to the values at the internal state but it does
+  		 * not get used to keep a certain continuity with BC_Riemann from which
+  		 * it's derived ---*/
+  		V_domain = node[iPoint]->GetPrimitive();
+
   		/* --- Compute the internal state u_i --- */
   		Velocity2_i = 0; ProjVelocity_i = 0.0;
   		for (iDim=0; iDim < nDim; iDim++){
@@ -9588,6 +9594,17 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
       //cout << Density_e << " " << Velocity_e[0] << " " << Velocity_e[1] << " " << Energy_e << " " << Pressure_e << endl;
       //cout << Density_b << " " << Velocity_b[0] << " " << Velocity_b[1] << " " << Energy_b << " " << Pressure_b << endl;
 
+//      /*--- Primitive variables, using the derived quantities ---*/
+//	  V_boundary[0] = Temperature_b;
+//	  for (iDim = 0; iDim < nDim; iDim++)
+//		V_boundary[iDim+1] = Velocity_b[iDim];
+//	  V_boundary[nDim+1] = Pressure_b;
+//	  V_boundary[nDim+2] = Density_b;
+//	  V_boundary[nDim+3] = Enthalpy_b;
+//
+//	  /*--- Set various quantities in the solver class ---*/
+//	  conv_numerics->SetPrimitive(V_domain, V_boundary);
+
       /*--- Compute the residuals ---*/
       conv_numerics->GetInviscidProjFlux(&Density_b, Velocity_b, &Pressure_b, &Enthalpy_b, Normal, Residual);
 
@@ -9689,14 +9706,6 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
       /*--- Viscous contribution ---*/
       if (viscous) {
-
-        /*--- Primitive variables, using the derived quantities ---*/
-        V_boundary[0] = Temperature_b;
-        for (iDim = 0; iDim < nDim; iDim++)
-          V_boundary[iDim+1] = Velocity_b[iDim];
-        V_boundary[nDim+1] = Pressure_b;
-        V_boundary[nDim+2] = Density_b;
-        V_boundary[nDim+3] = Enthalpy_b;
 
         /*--- Set laminar and eddy viscosity at the infinity ---*/
         V_boundary[nDim+5] = FluidModel->GetLaminarViscosity();

@@ -3396,7 +3396,7 @@ void CAdjEulerSolver::BC_Euler_Wall(CGeometry *geometry, CSolver **solver_contai
   UnitNormal = new su2double[nDim];
   Velocity = new su2double[nDim];
   Psi      = new su2double[nVar];
-  
+
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
     iPoint = geometry->vertex[val_marker][iVertex]->GetNode();
     
@@ -4644,6 +4644,8 @@ void CAdjEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_contai
   Psi_domain = new su2double[nVar];
   Psi_boundary = new su2double[nVar];
 
+  cout << "Executing adjoint NUBC" << endl;
+
   /*--- Loop over all the vertices on this boundary marker ---*/
 
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
@@ -4922,6 +4924,8 @@ void CAdjEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container, 
   Psi_domain = new su2double[nVar];
   Psi_inlet = new su2double[nVar];
   
+  cout << "Executing adjoint inlet BC" << endl;
+
   /*--- Loop over all the vertices on this boundary marker ---*/
   
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
