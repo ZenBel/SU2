@@ -4645,7 +4645,7 @@ void CAdjEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_contai
   Psi_boundary = new su2double[nVar];
   Velocity_i = new su2double[nDim];
 
-  cout << "Executing adjoint NUBC" << endl;
+  if (config->GetExtIter() == 0) {cout << "Executing adjoint NUBC" << endl;}
 
   /*--- Loop over all the vertices on this boundary marker ---*/
 
@@ -4690,12 +4690,12 @@ void CAdjEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_contai
   			Velocity_i[iDim] = solver_container[FLOW_SOL]->node[iPoint]->GetVelocity(iDim);
   			ProjVelocity_i += Velocity_i[iDim]*UnitNormal[iDim];
   		}
-  		cout << "Vn_i = " << ProjVelocity_i << endl;
 
   		/*--- Distinguish between outflow and inflow ---*/
 
         if (ProjVelocity_i < 0.0) {
-      	  cout << "Inflow conditions"<< endl;
+
+          if (config->GetExtIter() == 0) {cout << "Vn_i = " << ProjVelocity_i << " -> Inflow conditions"<< endl;}
 
       	  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
       		  cout << "Adjoint BC for TOTAL_CONDITIONS_PT not implemented yet"  << endl;
@@ -4733,7 +4733,7 @@ void CAdjEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_contai
 
         /*--- Outflow at the NUBC (implemented only for subsonic case) ---*/
         else if (ProjVelocity_i > 0.0) {
-        	cout << "Outflow conditions"<< endl;
+            if (config->GetExtIter() == 0) {cout << "Vn_i = " << ProjVelocity_i << " -> Outflow conditions"<< endl;}
 
         	/*--- Retrieve the specified back pressure for this outlet, Non-dim. the inputs if necessary. ---*/
 
@@ -4898,6 +4898,8 @@ void CAdjEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_contai
       }
     }
 
+    if (config->GetExtIter() == 0) {cout << "End adjoint NUBC" << endl;}
+
     /*--- Free locally allocated memory ---*/
 
     delete [] Normal;
@@ -4923,8 +4925,6 @@ void CAdjEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container, 
   Normal = new su2double[nDim];
   Psi_domain = new su2double[nVar];
   Psi_inlet = new su2double[nVar];
-  
-  cout << "Executing adjoint inlet BC" << endl;
 
   /*--- Loop over all the vertices on this boundary marker ---*/
   

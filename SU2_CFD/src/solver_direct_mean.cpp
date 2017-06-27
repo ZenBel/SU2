@@ -9490,6 +9490,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
         }
 
         else {
+
         	/*--- Set boundary state equal to internal state ---*/
         	cout << "Setting boundary state equal to internal state." << endl;
         	ProjVelocity_i = 0.0;
