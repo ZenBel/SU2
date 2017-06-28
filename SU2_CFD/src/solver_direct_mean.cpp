@@ -9335,61 +9335,59 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
   	/*--- Check if the node belongs to the domain (i.e., not a halo node) ---*/
   	if (geometry->node[iPoint]->GetDomain()) {
 
-  		/*--- Index of the closest interior node ---*/
-  		Point_Normal = geometry->vertex[val_marker][iVertex]->GetNormal_Neighbor();
+	  /*--- Index of the closest interior node ---*/
+	  Point_Normal = geometry->vertex[val_marker][iVertex]->GetNormal_Neighbor();
 
-  		/*--- Normal vector for this vertex (negate for outward convention) ---*/
-  		geometry->vertex[val_marker][iVertex]->GetNormal(Normal);
-  		for (iDim = 0; iDim < nDim; iDim++) Normal[iDim] = -Normal[iDim];
-  		conv_numerics->SetNormal(Normal);
+	  /*--- Normal vector for this vertex (negate for outward convention) ---*/
+	  geometry->vertex[val_marker][iVertex]->GetNormal(Normal);
+	  for (iDim = 0; iDim < nDim; iDim++) Normal[iDim] = -Normal[iDim];
+	  conv_numerics->SetNormal(Normal);
 
-  		/*--- Compute Unit Normal vector ---*/
-  		Area = 0.0;
-  		for (iDim = 0; iDim < nDim; iDim++) Area += Normal[iDim]*Normal[iDim];
-  		Area = sqrt (Area);
+	  /*--- Compute Unit Normal vector ---*/
+	  Area = 0.0;
+	  for (iDim = 0; iDim < nDim; iDim++) Area += Normal[iDim]*Normal[iDim];
+	  Area = sqrt (Area);
 
-  		for (iDim = 0; iDim < nDim; iDim++)
-  			UnitNormal[iDim] = Normal[iDim]/Area;
+	  for (iDim = 0; iDim < nDim; iDim++) UnitNormal[iDim] = Normal[iDim]/Area;
 
-  		/*--- Retrieve solution at this boundary node ---*/
-  		/*--- Note: This is equal to the values at the internal state but it does
-  		 * not get used to keep a certain continuity with BC_Riemann from which
-  		 * it's derived ---*/
-  		V_domain = node[iPoint]->GetPrimitive();
+	  /*--- Retrieve solution at this boundary node ---*/
+	  /*--- Note: This is equal to the values at the internal state but it does
+	   * not get used to keep a certain continuity with BC_Riemann from which
+	   * it's derived ---*/
+	  V_domain = node[iPoint]->GetPrimitive();
 
-  		/* --- Compute the internal state u_i --- */
-  		Velocity2_i = 0; ProjVelocity_i = 0.0;
-  		for (iDim=0; iDim < nDim; iDim++){
-  			Velocity_i[iDim] = node[iPoint]->GetVelocity(iDim);
-  			//cout << Velocity_i[iDim] << endl;
-  			Velocity2_i += Velocity_i[iDim]*Velocity_i[iDim];
-  			ProjVelocity_i += Velocity_i[iDim]*UnitNormal[iDim];
-  		}
-  		cout << "Vn_i = " << ProjVelocity_i << endl;
+	  /* --- Compute the internal state u_i --- */
+	  Velocity2_i = 0; ProjVelocity_i = 0.0;
+	  for (iDim=0; iDim < nDim; iDim++){
+			Velocity_i[iDim] = node[iPoint]->GetVelocity(iDim);
+			//cout << Velocity_i[iDim] << endl;
+			Velocity2_i += Velocity_i[iDim]*Velocity_i[iDim];
+	    	ProjVelocity_i += Velocity_i[iDim]*UnitNormal[iDim];
+	  }
 
-  		Density_i = node[iPoint]->GetDensity();
-  		cout << Density_i <<" "<< V_domain[nDim+2] << " "<< GetDensity_Inf() << endl;
-  		Energy_i = node[iPoint]->GetEnergy();
-  		StaticEnergy_i = Energy_i - 0.5*Velocity2_i;
+	  Density_i = node[iPoint]->GetDensity();
+	  //cout << Density_i <<" "<< V_domain[nDim+2] << " "<< GetDensity_Inf() << endl;
+	  Energy_i = node[iPoint]->GetEnergy();
+	  StaticEnergy_i = Energy_i - 0.5*Velocity2_i;
 
-  		FluidModel->SetTDState_rhoe(Density_i, StaticEnergy_i);
+	  FluidModel->SetTDState_rhoe(Density_i, StaticEnergy_i);
 
-  		Pressure_i = FluidModel->GetPressure();
-  		//cout << Pressure_i <<" "<< node[iPoint]->GetPressure() << " "<< GetPressure_Inf() <<endl;
-  		Enthalpy_i = Energy_i + Pressure_i/Density_i;
-  		SoundSpeed_i = FluidModel->GetSoundSpeed();
+	  Pressure_i = FluidModel->GetPressure();
+	  //cout << Pressure_i <<" "<< node[iPoint]->GetPressure() << " "<< GetPressure_Inf() <<endl;
+	  Enthalpy_i = Energy_i + Pressure_i/Density_i;
+      SoundSpeed_i = FluidModel->GetSoundSpeed();
 
-  		Kappa_i = FluidModel->GetdPde_rho() / Density_i;
-  		Chi_i = FluidModel->GetdPdrho_e() - Kappa_i * StaticEnergy_i;
+	  Kappa_i = FluidModel->GetdPde_rho() / Density_i;
+	  Chi_i = FluidModel->GetdPdrho_e() - Kappa_i * StaticEnergy_i;
 
-  	  /*--- Retrive x, y coordinates of node ---*/
-      x_Coord = geometry->node[iPoint]->GetCoord(nDim-2);
-      y_Coord = geometry->node[iPoint]->GetCoord(nDim-1);
+	  /*--- Retrive x, y coordinates of node ---*/
+	  x_Coord = geometry->node[iPoint]->GetCoord(nDim-2);
+	  y_Coord = geometry->node[iPoint]->GetCoord(nDim-1);
 
       /*--- Build the external state u_e from boundary data and internal node ---*/
 
       if (ProjVelocity_i < 0.0) {
-    	  cout << "Inflow conditions"<< endl;
+    	  cout << "Vn_i = " << ProjVelocity_i << " -> Inflow conditions."<< endl;
 
 		  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
 			  /*--- Retrieve the specified total conditions for this boundary. ---*/
@@ -9431,39 +9429,40 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 			  //TODO Setting quantities possibly needed for optimization
 		  }
 
-			else if (config->GetKind_Data_NonUniform(Marker_Tag) == DENSITY_VELOCITY){
-				/*--- Retrieve the specified density and velocity magnitude ---*/
-				Density_e  = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_d2Var1, NonUniformBC_InputPoints, x_Coord);
-				VelMag_e   = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var2, NonUniformBC_d2Var2, NonUniformBC_InputPoints, x_Coord);
-				Flow_Dir[0] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_x, NonUniformBC_d2FlowDir_x, NonUniformBC_InputPoints, x_Coord);
-				Flow_Dir[1] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_y, NonUniformBC_d2FlowDir_y, NonUniformBC_InputPoints, x_Coord);
-				Flow_Dir[2] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_z, NonUniformBC_d2FlowDir_z, NonUniformBC_InputPoints, x_Coord);
+		  else if (config->GetKind_Data_NonUniform(Marker_Tag) == DENSITY_VELOCITY){
 
-				/*--- Non-dim. the inputs if necessary. ---*/
-				Density_e /= config->GetDensity_Ref();
-				VelMag_e /= config->GetVelocity_Ref();
+			  /*--- Retrieve the specified density and velocity magnitude ---*/
+			  Density_e  = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_d2Var1, NonUniformBC_InputPoints, x_Coord);
+			  VelMag_e   = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var2, NonUniformBC_d2Var2, NonUniformBC_InputPoints, x_Coord);
+			  Flow_Dir[0] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_x, NonUniformBC_d2FlowDir_x, NonUniformBC_InputPoints, x_Coord);
+			  Flow_Dir[1] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_y, NonUniformBC_d2FlowDir_y, NonUniformBC_InputPoints, x_Coord);
+			  Flow_Dir[2] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_z, NonUniformBC_d2FlowDir_z, NonUniformBC_InputPoints, x_Coord);
 
-				Energy_e = Energy_i;
-				Velocity2_e = 0;
-				for (iDim = 0; iDim < nDim; iDim++){
-					Velocity_e[iDim] = VelMag_e*Flow_Dir[iDim];
-					Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
-				}
+			  /*--- Non-dim. the inputs if necessary. ---*/
+			  Density_e /= config->GetDensity_Ref();
+			  VelMag_e /= config->GetVelocity_Ref();
 
-				StaticEnergy_e = Energy_i - 0.5*Velocity2_e;
-				cout << Energy_e << ", " << 0.5*(Velocity_e[0]*Velocity_e[0] + Velocity_e[1]*Velocity_e[1]) << ", "<< StaticEnergy_e <<endl;
+			  Energy_e = Energy_i;
+			  Velocity2_e = 0;
+			  for (iDim = 0; iDim < nDim; iDim++){
+				  Velocity_e[iDim] = VelMag_e*Flow_Dir[iDim];
+				  Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
+			  }
 
-				FluidModel->SetTDState_rhoe(Density_e, StaticEnergy_e);
-				Pressure_e = FluidModel->GetPressure();
+			  StaticEnergy_e = Energy_i - 0.5*Velocity2_e;
+			  //cout << Energy_e << ", " << 0.5*(Velocity_e[0]*Velocity_e[0] + Velocity_e[1]*Velocity_e[1]) << ", "<< StaticEnergy_e <<endl;
 
-				cout << "Executing DENSITY_VELOCITY " << endl;
-				//cout << Density_e << ", " << VelMag_e << ", " << Pressure_e << ", " << Flow_Dir[0] << ", " << Flow_Dir[1] << endl;
+			  FluidModel->SetTDState_rhoe(Density_e, StaticEnergy_e);
+			  Pressure_e = FluidModel->GetPressure();
 
-			}
+			  cout << "Executing DENSITY_VELOCITY " << endl;
+			  cout << Density_e << ", " << VelMag_e << ", " << Pressure_e << ", " << Flow_Dir[0] << ", " << Flow_Dir[1] << endl;
+
+		  }
         }
 
         else if (ProjVelocity_i > 0.0) {
-          cout << "Outflow conditions"<< endl;
+          cout << "Vn_i = " << ProjVelocity_i << " -> Outflow conditions."<< endl;
 
           /*--- Retrieve the staic pressure for this boundary. ---*/
           Pressure_e = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var3, NonUniformBC_d2Var3, NonUniformBC_InputPoints, x_Coord);
@@ -9486,7 +9485,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
           Flow_Dir[2] = 0.0;
 
           cout << "Executing STATIC_PRESSURE " << endl;
-          //cout << Density_e << ", " << VelMag_e << ", " << Pressure_e << ", " << Flow_Dir[0] << ", " << Flow_Dir[1] << endl;
+          cout << Density_e << ", " << VelMag_e << ", " << Pressure_e << ", " << Flow_Dir[0] << ", " << Flow_Dir[1] << endl;
         }
 
         else {
@@ -9591,9 +9590,9 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
       Kappa_b = FluidModel->GetdPde_rho() / Density_b;
       Chi_b = FluidModel->GetdPdrho_e() - Kappa_b * StaticEnergy_b;
 
-      //cout << Density_i << " " << Velocity_i[0] << " " << Velocity_i[1] << " " << Energy_i << " " << Pressure_i << endl;
-      //cout << Density_e << " " << Velocity_e[0] << " " << Velocity_e[1] << " " << Energy_e << " " << Pressure_e << endl;
-      //cout << Density_b << " " << Velocity_b[0] << " " << Velocity_b[1] << " " << Energy_b << " " << Pressure_b << endl;
+      cout << "rho_i = " << Density_i << ", u_i = " << Velocity_i[0] << ", v_i = " << Velocity_i[1] << ", E_i = " << Energy_i << " " << Pressure_i << endl;
+      cout << "rho_e = " << Density_e << ", u_e = " << Velocity_e[0] << ", v_e = " << Velocity_e[1] << ", E_e = " << Energy_e << " " << Pressure_e << endl;
+      cout << "rho_b = " << Density_b << ", u_b = " << Velocity_b[0] << ", v_b = " << Velocity_b[1] << ", E_b = " << Energy_b << " " << Pressure_b << endl;
 
       /*--- Primitive variables, using the derived quantities ---*/
 	  V_boundary[0] = Temperature_b;
