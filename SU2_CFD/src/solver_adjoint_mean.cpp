@@ -4914,7 +4914,7 @@ void CAdjEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container, 
   ProjGridVel, *GridVel;
   su2double *V_inlet, *V_domain, *Normal, *Psi_domain, *Psi_inlet;
   unsigned long R, T, e, Enthalpy, denominator;
-  su2double v, *A, *B, *C, *D, *F, Vn, vsq;
+  su2double v, *A, *B, *C, *D, *F, Vn, vsq, Energy;
 
   unsigned short Kind_Inlet = config->GetKind_Inlet();
   bool implicit = (config->GetKind_TimeIntScheme_AdjFlow() == EULER_IMPLICIT);
@@ -4957,15 +4957,12 @@ void CAdjEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container, 
         UnitNormal[iDim] = Normal[iDim]/Area;
       
       /*--- Allocate the value at the inlet ---*/
-      
       V_inlet = solver_container[FLOW_SOL]->GetCharacPrimVar(val_marker, iVertex);
       
       /*--- Retrieve solution at the boundary node ---*/
-      
       V_domain = solver_container[FLOW_SOL]->node[iPoint]->GetPrimitive();
       
       /*--- Adjoint flow solution at the boundary ---*/
-      
       for (iVar = 0; iVar < nVar; iVar++)
         Psi_domain[iVar] = node[iPoint]->GetSolution(iVar);
       
@@ -4987,20 +4984,19 @@ void CAdjEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container, 
             for (iVar = 0; iVar < nVar; iVar++)
               Psi_inlet[iVar] = node[iPoint]->GetSolution(iVar);
 
-            /*--- Some terms needed for the adjoint BC ---*/
-            R = config->GetGas_ConstantND();
-            T = V_domain[0];   		// Temperature
-            e = V_domain[nDim+3];	// static energy
-			Enthalpy = solver_container[FLOW_SOL]->node[iPoint]->GetEnthalpy();
-
-//			cout << "R = " << R << ", T = " << T << ", (gamma-1)*e/R = " << Gamma_Minus_One*e/R << endl;
-
 			Vn = 0.0; vsq = 0.0;
   		  	for (iDim=0; iDim < nDim; iDim++){
   		  	    Velocity[iDim] = solver_container[FLOW_SOL]->node[iPoint]->GetVelocity(iDim);
   				Vn  += Velocity[iDim]*UnitNormal[iDim];
   				vsq += Velocity[iDim]*Velocity[iDim];
   	  		}
+
+            /*--- Some terms needed for the adjoint BC ---*/
+            R = config->GetGas_ConstantND();
+            T = V_domain[0];   		// Temperature
+			Enthalpy = solver_container[FLOW_SOL]->node[iPoint]->GetEnthalpy();
+			Energy   = Enthalpy - V_domain[nDim+1]/V_domain[nDim+2];
+            e        = Energy - 0.5*vsq;	// static energy
 
   		  	/*--- Initialize coefficients. ( for reference see Z.Belligoli's report) ---*/
   		    for (iDim=0; iDim < nDim; iDim++){
