@@ -4913,6 +4913,8 @@ void CAdjEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container, 
   su2double Velocity[3], bcn, phin, Area, UnitNormal[3],
   ProjGridVel, *GridVel;
   su2double *V_inlet, *V_domain, *Normal, *Psi_domain, *Psi_inlet;
+  unsigned long R, T, e, Enthalpy, denominator;
+  su2double v, *A, *B, *C, *D, *F, Vn, vsq;
 
   unsigned short Kind_Inlet = config->GetKind_Inlet();
   bool implicit = (config->GetKind_TimeIntScheme_AdjFlow() == EULER_IMPLICIT);
@@ -4925,6 +4927,11 @@ void CAdjEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container, 
   Normal = new su2double[nDim];
   Psi_domain = new su2double[nVar];
   Psi_inlet = new su2double[nVar];
+  A = new su2double[nDim];
+  B = new su2double[nDim];
+  C = new su2double[nDim];
+  D = new su2double[nDim];
+  F = new su2double[nDim];
 
   /*--- Loop over all the vertices on this boundary marker ---*/
   
@@ -4970,17 +4977,68 @@ void CAdjEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container, 
          those conservative values, compute the characteristic-based
          adjoint boundary condition. The boundary update to be applied
          depends on whether total conditions or mass flow are specified. ---*/
-        
+
         switch (Kind_Inlet) {
             
             /*--- Total properties have been specified at the inlet. ---*/
           case TOTAL_CONDITIONS:
             
-            /*--- Adjoint solution at the inlet. Set to zero for now
-             but should be replaced with derived expression for this type of
-             inlet. ---*/
+        	/*--- Retrieve current adjoint solution values at the boundary ---*/
             for (iVar = 0; iVar < nVar; iVar++)
-              Psi_inlet[iVar] = 0.0;
+              Psi_inlet[iVar] = node[iPoint]->GetSolution(iVar);
+
+            /*--- Some terms needed for the adjoint BC ---*/
+            R = config->GetGas_ConstantND();
+            T = V_domain[0];   		// Temperature
+            e = V_domain[nDim+3];	// static energy
+			Enthalpy = solver_container[FLOW_SOL]->node[iPoint]->GetEnthalpy();
+
+//			cout << "R = " << R << ", T = " << T << ", (gamma-1)*e/R = " << Gamma_Minus_One*e/R << endl;
+
+			Vn = 0.0; vsq = 0.0;
+  		  	for (iDim=0; iDim < nDim; iDim++){
+  		  	    Velocity[iDim] = solver_container[FLOW_SOL]->node[iPoint]->GetVelocity(iDim);
+  				Vn  += Velocity[iDim]*UnitNormal[iDim];
+  				vsq += Velocity[iDim]*Velocity[iDim];
+  	  		}
+
+  		  	/*--- Initialize coefficients. ( for reference see Z.Belligoli's report) ---*/
+  		    for (iDim=0; iDim < nDim; iDim++){
+  		    	B[iDim] = 0.0;
+  		    	C[iDim] = 0.0;
+  		    	if (nDim == 3){D[iDim] = 0.0;}
+  		    }
+
+  		    /*--- Assign values to coefficients ---*/
+  		  	B[0] = Vn; C[1] = Vn;
+			if (nDim == 3){	D[2] = Vn;}
+			for (iDim=0; iDim < nDim; iDim++){
+				A[iDim] = UnitNormal[iDim] - Velocity[iDim]*Vn/(Gamma*R*T);
+				B[iDim] += Velocity[0]*UnitNormal[iDim] - (Gamma_Minus_One*e)/(R*T)*Velocity[iDim]*UnitNormal[0] - Velocity[0]*Velocity[iDim]*Vn/(Gamma*R*T);
+				C[iDim] += Velocity[1]*UnitNormal[iDim] - (Gamma_Minus_One*e)/(R*T)*Velocity[iDim]*UnitNormal[1] - Velocity[1]*Velocity[iDim]*Vn/(Gamma*R*T);
+				if (nDim == 3){	D[iDim] += Velocity[2]*UnitNormal[iDim] - (Gamma_Minus_One*e)/(R*T)*Velocity[iDim]*UnitNormal[2] - Velocity[2]*Velocity[iDim]*Vn/(Gamma*R*T);}
+				F[iDim] = Enthalpy*UnitNormal[iDim] + Velocity[iDim]*Vn*(1-Gamma*e/(R*T)) - 0.5*Velocity[iDim]*Vn*vsq/(Gamma*R*T);
+			}
+
+			/*--- Impose values for Psi_rhov1, Psi_rhov2 (and Psi_rhov3 if 3D) ---*/
+
+            if (nDim == 2){
+            	denominator  = B[0]*C[1] - C[0]*B[1];
+            	Psi_inlet[1] = (C[0]*(A[1]*Psi_inlet[0] + F[1]*Psi_inlet[4]) - C[1]*(A[0]*Psi_inlet[0] + F[0]*Psi_inlet[4]))/denominator;
+            	Psi_inlet[1] = (-B[0]*(A[1]*Psi_inlet[0] + F[1]*Psi_inlet[4]) + B[1]*(A[0]*Psi_inlet[0] + F[0]*Psi_inlet[4]))/denominator;
+            }
+            else{
+            denominator  = (B[0]*C[1]*D[2] - B[0]*D[1]*C[2] - C[0]*B[1]*D[2] + C[0]*D[1]*B[2] + D[0]*B[1]*C[2] - D[0]*C[1]*B[2]);
+
+            Psi_inlet[1] = (-(A[0]*Psi_inlet[0] + F[0]*Psi_inlet[4])*(C[1]*D[2] - D[1]*C[2]) - (C[0]*D[1] - D[0]*C[1])*(A[2]*Psi_inlet[0] +
+            		       F[2]*Psi_inlet[4]) + (C[0]*D[2] - D[0]*C[2])*(A[1]*Psi_inlet[0] + F[1]*Psi_inlet[4]))/denominator;
+
+            Psi_inlet[2] = ((A[0]*Psi_inlet[0] + F[0]*Psi_inlet[4])*(B[1]*D[2] - D[1]*B[2]) + (B[0]*D[1] - D[0]*B[1])*(A[2]*Psi_inlet[0] +
+            		       F[2]*Psi_inlet[4]) - (B[0]*D[2] - D[0]*B[2])*(A[1]*Psi_inlet[0] + F[1]*Psi_inlet[4]))/denominator;
+
+            Psi_inlet[3] = (-(A[0]*Psi_inlet[0] + F[0]*Psi_inlet[4])*(B[1]*C[2] - C[1]*B[2]) - (B[0]*C[1] - C[0]*B[1])*(A[2]*Psi_inlet[0] +
+     		               F[2]*Psi_inlet[4]) + (B[0]*C[2] - C[0]*B[2])*(A[1]*Psi_inlet[0] + F[1]*Psi_inlet[4]))/denominator;
+            }
             
             break;
             
