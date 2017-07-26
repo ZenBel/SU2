@@ -4914,7 +4914,7 @@ void CAdjEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container, 
   ProjGridVel, *GridVel;
   su2double *V_inlet, *V_domain, *Normal, *Psi_domain, *Psi_inlet;
   unsigned long R, T, e, Enthalpy, denominator;
-  su2double v, *A, *B, *C, *D, *F, Vn, vsq, Energy;
+  su2double v, A, B, C, D, Velocity2, Energy, *FlowDir, Vel_Mag;
 
   unsigned short Kind_Inlet = config->GetKind_Inlet();
   bool implicit = (config->GetKind_TimeIntScheme_AdjFlow() == EULER_IMPLICIT);
@@ -4927,11 +4927,7 @@ void CAdjEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container, 
   Normal = new su2double[nDim];
   Psi_domain = new su2double[nVar];
   Psi_inlet = new su2double[nVar];
-  A = new su2double[nDim];
-  B = new su2double[nDim];
-  C = new su2double[nDim];
-  D = new su2double[nDim];
-  F = new su2double[nDim];
+  FlowDir = new su2double[nDim];
 
   /*--- Loop over all the vertices on this boundary marker ---*/
   
@@ -4984,57 +4980,45 @@ void CAdjEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container, 
             for (iVar = 0; iVar < nVar; iVar++)
               Psi_inlet[iVar] = node[iPoint]->GetSolution(iVar);
 
-			Vn = 0.0; vsq = 0.0;
+			Velocity2 = 0.0;
   		  	for (iDim=0; iDim < nDim; iDim++){
   		  	    Velocity[iDim] = solver_container[FLOW_SOL]->node[iPoint]->GetVelocity(iDim);
-  				Vn  += Velocity[iDim]*UnitNormal[iDim];
-  				vsq += Velocity[iDim]*Velocity[iDim];
+  				Velocity2 += Velocity[iDim]*Velocity[iDim];
   	  		}
 
-            /*--- Some terms needed for the adjoint BC ---*/
+  		  	Vel_Mag = sqrt(Velocity2);
+  		  	for (iDim=0; iDim < nDim; iDim++){
+  		  		FlowDir[iDim] = Velocity[iDim]/Vel_Mag;
+  		  	}
+
+  		  	/*--- Some terms needed for the adjoint BC ---*/
             R = config->GetGas_ConstantND();
             T = V_domain[0];   		// Temperature
 			Enthalpy = solver_container[FLOW_SOL]->node[iPoint]->GetEnthalpy();
 			Energy   = Enthalpy - V_domain[nDim+1]/V_domain[nDim+2];
-            e        = Energy - 0.5*vsq;	// static energy
+            e        = Energy - 0.5*Velocity2;	// static energy
 
-  		  	/*--- Initialize coefficients. ( for reference see Z.Belligoli's report) ---*/
-  		    for (iDim=0; iDim < nDim; iDim++){
-  		    	B[iDim] = 0.0;
-  		    	C[iDim] = 0.0;
-  		    	if (nDim == 3){D[iDim] = 0.0;}
-  		    }
+            /*--- Initialize coefficients of adjoint variables used as free variables. See Z.Belligoli report ---*/
+            A = 0;
+            B = Gamma*e*Vel_Mag*Gamma_Minus_One*UnitNormal[1];
+            D = 0;
+            denominator = -Gamma*e*Vel_Mag*Gamma_Minus_One*UnitNormal[0];
+            C = 0;
+            if (nDim ==3){C = Gamma*e*Vel_Mag*Gamma_Minus_One*UnitNormal[2];}
 
-  		    /*--- Assign values to coefficients ---*/
-  		  	B[0] = Vn; C[1] = Vn;
-			if (nDim == 3){	D[2] = Vn;}
-			for (iDim=0; iDim < nDim; iDim++){
-				A[iDim] = UnitNormal[iDim] - Velocity[iDim]*Vn/(Gamma*R*T);
-				B[iDim] += Velocity[0]*UnitNormal[iDim] - (Gamma_Minus_One*e)/(R*T)*Velocity[iDim]*UnitNormal[0] - Velocity[0]*Velocity[iDim]*Vn/(Gamma*R*T);
-				C[iDim] += Velocity[1]*UnitNormal[iDim] - (Gamma_Minus_One*e)/(R*T)*Velocity[iDim]*UnitNormal[1] - Velocity[1]*Velocity[iDim]*Vn/(Gamma*R*T);
-				if (nDim == 3){	D[iDim] += Velocity[2]*UnitNormal[iDim] - (Gamma_Minus_One*e)/(R*T)*Velocity[iDim]*UnitNormal[2] - Velocity[2]*Velocity[iDim]*Vn/(Gamma*R*T);}
-				F[iDim] = Enthalpy*UnitNormal[iDim] + Velocity[iDim]*Vn*(1-Gamma*e/(R*T)) - 0.5*Velocity[iDim]*Vn*vsq/(Gamma*R*T);
-			}
+  		    /*--- Assign values to coefficients. Note that (gamma-1)*e/R = T and could be used to simplify some terms ---*/
+            for (iDim=0; iDim < nDim; iDim++){
+            	A += (Velocity2 - Gamma*R*T)*FlowDir[iDim]*UnitNormal[iDim];
+            	B += Velocity[1]*(Velocity2 - 2*Gamma*R*T)*FlowDir[iDim]*UnitNormal[iDim];
+            	D += (-Gamma*R*T*(Enthalpy + Velocity2) + Velocity2*(0.5*Velocity2 + Gamma*e))*FlowDir[iDim]*UnitNormal[iDim];
+            	denominator += -Velocity[0]*(Velocity2 - 2*Gamma*R*T)*FlowDir[iDim]*UnitNormal[iDim];
+            	if(nDim == 3){
+            		C += Velocity[2]*(Velocity2 - 2*Gamma*R*T)*FlowDir[iDim]*UnitNormal[iDim];
+            	}
+            }
 
 			/*--- Impose values for Psi_rhov1, Psi_rhov2 (and Psi_rhov3 if 3D) ---*/
-
-            if (nDim == 2){
-            	denominator  = B[0]*C[1] - C[0]*B[1];
-            	Psi_inlet[1] = (C[0]*(A[1]*Psi_inlet[0] + F[1]*Psi_inlet[4]) - C[1]*(A[0]*Psi_inlet[0] + F[0]*Psi_inlet[4]))/denominator;
-            	Psi_inlet[1] = (-B[0]*(A[1]*Psi_inlet[0] + F[1]*Psi_inlet[4]) + B[1]*(A[0]*Psi_inlet[0] + F[0]*Psi_inlet[4]))/denominator;
-            }
-            else{
-            denominator  = (B[0]*C[1]*D[2] - B[0]*D[1]*C[2] - C[0]*B[1]*D[2] + C[0]*D[1]*B[2] + D[0]*B[1]*C[2] - D[0]*C[1]*B[2]);
-
-            Psi_inlet[1] = (-(A[0]*Psi_inlet[0] + F[0]*Psi_inlet[4])*(C[1]*D[2] - D[1]*C[2]) - (C[0]*D[1] - D[0]*C[1])*(A[2]*Psi_inlet[0] +
-            		       F[2]*Psi_inlet[4]) + (C[0]*D[2] - D[0]*C[2])*(A[1]*Psi_inlet[0] + F[1]*Psi_inlet[4]))/denominator;
-
-            Psi_inlet[2] = ((A[0]*Psi_inlet[0] + F[0]*Psi_inlet[4])*(B[1]*D[2] - D[1]*B[2]) + (B[0]*D[1] - D[0]*B[1])*(A[2]*Psi_inlet[0] +
-            		       F[2]*Psi_inlet[4]) - (B[0]*D[2] - D[0]*B[2])*(A[1]*Psi_inlet[0] + F[1]*Psi_inlet[4]))/denominator;
-
-            Psi_inlet[3] = (-(A[0]*Psi_inlet[0] + F[0]*Psi_inlet[4])*(B[1]*C[2] - C[1]*B[2]) - (B[0]*C[1] - C[0]*B[1])*(A[2]*Psi_inlet[0] +
-     		               F[2]*Psi_inlet[4]) + (B[0]*C[2] - C[0]*B[2])*(A[1]*Psi_inlet[0] + F[1]*Psi_inlet[4]))/denominator;
-            }
+            Psi_inlet[1] = (A*Psi_inlet[0] + B*Psi_inlet[2] + C*Psi_inlet[3] + D*Psi_inlet[4])/denominator;
             
             break;
             
