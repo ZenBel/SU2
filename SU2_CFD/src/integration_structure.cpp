@@ -106,7 +106,6 @@ void CIntegration::Space_Integration(CGeometry *geometry,
     solver_container[MainSolver]->PreprocessBC_Giles(geometry, config, numerics[CONV_BOUND_TERM], OUTFLOW);
   }
 
-
   /*--- Weak boundary conditions ---*/
   for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
     KindBC = config->GetMarker_All_KindBC(iMarker);
@@ -148,6 +147,9 @@ void CIntegration::Space_Integration(CGeometry *geometry,
       	else{
           solver_container[MainSolver]->BC_Riemann(geometry, solver_container, numerics[CONV_BOUND_TERM], numerics[VISC_BOUND_TERM], config, iMarker);
       	}
+      	break;
+      case NONUNIFORM_BOUNDARY:
+      	  solver_container[MainSolver]->BC_NonUniform(geometry, solver_container, numerics[CONV_BOUND_TERM], numerics[VISC_BOUND_TERM], config, iMarker);
       	break;
       case FAR_FIELD:
         solver_container[MainSolver]->BC_Far_Field(geometry, solver_container, numerics[CONV_BOUND_TERM], numerics[VISC_BOUND_TERM], config, iMarker);

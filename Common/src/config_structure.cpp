@@ -3806,6 +3806,12 @@ void CConfig::SetMarkers(unsigned short val_software) {
     iMarker_CfgFile++;
   }
 
+  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++) {
+    Marker_CfgFile_TagBound[iMarker_CfgFile] = Marker_NonUniform[iMarker_NonUniform];
+    Marker_CfgFile_KindBC[iMarker_CfgFile] = NONUNIFORM_BOUNDARY;
+    iMarker_CfgFile++;
+  }
+
   Engine_Power       = new su2double[nMarker_EngineInflow];
   Engine_Mach        = new su2double[nMarker_EngineInflow];
   Engine_Force       = new su2double[nMarker_EngineInflow];
@@ -4065,14 +4071,6 @@ void CConfig::SetMarkers(unsigned short val_software) {
     for(iMarker_PyCustom=0; iMarker_PyCustom < nMarker_PyCustom; iMarker_PyCustom++)
       if (Marker_CfgFile_TagBound[iMarker_CfgFile] == Marker_PyCustom[iMarker_PyCustom])
         Marker_CfgFile_PyCustom[iMarker_CfgFile] = YES;
-  }
-
-  /*--- Identification of Non-Uniform markers ----*/
-
-  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++) {
-    Marker_CfgFile_TagBound[iMarker_CfgFile] = Marker_NonUniform[iMarker_NonUniform];
-    Marker_CfgFile_KindBC[iMarker_CfgFile] = NONUNIFORM_BOUNDARY;
-    iMarker_CfgFile++;
   }
 
 }

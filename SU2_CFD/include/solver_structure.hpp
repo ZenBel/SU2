@@ -1013,6 +1013,19 @@ public:
   virtual void BC_TurboRiemann(CGeometry *geometry, CSolver **solver_container,
 	                            CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker);
 
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] conv_numerics - Description of the numerical method.
+   * \param[in] visc_numerics - Description of the numerical method.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] val_marker - Surface marker where the boundary condition is applied.
+   */
+  virtual void BC_NonUniform(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics,
+		  	  	  	  	     CNumerics *visc_numerics, CConfig *config, unsigned short val_marker);
+
   /*!
    * \brief It computes Fourier transformation for the needed quantities along the pitch for each span in turbomachinery analysis.
    * \param[in] geometry - Geometrical definition of the problem.
@@ -4062,6 +4075,7 @@ public:
    */
   virtual void SetDES_LengthScale(CSolver** solver, CGeometry *geometry, CConfig *config);
 
+
 };
 
 /*!
@@ -6549,6 +6563,18 @@ public:
 //  void SetBC_NonUniform(CGeometry *geometry, CConfig *config, unsigned short val_marker, string val_marker1);
 //  void SetBC_NonUniform_RBF(CGeometry *geometry, CConfig *config, unsigned short val_marker, string name_marker);
   void SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config, string name_marker);
+
+  /*!
+   * \brief Impose the boundary condition using characteristic recostruction.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] conv_numerics - Description of the numerical method.
+   * \param[in] visc_numerics - Description of the numerical method.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] val_marker - Surface marker where the boundary condition is applied.
+   */
+  void BC_NonUniform(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics,
+		             CNumerics *visc_numerics, CConfig *config,	unsigned short val_marker);
 
 
 };

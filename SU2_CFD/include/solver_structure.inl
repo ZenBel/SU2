@@ -727,9 +727,11 @@ inline void CSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
 
 inline void CSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, CNumerics *visc_numerics,
 										 CConfig *config, unsigned short val_marker) { }
+										 
+inline void CSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, 
+                                   CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) { }
 
-inline void CSolver::PreprocessBC_Giles(CGeometry *geometry, CConfig *config,
-																								CNumerics *conv_numerics,unsigned short marker_flag){}
+inline void CSolver::PreprocessBC_Giles(CGeometry *geometry, CConfig *config, CNumerics *conv_numerics,unsigned short marker_flag){}
 
 inline void CSolver::BC_Giles(CGeometry *geometry, CSolver **solver_container,
                             CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) { }
@@ -2181,3 +2183,4 @@ inline unsigned short CDiscAdjFEASolver::GetnDVFEA(void) { return nDV; }
 inline su2double CDiscAdjFEASolver::GetVal_EField(unsigned short iVal) { return EField[iVal]; }
 
 inline su2double CDiscAdjFEASolver::GetVal_DVFEA(unsigned short iVal) { return DV_Val[iVal]; }
+
