@@ -13003,9 +13003,526 @@ void CEulerSolver::SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config,
 	  }
     }
 
-//    geometry->SetBoundaryData(InputPoints, PointIn, InputVar1, InputVar2, InputVar3, InputVar4, InputVar5, InputVar6, BoundaryData );
+    config->SetBoundaryData(InputPoints, PointIn, InputVar1, InputVar2, InputVar3, InputVar4, InputVar5, InputVar6, BoundaryData );
 
 }
+
+//void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container,
+//    CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
+//
+//  unsigned short iDim, iVar, jVar, kVar;
+//  unsigned long iVertex, iPoint, Point_Normal;
+//  su2double P_Total, T_Total, *Flow_Dir, *Flow_Dir_norm, Area, UnitNormal[3];
+//  su2double *Velocity_b, Velocity2_b, Enthalpy_b, Energy_b, StaticEnergy_b, Density_b, Kappa_b, Chi_b, Pressure_b, Temperature_b;
+//  su2double *Velocity_e, Velocity2_e, Enthalpy_e, Entropy_e, Energy_e = 0.0, StaticEnergy_e, StaticEnthalpy_e, Density_e = 0.0, Pressure_e;
+//  su2double *Velocity_i, Velocity2_i, Enthalpy_i, Energy_i, StaticEnergy_i, Density_i, Kappa_i, Chi_i, Pressure_i, SoundSpeed_i;
+//  su2double ProjVelocity_i;
+//  su2double **P_Tensor, **invP_Tensor, *Lambda_i, **Jacobian_b, **DubDu, *dw, *u_e, *u_i, *u_b;
+//  su2double *gridVel;
+//  su2double *V_boundary, *V_domain, *S_boundary, *S_domain;
+//  su2double  *Coord, y_0, y_min, y_max, y_perio, yPitch, Physical_dt, Physical_t, t_perio, Period, Boundary_Vel;
+//  su2double VelMag_e;
+//
+//  bool implicit             = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
+//  bool grid_movement        = config->GetGrid_Movement();
+//  string Marker_Tag         = config->GetMarker_All_TagBound(val_marker);
+//  bool viscous              = config->GetViscous();
+//  bool gravity = (config->GetGravityForce());
+//  bool tkeNeeded = (((config->GetKind_Solver() == RANS )|| (config->GetKind_Solver() == DISC_ADJ_RANS)) &&
+//                    (config->GetKind_Turb_Model() == SST));
+//
+//  su2double *Normal, TangVelocity, NormalVelocity;
+//  Normal = new su2double[nDim];
+//  Velocity_i = new su2double[nDim];
+//  Velocity_b = new su2double[nDim];
+//  Velocity_e = new su2double[nDim];
+//  Flow_Dir    = new su2double[nDim];
+//  Flow_Dir_norm    = new su2double[nDim];
+//  Lambda_i = new su2double[nVar];
+//  u_i = new su2double[nVar];
+//  u_e = new su2double[nVar];
+//  u_b = new su2double[nVar];
+//  dw = new su2double[nVar];
+//
+//  S_boundary = new su2double[8];
+//
+//  P_Tensor = new su2double*[nVar];
+//  invP_Tensor = new su2double*[nVar];
+//  for (iVar = 0; iVar < nVar; iVar++)
+//  {
+//  	P_Tensor[iVar] = new su2double[nVar];
+//  	invP_Tensor[iVar] = new su2double[nVar];
+//  }
+//
+//  /*---Initialize the Non-Uniform boundary condition---*/
+////  SetBC_NonUniform_Direct(geometry, config, Marker_Tag);
+//
+//  /*--- Loop over all the vertices on this boundary marker ---*/
+//  for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
+//
+//	V_boundary = GetCharacPrimVar(val_marker, iVertex);
+//	iPoint = geometry->vertex[val_marker][iVertex]->GetNode();
+//	unsigned long PointID = geometry->node[iPoint]->GetGlobalIndex();
+//
+//  	/*--- Check if the node belongs to the domain (i.e., not a halo node) ---*/
+//  	if (geometry->node[iPoint]->GetDomain()) {
+//
+//	  /*--- Index of the closest interior node ---*/
+//	  Point_Normal = geometry->vertex[val_marker][iVertex]->GetNormal_Neighbor();
+//
+//	  /*--- Normal vector for this vertex (negate for outward convention) ---*/
+//	  geometry->vertex[val_marker][iVertex]->GetNormal(Normal);
+//	  for (iDim = 0; iDim < nDim; iDim++) Normal[iDim] = -Normal[iDim];
+//	  conv_numerics->SetNormal(Normal);
+//
+//	  /*--- Compute Unit Normal vector ---*/
+//	  Area = 0.0;
+//	  for (iDim = 0; iDim < nDim; iDim++) Area += Normal[iDim]*Normal[iDim];
+//	  Area = sqrt (Area);
+//
+//	  for (iDim = 0; iDim < nDim; iDim++)
+//		  UnitNormal[iDim] = Normal[iDim]/Area;
+//
+//	  /*--- Retrieve solution at this boundary node ---*/
+//	  /*--- Note: This is equal to the values at the internal state but it does
+//	   * not get used to keep a certain continuity with BC_Riemann from which
+//	   * it's derived ---*/
+//	  V_domain = node[iPoint]->GetPrimitive();
+//
+//	  /* --- Compute the internal state u_i --- */
+//	  Velocity2_i = 0;
+//	  for (iDim=0; iDim < nDim; iDim++){
+//			Velocity_i[iDim] = node[iPoint]->GetVelocity(iDim);
+//			Velocity2_i += Velocity_i[iDim]*Velocity_i[iDim];
+//	  }
+//
+//	  Density_i = node[iPoint]->GetDensity();
+//	  Energy_i = node[iPoint]->GetEnergy();
+//	  StaticEnergy_i = Energy_i - 0.5*Velocity2_i;
+//
+//	  FluidModel->SetTDState_rhoe(Density_i, StaticEnergy_i);
+//
+//	  Pressure_i = FluidModel->GetPressure();
+//	  Enthalpy_i = Energy_i + Pressure_i/Density_i;
+//
+//      SoundSpeed_i = FluidModel->GetSoundSpeed();
+//
+//	  Kappa_i = FluidModel->GetdPde_rho() / Density_i;
+//	  Chi_i = FluidModel->GetdPdrho_e() - Kappa_i * StaticEnergy_i;
+//
+//	  ProjVelocity_i = 0.0;
+//	  for (iDim = 0; iDim < nDim; iDim++)
+//		  ProjVelocity_i += Velocity_i[iDim]*UnitNormal[iDim];
+//
+////	  /*--- Retrive x, y coordinates of node ---*/
+////	  Coord = new su2double[3];
+////	  Coord[0] = geometry->node[iPoint]->GetCoord(nDim-2);
+////	  Coord[1] = geometry->node[iPoint]->GetCoord(nDim-1);
+////	  Coord[2] = 0.0;
+////	  if (nDim == 3) {Coord[2] = geometry->node[iPoint]->GetCoord(nDim);}
+//
+//      /*--- Build the external state u_e from boundary data and internal node ---*/
+//      if (ProjVelocity_i < 0.0) {
+//
+//		  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+//
+//			  P_Total = BoundaryData[PointID][0];
+//			  T_Total = BoundaryData[PointID][1];
+//			  Flow_Dir[0] = BoundaryData[PointID][3];
+//			  Flow_Dir[1] = BoundaryData[PointID][4];
+//			  Flow_Dir[2] = BoundaryData[PointID][5];
+//
+//			  /*--- Non-dim. the inputs if necessary. ---*/
+//			  P_Total /= config->GetPressure_Ref();
+//			  T_Total /= config->GetTemperature_Ref();
+//
+//			  /*--- Normalize flow direction components ---*/
+//			  su2double modFlow_Dir, modFlow_Dir2;
+//			  modFlow_Dir2 = 0.0;
+//			  for (iDim = 0; iDim < nDim; iDim++){
+//				  modFlow_Dir2 += Flow_Dir[iDim]*Flow_Dir[iDim];
+//			  }
+//			  modFlow_Dir = sqrt(modFlow_Dir2);
+//
+//			  for (iDim = 0; iDim < nDim; iDim++){
+//				  Flow_Dir_norm[iDim] = Flow_Dir[iDim]/modFlow_Dir;
+//			  }
+//
+////			  cout << "PointID: " << PointID << ", p = " << P_Total <<", T = " << T_Total << ", fx = " << Flow_Dir[0] << ", fy = " << Flow_Dir[1] << ", fz = " << Flow_Dir[2] << endl;
+//
+//			  /* --- Computes the total state --- */
+//			  FluidModel->SetTDState_PT(P_Total, T_Total);
+//			  Enthalpy_e = FluidModel->GetStaticEnergy()+ FluidModel->GetPressure()/FluidModel->GetDensity(); // H = T_tot*R*Gamma/Gamma_Minus_One
+//			  Entropy_e = FluidModel->GetEntropy();
+//
+//			  /* --- Compute the boundary state u_e --- */
+//			  Velocity2_e = Velocity2_i;
+//			  VelMag_e    = sqrt(Velocity2_e);
+// 			  for (iDim = 0; iDim < nDim; iDim++){
+//				  Velocity_e[iDim] = VelMag_e*Flow_Dir_norm[iDim];
+//			  }
+//
+//			  StaticEnthalpy_e = Enthalpy_e - 0.5 * Velocity2_e;
+//			  FluidModel->SetTDState_hs(StaticEnthalpy_e, Entropy_e);
+//			  Density_e = FluidModel->GetDensity();
+//			  StaticEnergy_e = FluidModel->GetStaticEnergy();
+//			  Energy_e = StaticEnergy_e + 0.5 * Velocity2_e;
+//			  if (tkeNeeded) Energy_e += GetTke_Inf();
+//
+//			  Pressure_e = FluidModel->GetPressure();
+//
+//		  }
+//
+//		  else if (config->GetKind_Data_NonUniform(Marker_Tag) == DENSITY_VELOCITY){
+//
+//			  Density_e = BoundaryData[PointID][0];
+//			  VelMag_e = BoundaryData[PointID][1];
+//			  Flow_Dir[0] = BoundaryData[PointID][3];
+//			  Flow_Dir[1] = BoundaryData[PointID][4];
+//			  Flow_Dir[2] = BoundaryData[PointID][5];
+//
+//			  /*--- Non-dim. the inputs if necessary. ---*/
+//			  Density_e /= config->GetDensity_Ref();
+//			  VelMag_e /= config->GetVelocity_Ref();
+//
+//			  /*--- Normalize flow direction components ---*/
+//			  su2double modFlow_Dir, modFlow_Dir2;
+//			  modFlow_Dir2 = 0.0;
+//			  for (iDim = 0; iDim < nDim; iDim++){
+//				  modFlow_Dir2 += Flow_Dir[iDim]*Flow_Dir[iDim];
+//			  }
+//			  modFlow_Dir = sqrt(modFlow_Dir2);
+//
+//			  for (iDim = 0; iDim < nDim; iDim++){
+//				  Flow_Dir_norm[iDim] = Flow_Dir[iDim]/modFlow_Dir;
+//			  }
+//
+//			  Energy_e = Energy_i;
+//			  Velocity2_e = 0;
+//			  for (iDim = 0; iDim < nDim; iDim++){
+//				  Velocity_e[iDim] = VelMag_e*Flow_Dir_norm[iDim];
+//				  Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
+//			  }
+//
+//			  StaticEnergy_e = Energy_i - 0.5*Velocity2_e;
+//			  //cout << Energy_e << ", " << 0.5*(Velocity_e[0]*Velocity_e[0] + Velocity_e[1]*Velocity_e[1]) << ", "<< StaticEnergy_e <<endl;
+//
+//			  FluidModel->SetTDState_rhoe(Density_e, StaticEnergy_e);
+//			  Pressure_e = FluidModel->GetPressure();
+//		  }
+//        }
+//
+//        else if (ProjVelocity_i > 0.0) {
+//
+//          /*--- Retrieve the staic pressure for this boundary. ---*/
+//          Pressure_e = BoundaryData[PointID][2];
+//          Pressure_e /= config->GetPressure_Ref();
+//          Density_e = Density_i;
+//
+//          /* --- Compute the boundary state u_e --- */
+//          FluidModel->SetTDState_Prho(Pressure_e, Density_e);
+//          Velocity2_e = 0.0;
+//          for (iDim = 0; iDim < nDim; iDim++) {
+//            Velocity_e[iDim] = Velocity_i[iDim];
+//            Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
+//          }
+//          Energy_e = FluidModel->GetStaticEnergy() + 0.5*Velocity2_e;
+//
+//          /*--- Setting other quantities possibly needed for sensitivity computation ---*/
+//          VelMag_e = sqrt(Velocity2_e);
+//          for (iDim = 0; iDim < nDim; iDim++) {
+//            Flow_Dir_norm[iDim] = Velocity_e[iDim]/VelMag_e;
+//            Flow_Dir[iDim] = Flow_Dir_norm[iDim];		// only for the OUTLET case //
+//          }
+//        }
+//
+//        else {
+//
+//        	/*--- Set boundary state equal to internal state ---*/
+//        	ProjVelocity_i = 0.0;
+//        	Pressure_e = Pressure_i;
+//			Density_e = Density_i;
+//			Velocity2_e = 0.0;
+//			for (iDim = 0; iDim < nDim; iDim++) {
+//			  Velocity_e[iDim] = Velocity_i[iDim];
+//			  Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
+//			}
+//			Energy_e = Energy_i;
+//			StaticEnergy_e = StaticEnergy_i;
+//			Enthalpy_e = Enthalpy_i;
+//
+//			//TODO Setting quantities possibly needed for optimization
+//        }
+//
+//      /*---Storing the values of the external state (to be used in solver_adjoint_mean.cpp) ---*/
+//	  node[iPoint]->SetDensity_e(Density_e);
+//	  node[iPoint]->SetEnergy_e(Energy_e);
+//	  node[iPoint]->SetVelMag_e(VelMag_e);
+//	  node[iPoint]->SetFlowDirX_e(Flow_Dir[0]);
+//	  node[iPoint]->SetFlowDirY_e(Flow_Dir[1]);
+//	  node[iPoint]->SetFlowDirZ_e(Flow_Dir[2]);
+//	  node[iPoint]->SetPressure_e(Pressure_e);
+//
+//      /*--- Compute P (matrix of right eigenvectors) ---*/
+//      conv_numerics->GetPMatrix(&Density_i, Velocity_i, &SoundSpeed_i, &Enthalpy_i, &Chi_i, &Kappa_i, UnitNormal, P_Tensor);
+//
+//      /*--- Compute inverse P (matrix of left eigenvectors)---*/
+//      conv_numerics->GetPMatrix_inv(invP_Tensor, &Density_i, Velocity_i, &SoundSpeed_i, &Chi_i, &Kappa_i, UnitNormal);
+//
+//      /*--- eigenvalues contribution due to grid motion ---*/
+//      if (grid_movement){
+//        gridVel = geometry->node[iPoint]->GetGridVel();
+//
+//        su2double ProjGridVel = 0.0;
+//        for (iDim = 0; iDim < nDim; iDim++)
+//          ProjGridVel   += gridVel[iDim]*UnitNormal[iDim];
+//        ProjVelocity_i -= ProjGridVel;
+//      }
+//
+//      /*--- Flow eigenvalues ---*/
+//      for (iDim = 0; iDim < nDim; iDim++)
+//        Lambda_i[iDim] = ProjVelocity_i;
+//      Lambda_i[nVar-2] = ProjVelocity_i + SoundSpeed_i;
+//      Lambda_i[nVar-1] = ProjVelocity_i - SoundSpeed_i;
+//
+//      /* --- Compute the boundary state u_e --- */
+//      u_e[0] = Density_e;
+//      for (iDim = 0; iDim < nDim; iDim++)
+//        u_e[iDim+1] = Velocity_e[iDim]*Density_e;
+//      u_e[nVar-1] = Energy_e*Density_e;
+//
+//      /* --- Compute the boundary state u_i --- */
+//      u_i[0] = Density_i;
+//      for (iDim = 0; iDim < nDim; iDim++)
+//        u_i[iDim+1] = Velocity_i[iDim]*Density_i;
+//      u_i[nVar-1] = Energy_i*Density_i;
+//
+//      /*--- Compute the characteristic jumps ---*/
+//      for (iVar = 0; iVar < nVar; iVar++)
+//      {
+//        dw[iVar] = 0;
+//        for (jVar = 0; jVar < nVar; jVar++)
+//          dw[iVar] += invP_Tensor[iVar][jVar] * (u_e[jVar] - u_i[jVar]);
+//      }
+//
+//      /*--- Compute the boundary state u_b using characteristics ---*/
+//      for (iVar = 0; iVar < nVar; iVar++){
+//        u_b[iVar] = u_i[iVar];
+//        for (jVar = 0; jVar < nVar; jVar++){
+//        	if (Lambda_i[jVar] < 0){
+//        		u_b[iVar] += P_Tensor[iVar][jVar]*dw[jVar];
+//          }
+//        }
+//      }
+//
+//      /*--- Compute the thermodynamic state in u_b ---*/
+//      Density_b = u_b[0];
+//      Velocity2_b = 0;
+//      for (iDim = 0; iDim < nDim; iDim++)
+//      {
+//        Velocity_b[iDim] = u_b[iDim+1]/Density_b;
+//        Velocity2_b += Velocity_b[iDim]*Velocity_b[iDim];
+//      }
+//      Energy_b = u_b[nVar-1]/Density_b;
+//      StaticEnergy_b = Energy_b - 0.5*Velocity2_b;
+//      FluidModel->SetTDState_rhoe(Density_b, StaticEnergy_b);
+//      Pressure_b = FluidModel->GetPressure();
+//      Temperature_b = FluidModel->GetTemperature();
+//      Enthalpy_b = Energy_b + Pressure_b/Density_b;
+//      Kappa_b = FluidModel->GetdPde_rho() / Density_b;
+//      Chi_b = FluidModel->GetdPdrho_e() - Kappa_b * StaticEnergy_b;
+//
+////      cout << "rho_i = " << Density_i << ", rho_e = " << Density_e << ", rho_b = "<<  Density_b << endl;
+////      cout << "v1_i = " << Velocity_i[0] << ", v1_e = " << Velocity_e[0] << ", v1_b = "<<  Velocity_b[0] << endl;
+////      cout << "v2_i = " << Velocity_i[1] << ", v2_e = " << Velocity_e[1] << ", v2_b = "<<  Velocity_b[1] << endl;
+////      cout << "T_i = " << "n.a." << ", T_e = " << V_domain[0] << ", T_b = "<< Temperature_b << endl;
+////      cout << "p_i = " << Pressure_i << ", p_e = " << Pressure_e << ", p_b = "<<  Pressure_b << endl;
+////      cout << "E_i = " << Energy_i << ", E_e = " << Energy_e << ", E_b = "<<  Energy_b << endl;
+//
+//      /*--- Primitive variables, using the derived quantities ---*/
+//	  V_boundary[0] = Temperature_b;
+//	  for (iDim = 0; iDim < nDim; iDim++)
+//		V_boundary[iDim+1] = Velocity_b[iDim];
+//	  V_boundary[nDim+1] = Pressure_b;
+//	  V_boundary[nDim+2] = Density_b;
+//	  V_boundary[nDim+3] = Enthalpy_b;
+//
+//	  /*--- Set various quantities in the solver class ---*/
+//	  conv_numerics->SetPrimitive(V_domain, V_boundary);
+//
+//      /*--- Compute the residuals ---*/
+//      conv_numerics->GetInviscidProjFlux(&Density_b, Velocity_b, &Pressure_b, &Enthalpy_b, Normal, Residual);
+//
+//      /*--- Residual contribution due to grid motion ---*/
+//      if (grid_movement) {
+//        gridVel = geometry->node[iPoint]->GetGridVel();
+//        su2double projVelocity = 0.0;
+//
+//        for (iDim = 0; iDim < nDim; iDim++)
+//          projVelocity +=  gridVel[iDim]*Normal[iDim];
+//        for (iVar = 0; iVar < nVar; iVar++)
+//          Residual[iVar] -= projVelocity *(u_b[iVar]);
+//      }
+//
+//      if (implicit) {
+//
+//        Jacobian_b = new su2double*[nVar];
+//        DubDu = new su2double*[nVar];
+//        for (iVar = 0; iVar < nVar; iVar++)
+//        {
+//          Jacobian_b[iVar] = new su2double[nVar];
+//          DubDu[iVar] = new su2double[nVar];
+//        }
+//
+//        /*--- Initialize DubDu to unit matrix---*/
+//        for (iVar = 0; iVar < nVar; iVar++)
+//        {
+//          for (jVar = 0; jVar < nVar; jVar++)
+//            DubDu[iVar][jVar]= 0;
+//          DubDu[iVar][iVar]= 1;
+//        }
+//
+//        /*--- Compute DubDu -= RNL---*/
+//        for (iVar=0; iVar<nVar; iVar++)
+//        {
+//          for (jVar=0; jVar<nVar; jVar++)
+//          {
+//            for (kVar=0; kVar<nVar; kVar++)
+//            {
+//              if (Lambda_i[kVar]<0)
+//            	/* Derivative of the boundary state with respect to the internal state:
+//            	 * u_b = u_i + P*d(Psi)*inv(P)(u_e-u_i) --> Dub/Dui = 1 + P*d(Psi)*inv(P)(0-1) = 1 - P*d(Psi)*inv(P) */
+//                DubDu[iVar][jVar] -= P_Tensor[iVar][kVar] * invP_Tensor[kVar][jVar];
+//            }
+//          }
+//        }
+//
+//        /*--- Compute flux Jacobian in state b ---*/
+//        conv_numerics->GetInviscidProjJac(Velocity_b, &Enthalpy_b, &Chi_b, &Kappa_b, Normal, 1.0, Jacobian_b);
+//
+//        /*--- Jacobian contribution due to grid motion ---*/
+//        if (grid_movement)
+//        {
+//          gridVel = geometry->node[iPoint]->GetGridVel();
+//          su2double projVelocity = 0.0;
+//          for (iDim = 0; iDim < nDim; iDim++)
+//            projVelocity +=  gridVel[iDim]*Normal[iDim];
+//          for (iVar = 0; iVar < nVar; iVar++){
+//            Residual[iVar] -= projVelocity *(u_b[iVar]);
+//            Jacobian_b[iVar][iVar] -= projVelocity;
+//          }
+//
+//        }
+//
+//        /*--- initiate Jacobian_i to zero matrix ---*/
+//        for (iVar=0; iVar<nVar; iVar++)
+//          for (jVar=0; jVar<nVar; jVar++)
+//            Jacobian_i[iVar][jVar] = 0.0;
+//
+//        /*--- Compute numerical flux Jacobian at node i ---*/
+//        for (iVar=0; iVar<nVar; iVar++) {
+//          for (jVar=0; jVar<nVar; jVar++) {
+//            for (kVar=0; kVar<nVar; kVar++) {
+//              Jacobian_i[iVar][jVar] += Jacobian_b[iVar][kVar] * DubDu[kVar][jVar];
+//            }
+//          }
+//        }
+//
+//        for (iVar = 0; iVar < nVar; iVar++) {
+//          delete [] Jacobian_b[iVar];
+//          delete [] DubDu[iVar];
+//        }
+//        delete [] Jacobian_b;
+//        delete [] DubDu;
+//      }
+//
+//      /*--- Update residual value ---*/
+//      LinSysRes.AddBlock(iPoint, Residual);
+//
+//      /*--- Jacobian contribution for implicit integration ---*/
+//      if (implicit)
+//        Jacobian.AddBlock(iPoint, iPoint, Jacobian_i);
+//
+//      /*--- Roe Turkel preconditioning, set the value of beta ---*/
+//      if (config->GetKind_Upwind() == TURKEL)
+//        node[iPoint]->SetPreconditioner_Beta(conv_numerics->GetPrecond_Beta());
+//
+//      /*--- Viscous contribution ---*/
+//      if (viscous) {
+//
+//        /*--- Set laminar and eddy viscosity at the infinity ---*/
+//        V_boundary[nDim+5] = FluidModel->GetLaminarViscosity();
+//        V_boundary[nDim+6] = node[iPoint]->GetEddyViscosity();
+//        V_boundary[nDim+7] = FluidModel->GetThermalConductivity();
+//        V_boundary[nDim+8] = FluidModel->GetCp();
+//
+//        /*--- Set the normal vector and the coordinates ---*/
+//        visc_numerics->SetNormal(Normal);
+//        visc_numerics->SetCoord(geometry->node[iPoint]->GetCoord(), geometry->node[Point_Normal]->GetCoord());
+//
+//        /*--- Primitive variables, and gradient ---*/
+//        visc_numerics->SetPrimitive(V_domain, V_boundary);
+//        visc_numerics->SetPrimVarGradient(node[iPoint]->GetGradient_Primitive(), node[iPoint]->GetGradient_Primitive());
+//
+//        /*--- Secondary variables ---*/
+//        S_domain = node[iPoint]->GetSecondary();
+//
+//        /*--- Compute secondary thermodynamic properties (partial derivatives...) ---*/
+//        S_boundary[0]= FluidModel->GetdPdrho_e();
+//        S_boundary[1]= FluidModel->GetdPde_rho();
+//
+//        S_boundary[2]= FluidModel->GetdTdrho_e();
+//        S_boundary[3]= FluidModel->GetdTde_rho();
+//
+//        /*--- Compute secondary thermo-physical properties (partial derivatives...) ---*/
+//        S_boundary[4]= FluidModel->Getdmudrho_T();
+//        S_boundary[5]= FluidModel->GetdmudT_rho();
+//
+//        S_boundary[6]= FluidModel->Getdktdrho_T();
+//        S_boundary[7]= FluidModel->GetdktdT_rho();
+//
+//        visc_numerics->SetSecondary(S_domain, S_boundary);
+//
+//        /*--- Turbulent kinetic energy ---*/
+//        if (config->GetKind_Turb_Model() == SST)
+//          visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0), solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
+//
+//        /*--- Compute and update residual ---*/
+//        visc_numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
+//        LinSysRes.SubtractBlock(iPoint, Residual);
+//
+//        /*--- Jacobian contribution for implicit integration ---*/
+//        if (implicit)
+//          Jacobian.SubtractBlock(iPoint, iPoint, Jacobian_i);
+//
+//      }
+//
+//    }
+//  }
+//
+//  /*--- Free locally allocated memory ---*/
+//  delete [] Normal;
+//  delete [] Velocity_e;
+//  delete [] Velocity_b;
+//  delete [] Velocity_i;
+//
+//  delete [] S_boundary;
+//  delete [] Lambda_i;
+//  delete [] u_i;
+//  delete [] u_e;
+//  delete [] u_b;
+//  delete [] dw;
+//
+//
+//  for (iVar = 0; iVar < nVar; iVar++)
+//  {
+//    delete [] P_Tensor[iVar];
+//    delete [] invP_Tensor[iVar];
+//  }
+//  delete [] P_Tensor;
+//  delete [] invP_Tensor;
+//
+//}
 
 void CEulerSolver::SetResidual_DualTime(CGeometry *geometry, CSolver **solver_container, CConfig *config,
                                         unsigned short iRKStep, unsigned short iMesh, unsigned short RunTime_EqSystem) {

@@ -7517,3 +7517,22 @@ unsigned short CConfig::GetKind_Data_NonUniform(string val_marker) {
     if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
   return Kind_Data_NonUniform[iMarker_NonUniform];
 }
+
+void CConfig::SetBoundaryData(unsigned long inputPoints, vector<unsigned long> &PointIn, vector<su2double> &InputVar1,
+		vector<su2double> &InputVar2, vector<su2double> &InputVar3, vector<su2double> &InputVar4,
+		vector<su2double> &InputVar5, vector<su2double> &InputVar6, su2double **BoundaryData){
+
+	unsigned short iPos, jPos;
+	unsigned long iPoint;
+
+	for (iPos=0; iPos<inputPoints; iPos++){
+		iPoint = PointIn[iPos];
+		BoundaryData[iPoint][0] = InputVar1[iPos];
+		BoundaryData[iPoint][1] = InputVar2[iPos];
+		BoundaryData[iPoint][2] = InputVar3[iPos];
+		BoundaryData[iPoint][3] = InputVar4[iPos];
+		BoundaryData[iPoint][4] = InputVar5[iPos];
+		BoundaryData[iPoint][5] = InputVar6[iPos];
+	}
+
+}

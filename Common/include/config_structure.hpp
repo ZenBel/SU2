@@ -4214,6 +4214,13 @@ public:
   unsigned short GetKind_Data_NonUniform(string val_marker);
 
   /*!
+   * \brief Set the array BoundaryData with pointID and values from the Non-Uniform input file.
+   */
+  void SetBoundaryData(unsigned long inputPoints, vector<unsigned long> &PointIn, vector<su2double> &InputVar1,
+		vector<su2double> &InputVar2, vector<su2double> &InputVar3, vector<su2double> &InputVar4,
+		vector<su2double> &InputVar5, vector<su2double> &InputVar6, su2double **BoundaryData);
+
+  /*!
    * \brief number Turbomachinery performance option specified from config file.
    * \return number of bound.
    */
@@ -7879,6 +7886,7 @@ public:
    * \brief Get if AD preaccumulation should be performed.
    */
   bool GetAD_Preaccumulation(void);
+
 };
 
 #include "config_structure.inl"
