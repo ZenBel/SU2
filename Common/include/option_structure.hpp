@@ -868,6 +868,7 @@ enum BC_TYPE {
   DISP_DIR_BOUNDARY = 40,    /*!< \brief Boundary displacement definition. */
   DAMPER_BOUNDARY = 41,    /*!< \brief Damper. */
   SEND_RECEIVE = 99,		/*!< \brief Boundary send-receive definition. */
+  NONUNIFORM_BOUNDARY= 88,   /*!< \brief NonUniform Boundary definition. */
 };
 
 
@@ -988,6 +989,11 @@ static const map<string, RIEMANN_TYPE> Giles_Map = CCreateMap<string, RIEMANN_TY
 ("RADIAL_EQUILIBRIUM", RADIAL_EQUILIBRIUM)
 ("TOTAL_CONDITIONS_PT_1D", TOTAL_CONDITIONS_PT_1D)
 ("STATIC_PRESSURE_1D", STATIC_PRESSURE_1D);
+
+static const map<string, RIEMANN_TYPE> NonUniform_Map = CCreateMap<string, RIEMANN_TYPE>
+("TOTAL_CONDITIONS_PT", TOTAL_CONDITIONS_PT)
+("DENSITY_VELOCITY", DENSITY_VELOCITY)
+("STATIC_PRESSURE", STATIC_PRESSURE);
 
 /*!
  * \brief types of mixing process for averaging quantities at the boundaries.
@@ -3026,6 +3032,79 @@ public:
     this->var2 = NULL;
     this->flowdir = NULL;
     this->size = 0; // There is no default value for list
+  }
+};
+
+template <class Tenum>
+class COptionNonUniform : public COptionBase{
+
+protected:
+  map<string, Tenum> m;
+  string name; // identifier for the option
+  unsigned short & size;
+  string * & marker;
+  unsigned short* & field; // Reference to the field name
+  string * & filename;
+
+public:
+  COptionNonUniform(string option_field_name, unsigned short & nMarker_NonUniform, string* & Marker_NonUniform,
+  		unsigned short* & option_field, const map<string, Tenum> m, string* & NonUniform_filename) : size(nMarker_NonUniform),
+			marker(Marker_NonUniform), field(option_field), filename(NonUniform_filename) {
+    this->name = option_field_name;
+    this->m = m;
+  }
+  ~COptionNonUniform() {};
+
+  string SetValue(vector<string> option_value) {
+
+    unsigned short totalVals = option_value.size();
+    if ((totalVals == 1) && (option_value[0].compare("NONE") == 0)) {
+      this->size        = 0;
+      this->marker      = NULL;
+      this->field       = NULL;
+      this->filename	= NULL;
+      return "";
+    }
+
+    if (totalVals % 3 != 0) {
+      string newstring;
+      newstring.append(this->name);
+      newstring.append(": must have a number of entries divisible by 3");
+      this->size        = 0;
+      this->field       = NULL;
+      this->marker      = NULL;
+      this->filename	= NULL;
+      return newstring;
+    }
+
+    unsigned short nVals = totalVals / 3;
+    this->size        = nVals;
+    this->field       = new unsigned short[nVals];
+    this->marker      = new string[nVals];
+    this->filename	  = new string[nVals];
+
+    for (unsigned long i = 0; i < nVals; i++) {
+      this->marker[i].assign(option_value[3*i]);
+      this->filename[i].assign(option_value[3*i+2]);
+        // Check to see if the enum value is in the map
+    if (this->m.find(option_value[3*i + 1]) == m.end()) {
+      string str;
+      str.append(this->name);
+      str.append(": invalid option value ");
+      str.append(option_value[0]);
+      str.append(". Check current SU2 options in config_template.cfg.");
+      return str;
+    }
+      Tenum val = this->m[option_value[3*i + 1]];
+      this->field[i] = val;
+    }
+
+    return "";
+  }
+
+  void SetDefault() {
+    this->marker      = NULL;
+    this->size        = 0; // There is no default value for list
   }
 };
 

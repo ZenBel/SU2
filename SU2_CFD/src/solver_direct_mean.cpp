@@ -1480,6 +1480,15 @@ void CEulerSolver::InitTurboContainers(CGeometry *geometry, CConfig *config){
     }
   }
 
+  for (iMarker = 0; iMarker < nMarker; iMarker++) {
+	string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+	switch (config->GetMarker_All_KindBC(iMarker)) {
+      case NONUNIFORM_BOUNDARY:
+  	    SetBC_NonUniform_Direct(geometry, config, Marker_Tag);
+  	    break;
+	}
+  }
+
 
 }
 
@@ -12946,6 +12955,57 @@ void CEulerSolver::BC_Dirichlet(CGeometry *geometry, CSolver **solver_container,
                                 CConfig *config, unsigned short val_marker) { }
 
 void CEulerSolver::BC_Custom(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short val_marker) { }
+
+void CEulerSolver::SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config, string name_marker){
+
+	/*--- Initialize NonUniform Boundary condition from external input file ---*/
+	string text_line;
+	ifstream input_file;
+	string input_filename = config->GetNonUniform_file(name_marker);
+	unsigned long InputPoints, iPos, jPos;
+
+	input_file.open(input_filename.data(), ios::in);
+	if (input_file.fail()) {
+	cout << "There is no input file!! " << input_filename.data() << "."<< endl;
+	exit(EXIT_FAILURE);
+	}
+
+	su2double Var1In, Var2In, Var3In, Var4In, Var5In, Var6In;
+    vector<su2double> InputVar1, InputVar2, InputVar3, InputVar4, InputVar5, InputVar6;
+    vector<unsigned long> PointIn;
+	unsigned long PointID;
+
+	/*--- Read head of the file for allocation ---*/
+	getline (input_file, text_line);
+	istringstream point_line(text_line);
+	point_line >> InputPoints;
+
+	while (getline (input_file, text_line)) {
+		istringstream point_line(text_line);
+		point_line >> PointID >> Var1In >> Var2In >> Var3In >> Var4In >> Var5In >> Var6In ;
+		PointIn.push_back(PointID);
+		InputVar1.push_back(Var1In);
+		InputVar2.push_back(Var2In);
+		InputVar3.push_back(Var3In);
+		InputVar4.push_back(Var4In);
+		InputVar5.push_back(Var5In);
+		InputVar6.push_back(Var6In);
+		}
+	input_file.close();
+
+	unsigned long nPointDomain = geometry->GetGlobal_nPointDomain();
+
+    BoundaryData = new su2double*[nPointDomain];
+    for (iPos=0; iPos<nPointDomain; iPos++){BoundaryData[iPos] = new su2double[6];}
+    for (iPos=0; iPos<nPointDomain; iPos++){
+	  for (jPos=0; jPos<6; jPos++){
+	    BoundaryData[iPos][jPos] = 0.0;
+	  }
+    }
+
+//    geometry->SetBoundaryData(InputPoints, PointIn, InputVar1, InputVar2, InputVar3, InputVar4, InputVar5, InputVar6, BoundaryData );
+
+}
 
 void CEulerSolver::SetResidual_DualTime(CGeometry *geometry, CSolver **solver_container, CConfig *config,
                                         unsigned short iRKStep, unsigned short iMesh, unsigned short RunTime_EqSystem) {

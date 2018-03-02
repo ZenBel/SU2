@@ -322,6 +322,7 @@ void CConfig::SetPointersNull(void) {
   Marker_CfgFile_KindBC       = NULL;    Marker_All_SendRecv     = NULL;    Marker_All_PerBound   = NULL;
   Marker_ZoneInterface        = NULL;    Marker_All_ZoneInterface= NULL;    Marker_Riemann        = NULL;
   Marker_Fluid_InterfaceBound = NULL;    Marker_Damper           = NULL;
+  Marker_NonUniform			  = NULL;    NonUniform_filename   = NULL;
 
   
     /*--- Boundary Condition settings ---*/
@@ -496,6 +497,8 @@ void CConfig::SetPointersNull(void) {
   RampRotatingFrame_Coeff  = NULL;
   RampOutletPressure_Coeff = NULL;
   Kind_TurboMachinery      = NULL;
+
+  Kind_Data_NonUniform     = NULL;
 
   Marker_MixingPlaneInterface  = NULL;
   Marker_TurboBoundIn          = NULL;
@@ -968,6 +971,9 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addEnumOption("ENGINE_INFLOW_TYPE", Kind_Engine_Inflow, Engine_Inflow_Map, FAN_FACE_MACH);
   /* DESCRIPTION: Evaluate a problem with engines */
   addBoolOption("ENGINE", Engine, false);
+
+  /* DESCRIPTION: NonUniform boundary marker(s). */
+  addNonUniformOption("MARKER_NONUNIFORM", nMarker_NonUniform, Marker_NonUniform, Kind_Data_NonUniform, NonUniform_Map, NonUniform_filename);
 
 
   /*!\par CONFIG_CATEGORY: Time-marching \ingroup Config*/
@@ -3506,6 +3512,8 @@ void CConfig::SetMarkers(unsigned short val_software) {
   iMarker_ActDiskInlet, iMarker_ActDiskOutlet,
   iMarker_Turbomachinery, iMarker_MixingPlaneInterface;
 
+  unsigned short iMarker_NonUniform;
+
   int size = SINGLE_NODE;
   
 #ifdef HAVE_MPI
@@ -3523,7 +3531,7 @@ void CConfig::SetMarkers(unsigned short val_software) {
   nMarker_Supersonic_Inlet + nMarker_Supersonic_Outlet + nMarker_Displacement + nMarker_Load +
   nMarker_FlowLoad + nMarker_Custom + nMarker_Damper +
   nMarker_Clamped + nMarker_Load_Sine + nMarker_Load_Dir + nMarker_Disp_Dir +
-  nMarker_ActDiskInlet + nMarker_ActDiskOutlet;
+  nMarker_ActDiskInlet + nMarker_ActDiskOutlet + nMarker_NonUniform;
   
   /*--- Add the possible send/receive domains ---*/
 
@@ -4059,6 +4067,14 @@ void CConfig::SetMarkers(unsigned short val_software) {
         Marker_CfgFile_PyCustom[iMarker_CfgFile] = YES;
   }
 
+  /*--- Identification of Non-Uniform markers ----*/
+
+  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++) {
+    Marker_CfgFile_TagBound[iMarker_CfgFile] = Marker_NonUniform[iMarker_NonUniform];
+    Marker_CfgFile_KindBC[iMarker_CfgFile] = NONUNIFORM_BOUNDARY;
+    iMarker_CfgFile++;
+  }
+
 }
 
 void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
@@ -4074,6 +4090,8 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
   iMarker_Moving, iMarker_Supersonic_Inlet, iMarker_Supersonic_Outlet, iMarker_ActDiskInlet,
   iMarker_ActDiskOutlet, iMarker_MixingPlaneInterface;
   
+  unsigned short iMarker_NonUniform;
+
   
   /*--- WARNING: when compiling on Windows, ctime() is not available. Comment out
    the two lines below that use the dt variable. ---*/
@@ -5537,6 +5555,15 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
     }
   }
 
+  if (nMarker_NonUniform != 0) {
+      cout << "Non-Uniform boundary marker(s): ";
+      for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++) {
+        cout << Marker_NonUniform[iMarker_NonUniform] << " ("<< NonUniform_filename[iMarker_NonUniform] << ")";
+        if (iMarker_NonUniform < nMarker_NonUniform-1) cout << ", ";
+        else cout <<"."<< endl;
+    }
+  }
+
 }
 
 bool CConfig::TokenizeString(string & str, string & option_name,
@@ -6249,6 +6276,9 @@ CConfig::~CConfig(void) {
   if (nBlades != NULL) delete [] nBlades;
   if (FreeStreamTurboNormal != NULL) delete [] FreeStreamTurboNormal;
 
+  if (Kind_Data_NonUniform != NULL) delete [] Kind_Data_NonUniform;
+  if (Marker_NonUniform != NULL) delete [] Marker_NonUniform;
+  if (NonUniform_filename != NULL) delete [] NonUniform_filename;
  
 }
 
@@ -7472,4 +7502,18 @@ void CConfig::SetFreeStreamTurboNormal(su2double* turboNormal){
   FreeStreamTurboNormal[1] = turboNormal[1];
   FreeStreamTurboNormal[2] = 0.0;
 
+}
+
+string CConfig::GetNonUniform_file(string val_marker) {
+  unsigned short iMarker_NonUniform;
+  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
+    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
+  return NonUniform_filename[iMarker_NonUniform];
+}
+
+unsigned short CConfig::GetKind_Data_NonUniform(string val_marker) {
+  unsigned short iMarker_NonUniform;
+  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
+    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
+  return Kind_Data_NonUniform[iMarker_NonUniform];
 }

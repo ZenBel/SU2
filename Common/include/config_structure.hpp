@@ -226,6 +226,10 @@ private:
   nMarker_CfgFile;					/*!< \brief Total number of markers using the config file
                              (note that using parallel computation this number can be different
                              from nMarker_All). */
+
+  unsigned short nMarker_NonUniform;	 /*!< \brief Number of Non Uniform flow markers. */
+  unsigned short *Kind_Data_NonUniform;  /*!< \brief Kind of Non-Uniform data.*/
+
   string *Marker_Euler,			/*!< \brief Euler wall markers. */
   *Marker_FarField,				/*!< \brief Far field markers. */
   *Marker_Custom,
@@ -263,6 +267,8 @@ private:
   *Marker_FlowLoad,					/*!< \brief Flow Load markers. */
   *Marker_Neumann,					/*!< \brief Neumann flow markers. */
   *Marker_Internal,					/*!< \brief Neumann flow markers. */
+  *Marker_NonUniform,				/*!< \brief Non-Uniform flow markers. */
+  *NonUniform_filename,				/*!< \brief Non-Uniform flow markers input file name. */
   *Marker_All_TagBound;				/*!< \brief Global index for markers using grid information. */
   su2double *Dirichlet_Value;    /*!< \brief Specified Dirichlet value at the boundaries. */
   su2double *Exhaust_Temperature_Target;    /*!< \brief Specified total temperatures for nacelle boundaries. */
@@ -1236,6 +1242,14 @@ private:
     option_map.insert(pair<string, COptionBase *>(name, val));
   }
   
+  template <class Tenum>
+  void addNonUniformOption(const string name, unsigned short & nMarker_NonUniform, string * & Marker_NonUniform, unsigned short* & option_field, const map<string, Tenum> & enum_map, string * & NonUniform_filename) {
+    assert(option_map.find(name) == option_map.end());
+    all_options.insert(pair<string, bool>(name, true));
+    COptionBase* val = new COptionNonUniform<Tenum>(name, nMarker_NonUniform, Marker_NonUniform, option_field, enum_map, NonUniform_filename);
+    option_map.insert(pair<string, COptionBase *>(name, val));
+  }
+
 public:
   
   vector<string> fields; /*!< \brief Tags for the different fields in a restart file. */
@@ -4178,6 +4192,26 @@ public:
    * \return boolean.
    */
   bool GetBoolRiemann(void);
+
+  /*!
+   * \brief Verify if there is Non-Uniform Boundary Condition option specified from config file.
+   * \return boolean.
+   */
+  bool GetBoolNonUniformBC(void);
+
+  /*!
+   * \brief Get the input file name of the NonUniform boundary condition.
+   * \param[in] val_marker - Index corresponding to the NonUniform boundary.
+   * \return NonUniform_FileName
+   */
+  string GetNonUniform_file(string val_marker);
+
+  /*!
+   * \brief Get Kind Data of NonUniform boundary.
+   * \param[in] val_marker - Index corresponding to the NonUniform boundary.
+   * \return Kind data
+   */
+  unsigned short GetKind_Data_NonUniform(string val_marker);
 
   /*!
    * \brief number Turbomachinery performance option specified from config file.

@@ -4335,6 +4335,8 @@ protected:
   *Surface_HF_Visc,            /*!< \brief Total (integrated) heat flux for each monitored surface. */
   *Surface_MaxHF_Visc;         /*!< \brief Maximum heat flux for each monitored surface. */
   
+  su2double **BoundaryData;    /*!< \brief pointer to array storing the pointID and values of Non-Uniform boundary. */
+
   su2double *iPoint_UndLapl,  /*!< \brief Auxiliary variable for the undivided Laplacians. */
   *jPoint_UndLapl;      /*!< \brief Auxiliary variable for the undivided Laplacians. */
   su2double *SecondaryVar_i,  /*!< \brief Auxiliary vector for storing the solution at point i. */
@@ -6538,6 +6540,15 @@ public:
    * \param[in] inMarkerTP - turboperformance marker.
    */
   void SetNuOut(su2double value, unsigned short inMarkerTP, unsigned short valSpan);
+
+  /*!
+   * \brief Set parameters for Non Uniform Boundary Condition.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+//  void SetBC_NonUniform(CGeometry *geometry, CConfig *config, unsigned short val_marker, string val_marker1);
+//  void SetBC_NonUniform_RBF(CGeometry *geometry, CConfig *config, unsigned short val_marker, string name_marker);
+  void SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config, string name_marker);
 
 
 };
