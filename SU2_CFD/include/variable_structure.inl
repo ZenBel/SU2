@@ -845,6 +845,34 @@ inline void CEulerVariable::SetWindGustDer( su2double* val_WindGustDer) {
 
 inline su2double* CEulerVariable::GetWindGustDer() { return WindGustDer;}
 
+inline void CVariable::SetDensity_e(su2double val_density_e) { Density_e = val_density_e; }
+
+inline su2double CVariable::GetDensity_e(void) { return Density_e; }
+
+inline void CVariable::SetVelMag_e(su2double val_velmag_e) { VelMag_e = val_velmag_e; }
+
+inline su2double CVariable::GetVelMag_e(void) { return VelMag_e; }	
+
+inline void CVariable::SetEnergy_e(su2double val_energy_e) { Energy_e = val_energy_e; }
+
+inline su2double CVariable::GetEnergy_e(void) { return Energy_e; }
+
+inline void CVariable::SetFlowDirX_e(su2double val_flowdirx_e) { FlowDirX_e = val_flowdirx_e; }
+
+inline su2double CVariable::GetFlowDirX_e(void) { return FlowDirX_e; }
+
+inline void CVariable::SetFlowDirY_e(su2double val_flowdiry_e) { FlowDirY_e = val_flowdiry_e; }
+
+inline su2double CVariable::GetFlowDirY_e(void) { return FlowDirY_e; }
+
+inline void CVariable::SetFlowDirZ_e(su2double val_flowdirz_e) { FlowDirZ_e = val_flowdirz_e; }
+
+inline su2double CVariable::GetFlowDirZ_e(void) { return FlowDirZ_e; }
+
+inline void CVariable::SetPressure_e(su2double val_pressure_e) { Pressure_e = val_pressure_e; }
+
+inline su2double CVariable::GetPressure_e(void) { return Pressure_e; }
+
 inline su2double CNSVariable::GetEddyViscosity(void) { return Primitive[nDim+6]; }
 
 inline su2double CNSVariable::GetLaminarViscosity(void) { return Primitive[nDim+5]; }

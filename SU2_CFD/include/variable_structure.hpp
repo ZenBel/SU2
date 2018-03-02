@@ -92,6 +92,14 @@ protected:
                                                        have different number of nVar in the same problem. */
   su2double *Solution_Adj_Old;    /*!< \brief Solution of the problem. */
 
+  su2double Density_e, 					/*!<brief external state density for the NUBC*/
+  Energy_e, 							/*!<brief external state energy for the NUBC*/
+  VelMag_e, 							/*!<brief external state velocity magnitude for the NUBC*/
+  FlowDirX_e,							/*!<brief external state x- flow direction for the NUBC*/
+  FlowDirY_e,							/*!<brief external state y- flow direction for the NUBC*/
+  FlowDirZ_e,							/*!<brief external state z- flow direction for the NUBC*/
+  Pressure_e;
+
   
 public:
   
@@ -2363,6 +2371,90 @@ public:
   virtual su2double GetSolution_Old_Vel(unsigned short iVar);
 
   virtual su2double GetSolution_Old_Accel(unsigned short iVar);
+
+  /*!
+   * \brief Set the value of the external state density.
+   * \param[in] val_density_e - Value of Density_e in the NUBC.
+   */
+  void SetDensity_e(su2double val_density_e);
+
+  /*!
+   * \brief Get the value of the external state density.
+   * \return the value of Density_e in the NUBC.
+   */
+  su2double GetDensity_e(void);
+
+  /*!
+   * \brief Set the value of the external state energy.
+   * \param[in] val_energy_e - Value of Energy_e in the NUBC.
+   */
+  void SetEnergy_e(su2double val_energy_e);
+
+  /*!
+   * \brief Get the value of the external state energy.
+   * \return the value of Energy_e in the NUBC.
+   */
+  su2double GetEnergy_e(void);
+
+  /*!
+   * \brief Set the value of the external state velocity magnitude.
+   * \param[in] val_velmag_e - Value of velMag in the NUBC.
+   */
+  void SetVelMag_e(su2double val_velmag_e);
+
+  /*!
+   * \brief Get the value of the external state velocity magnitude.
+   * \return the value of velMag in the NUBC.
+   */
+  su2double GetVelMag_e(void);
+
+  /*!
+   * \brief Set the value of the external state flow direction x.
+   * \param[in] val_flowdirx_e - Value of Flow_Dir in the NUBC.
+   */
+  void SetFlowDirX_e(su2double val_flowdirx_e);
+
+  /*!
+   * \brief Get the value of the external state flow direction x.
+   * \return the value of Flow_Dir in the NUBC.
+   */
+  su2double GetFlowDirX_e(void);
+
+  /*!
+   * \brief Set the value of the external state flow direction y.
+   * \param[in] val_flowdiry_e - Value of Flow_Dir in the NUBC.
+   */
+  void SetFlowDirY_e(su2double val_flowdiry_e);
+
+  /*!
+   * \brief Get the value of the external state flow direction y.
+   * \return the value of Flow_Dir in the NUBC.
+   */
+  su2double GetFlowDirY_e(void);
+
+  /*!
+   * \brief Set the value of the external state flow direction z.
+   * \param[in] val_flowdirz_e - Value of Flow_Dir in the NUBC.
+   */
+  void SetFlowDirZ_e(su2double val_flowdirz_e);
+
+  /*!
+   * \brief Get the value of the external state flow direction z.
+   * \return the value of Flow_Dir in the NUBC.
+   */
+  su2double GetFlowDirZ_e(void);
+
+  /*!
+   * \brief Set the value of the external state pressure.
+   * \param[in] val_pressure_e - Value of Pressure_e in the NUBC.
+   */
+  void SetPressure_e(su2double val_pressure_e);
+
+  /*!
+   * \brief Get the value of the external state pressure.
+   * \return the value of Pressure_e in the NUBC.
+   */
+  su2double GetPressure_e(void);
 
 };
 
