@@ -672,7 +672,7 @@ unsigned long CSysSolve::Solve(CSysMatrix & Jacobian, CSysVector & LinSysRes, CS
   }
   
   /*--- Smooth the linear system. ---*/
-  
+
   else {
     switch (config->GetKind_Linear_Solver()) {
       case SMOOTHER_LUSGS:
@@ -699,7 +699,6 @@ unsigned long CSysSolve::Solve(CSysMatrix & Jacobian, CSysVector & LinSysRes, CS
         break;
     }
   }
-
 
   if(TapeActive) {
     /*--- Start recording if it was stopped for the linear solver ---*/

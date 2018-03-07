@@ -184,11 +184,10 @@ void CMultiGridIntegration::MultiGrid_Cycle(CGeometry ***geometry,
       /*--- Time integration, update solution using the old solution plus the solution increment ---*/
       
       Time_Integration(geometry[iZone][iMesh], solver_container[iZone][iMesh], config[iZone], iRKStep, RunTime_EqSystem, Iteration);
-      
+
       /*--- Send-Receive boundary conditions, and postprocessing ---*/
       
       solver_container[iZone][iMesh][SolContainer_Position]->Postprocessing(geometry[iZone][iMesh], solver_container[iZone][iMesh], config[iZone], iMesh);
-      
     }
     
   }
@@ -207,7 +206,7 @@ void CMultiGridIntegration::MultiGrid_Cycle(CGeometry ***geometry,
     SetRestricted_Solution(RunTime_EqSystem, solver_container[iZone][iMesh][SolContainer_Position], solver_container[iZone][iMesh+1][SolContainer_Position], geometry[iZone][iMesh], geometry[iZone][iMesh+1], config[iZone]);
     solver_container[iZone][iMesh+1][SolContainer_Position]->Preprocessing(geometry[iZone][iMesh+1], solver_container[iZone][iMesh+1], config[iZone], iMesh+1, NO_RK_ITER, RunTime_EqSystem, false);
     Space_Integration(geometry[iZone][iMesh+1], solver_container[iZone][iMesh+1], numerics_container[iZone][iMesh+1][SolContainer_Position], config[iZone], iMesh+1, NO_RK_ITER, RunTime_EqSystem);
-    
+
     /*--- Compute $P_(k+1) = I^(k+1)_k(r_k) - r_(k+1) ---*/
     
     SetForcing_Term(solver_container[iZone][iMesh][SolContainer_Position], solver_container[iZone][iMesh+1][SolContainer_Position], geometry[iZone][iMesh], geometry[iZone][iMesh+1], config[iZone], iMesh+1);

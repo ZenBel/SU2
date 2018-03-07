@@ -333,6 +333,65 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
     /*--- Here it is possible to register other variables as input that influence the flow solution
      * and thereby also the objective function. The adjoint values (i.e. the derivatives) can be
      * extracted in the ExtractAdjointVariables routine. ---*/
+
+  /*--- Register Riemann values as input ---*/
+  unsigned short iMarker;
+
+  if((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_FLOW_SYS && config->GetBoolRiemann())) {
+	  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+		  string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+
+		  if (config->GetKind_Data_Riemann(Marker_Tag) == TOTAL_CONDITIONS_PT){
+
+//			  Temperature = config->GetTotalTemperatureIn_BC();
+			  Temperature = config->GetRiemann_Var2(Marker_Tag);
+			  cout << "T = " << Temperature << endl;
+
+			  if (!reset){
+				AD::RegisterInput(Temperature);
+			  }
+
+//			  config->SetTotalTemperatureIn_BC(Temperature);
+			  config->SetRiemann_Var2(Temperature, Marker_Tag);
+
+		  }
+	  }
+  }
+
+  if((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_FLOW_SYS && config->GetBoolNonUniform())) {
+
+	  cout << "registering input discrete adjoint NUBC" << endl;
+
+	  T_tot = new su2double*[config->GetnMarkerNonUniform()];
+
+	  unsigned short iDim;
+	  unsigned long iVertex, iPoint, InputPoints;
+
+	  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+		  string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+
+			  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+
+				  InputPoints = config->GetNUBC_InputPoints(Marker_Tag);
+				  T_tot[iMarker] = new su2double[InputPoints];
+
+				  for (iPoint = 0; iPoint < InputPoints; iPoint++){
+
+					  T_tot[iMarker][iPoint] = config->GetNUBC_Var2(Marker_Tag, iPoint);
+//					  cout << "T_tot = " << T_tot << endl;
+
+					  if (!reset){
+						  AD::RegisterInput(T_tot[iMarker][iPoint]);
+					  }
+
+					  config->SetNUBC_Var2(T_tot[iMarker][iPoint], Marker_Tag, iPoint);
+
+				  }
+			  }
+		  }
+	  }
+
+
 }
 
 void CDiscAdjSolver::RegisterOutput(CGeometry *geometry, CConfig *config) {
@@ -540,6 +599,45 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
   }
 
   /*--- Extract here the adjoint values of everything else that is registered as input in RegisterInput. ---*/
+
+  if ((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_FLOW_SYS) && config->GetBoolRiemann()){
+    su2double Local_Sens_Temperature;
+
+    Local_Sens_Temperature = SU2_TYPE::GetDerivative(Temperature);
+
+#ifdef HAVE_MPI
+    SU2_MPI::Allreduce(&Local_Sens_Temperature,   &Total_Sens_Temp,   1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+#else
+    Total_Sens_Temp = Local_Sens_Temperature;
+#endif
+
+  }
+
+  if ((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_FLOW_SYS) && config->GetBoolNonUniform()){
+    su2double Local_Sens_Ttot;
+    unsigned short iMarker;
+    unsigned long InputPoints, iPoint;
+
+    Total_Sens_Ttot = new su2double*[config->GetnMarkerNonUniform()];
+
+    for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+    	  string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+
+    	  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+    		  InputPoints = config->GetNUBC_InputPoints(Marker_Tag);
+    		  Total_Sens_Ttot[iMarker] = new su2double[InputPoints];
+
+    		  for (iPoint = 0; iPoint < InputPoints; iPoint++){
+    			  Local_Sens_Ttot = SU2_TYPE::GetDerivative(T_tot[iMarker][iPoint]);
+    			  Total_Sens_Ttot[iMarker][iPoint] = Local_Sens_Ttot;
+
+    			  cout << "Sens_Ttot[" << iMarker << "][" << iPoint << "] = " << Total_Sens_Ttot[iMarker][iPoint] << endl;
+
+    		  }
+    	  }
+      }
+  }
 
 }
 

@@ -276,6 +276,8 @@ private:
   su2double *Inlet_Ttotal;    /*!< \brief Specified total temperatures for inlet boundaries. */
   su2double *Riemann_Var1, *Riemann_Var2;    /*!< \brief Specified values for Riemann boundary. */
   su2double **Riemann_FlowDir;  /*!< \brief Specified flow direction vector (unit vector) for Riemann boundaries. */
+  su2double **NonUniform_Var2;
+  unsigned long *NonUniform_InputPoints;
   su2double *Giles_Var1, *Giles_Var2, *RelaxFactorAverage, *RelaxFactorFourier;    /*!< \brief Specified values for Giles BC. */
   su2double **Giles_FlowDir;  /*!< \brief Specified flow direction vector (unit vector) for Giles BC. */
   su2double *Inlet_Ptotal;    /*!< \brief Specified total pressures for inlet boundaries. */
@@ -4170,6 +4172,13 @@ public:
   bool GetBoolTurbomachinery(void);
   
   /*!
+   * \brief Verify if there is Non-Uniform boundary option specified from config file.
+   * \return boolean.
+   */
+  bool GetBoolNonUniform(void);
+  unsigned short GetnMarkerNonUniform(void);
+
+  /*!
    * \brief number Turbomachinery blades computed using the pitch information.
    * \return nBlades.
    */
@@ -5950,7 +5959,14 @@ public:
    * \return The var2
    */
   su2double GetRiemann_Var2(string val_marker);
+  void SetRiemann_Var2(su2double newVar2, string val_marker) ;
   
+  su2double GetNUBC_Var2(string val_marker, unsigned short val_pos);
+  void SetNUBC_Var2(su2double newVar2, string val_marker, unsigned short val_pos);
+  void Initialize_NonUniform_Variables(unsigned long val_points);
+  void SetNUBC_InputPoints(unsigned long val_npoints, string val_marker);
+  unsigned long GetNUBC_InputPoints(string val_marker);
+
   /*!
    * \brief Get the Flowdir at Riemann boundary.
    * \param[in] val_marker - Index corresponding to the Riemann boundary.

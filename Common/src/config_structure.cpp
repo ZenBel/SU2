@@ -6867,6 +6867,49 @@ su2double CConfig::GetRiemann_Var2(string val_marker) {
   return Riemann_Var2[iMarker_Riemann];
 }
 
+void CConfig::SetRiemann_Var2(su2double newVar2, string val_marker) {
+  unsigned short iMarker_Riemann;
+  for (iMarker_Riemann = 0; iMarker_Riemann < nMarker_Riemann; iMarker_Riemann++)
+    if (Marker_Riemann[iMarker_Riemann] == val_marker) break;
+  Riemann_Var2[iMarker_Riemann] = newVar2;
+}
+
+su2double CConfig::GetNUBC_Var2(string val_marker, unsigned short val_pos) {
+  unsigned short iMarker_NonUniform;
+  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
+    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
+  return NonUniform_Var2[iMarker_NonUniform][val_pos];
+}
+
+void CConfig::SetNUBC_Var2(su2double newVar2, string val_marker, unsigned short val_pos) {
+  unsigned short iMarker_NonUniform;
+  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
+    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
+  NonUniform_Var2[iMarker_NonUniform][val_pos] = newVar2;
+}
+
+unsigned long CConfig::GetNUBC_InputPoints(string val_marker) {
+  unsigned short iMarker_NonUniform;
+  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
+    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
+  return NonUniform_InputPoints[iMarker_NonUniform];
+}
+
+void CConfig::SetNUBC_InputPoints(unsigned long val_npoints, string val_marker) {
+  unsigned short iMarker_NonUniform;
+  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
+    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
+  NonUniform_InputPoints[iMarker_NonUniform] = val_npoints;
+}
+
+void CConfig::Initialize_NonUniform_Variables(unsigned long val_points) {
+  NonUniform_Var2 = new su2double*[nMarker_NonUniform];
+  NonUniform_InputPoints = new unsigned long[nMarker_NonUniform];
+  unsigned short iMarker_NonUniform;
+  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
+	  NonUniform_Var2[iMarker_NonUniform] = new su2double[val_points]; //here there is a bug: val_points should not necessarily be the same for all markers
+}
+
 su2double* CConfig::GetRiemann_FlowDir(string val_marker) {
   unsigned short iMarker_Riemann;
   for (iMarker_Riemann = 0; iMarker_Riemann < nMarker_Riemann; iMarker_Riemann++)

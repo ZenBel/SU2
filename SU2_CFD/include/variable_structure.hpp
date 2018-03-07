@@ -100,6 +100,8 @@ protected:
   FlowDirZ_e,							/*!<brief external state z- flow direction for the NUBC*/
   Pressure_e;
 
+  su2double Ptot_nubc;
+
   
 public:
   
@@ -2455,6 +2457,10 @@ public:
    * \return the value of Pressure_e in the NUBC.
    */
   su2double GetPressure_e(void);
+
+  void SetPtot_nubc(su2double val_ptot_nubc);
+
+  su2double GetPtot_nubc(void);
 
 };
 

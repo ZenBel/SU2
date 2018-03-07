@@ -6363,7 +6363,7 @@ void CEulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solver
       LinSysSol[total_index] = 0.0;
     }
   }
-  
+
   /*--- Solve or smooth the linear system ---*/
   
   CSysSolve system;
@@ -6382,7 +6382,7 @@ void CEulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solver
       }
     }
   }
-  
+
   /*--- MPI solution ---*/
   
   Set_MPI_Solution(geometry, config);
@@ -13006,6 +13006,12 @@ void CEulerSolver::SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config,
 
     config->SetBoundaryData(InputPoints, PointIn, InputVar1, InputVar2, InputVar3, InputVar4, InputVar5, InputVar6, BoundaryData );
 
+    config->Initialize_NonUniform_Variables(InputPoints);
+    config->SetNUBC_InputPoints(InputPoints, name_marker);
+    for (iPos=0; iPos<InputPoints; iPos++){
+    	config->SetNUBC_Var2(InputVar2[iPos], name_marker, iPos);
+    }
+
 }
 
 void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container,
@@ -13057,6 +13063,9 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
   /*---Initialize the Non-Uniform boundary condition---*/
 //  SetBC_NonUniform_Direct(geometry, config, Marker_Tag);
+
+
+  unsigned short nubc_Pos = 0.0;
 
   /*--- Loop over all the vertices on this boundary marker ---*/
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
@@ -13128,10 +13137,12 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 		  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
 
 			  P_Total = BoundaryData[PointID][0];
-			  T_Total = BoundaryData[PointID][1];
+//			  T_Total = BoundaryData[PointID][1];
+			  T_Total = config->GetNUBC_Var2(Marker_Tag, nubc_Pos);
+//			  cout << "T_tot = " << T_Total << endl;
 			  Flow_Dir[0] = BoundaryData[PointID][3];
 			  Flow_Dir[1] = BoundaryData[PointID][4];
-			  Flow_Dir[2] = BoundaryData[PointID][5];
+			  if (nDim == 3){ Flow_Dir[2] = BoundaryData[PointID][5]; }
 
 			  /*--- Non-dim. the inputs if necessary. ---*/
 			  P_Total /= config->GetPressure_Ref();
@@ -13171,6 +13182,8 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 			  if (tkeNeeded) Energy_e += GetTke_Inf();
 
 			  Pressure_e = FluidModel->GetPressure();
+
+			  nubc_Pos += 1;
 
 		  }
 
@@ -13263,6 +13276,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 	  node[iPoint]->SetFlowDirY_e(Flow_Dir[1]);
 	  node[iPoint]->SetFlowDirZ_e(Flow_Dir[2]);
 	  node[iPoint]->SetPressure_e(Pressure_e);
+	  node[iPoint]->SetPtot_nubc(P_Total);
 
       /*--- Compute P (matrix of right eigenvectors) ---*/
       conv_numerics->GetPMatrix(&Density_i, Velocity_i, &SoundSpeed_i, &Enthalpy_i, &Chi_i, &Kappa_i, UnitNormal, P_Tensor);
@@ -13500,6 +13514,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
     }
   }
+
 
   /*--- Free locally allocated memory ---*/
   delete [] Normal;
