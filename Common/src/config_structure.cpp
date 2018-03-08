@@ -6874,14 +6874,14 @@ void CConfig::SetRiemann_Var2(su2double newVar2, string val_marker) {
   Riemann_Var2[iMarker_Riemann] = newVar2;
 }
 
-su2double CConfig::GetNUBC_Var2(string val_marker, unsigned short val_pos) {
+su2double CConfig::GetNUBC_Var2(string val_marker, unsigned long val_pos) {
   unsigned short iMarker_NonUniform;
   for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
     if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
   return NonUniform_Var2[iMarker_NonUniform][val_pos];
 }
 
-void CConfig::SetNUBC_Var2(su2double newVar2, string val_marker, unsigned short val_pos) {
+void CConfig::SetNUBC_Var2(su2double newVar2, string val_marker, unsigned long val_pos) {
   unsigned short iMarker_NonUniform;
   for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
     if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;

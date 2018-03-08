@@ -362,34 +362,32 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 
 	  cout << "registering input discrete adjoint NUBC" << endl;
 
-	  T_tot = new su2double*[config->GetnMarkerNonUniform()];
+	  T_tot = new su2double[geometry->GetGlobal_nPointDomain()]; // could be initialized somewhere else
 
-	  unsigned short iDim;
-	  unsigned long iVertex, iPoint, InputPoints;
+	  unsigned long iVertex, iPoint, GlobalIndex;
 
 	  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
 		  string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+		  if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY){
+			  for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
+				  iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+				  GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+			      if (geometry->node[iPoint]->GetDomain()) {
+					  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+							  T_tot[GlobalIndex] = config->GetNUBC_Var2(Marker_Tag, GlobalIndex);
 
-			  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+							  if (!reset){
+								  AD::RegisterInput(T_tot[GlobalIndex]);
+							  }
 
-				  InputPoints = config->GetNUBC_InputPoints(Marker_Tag);
-				  T_tot[iMarker] = new su2double[InputPoints];
-
-				  for (iPoint = 0; iPoint < InputPoints; iPoint++){
-
-					  T_tot[iMarker][iPoint] = config->GetNUBC_Var2(Marker_Tag, iPoint);
-//					  cout << "T_tot = " << T_tot << endl;
-
-					  if (!reset){
-						  AD::RegisterInput(T_tot[iMarker][iPoint]);
+							  config->SetNUBC_Var2(T_tot[GlobalIndex], Marker_Tag, GlobalIndex);
 					  }
-
-					  config->SetNUBC_Var2(T_tot[iMarker][iPoint], Marker_Tag, iPoint);
-
-				  }
+					  else{/*TODO add other GetKind_Data_NonUniform(Marker_Tag) options*/}
+			      }
 			  }
 		  }
 	  }
+  }
 
 
 }
@@ -615,28 +613,45 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
   }
 
   if ((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_FLOW_SYS) && config->GetBoolNonUniform()){
-    su2double Local_Sens_Ttot;
-    unsigned short iMarker;
-    unsigned long InputPoints, iPoint;
 
-    Total_Sens_Ttot = new su2double*[config->GetnMarkerNonUniform()];
+	Total_Sens_Ttot = new su2double[geometry->GetGlobal_nPointDomain()]; // could be initialized somewhere else
+	su2double *Local_Sens_Ttot;
+	Local_Sens_Ttot = new su2double[geometry->GetGlobal_nPointDomain()];
+	cout << "nPoints = " << nPoint << endl;
+
+    unsigned short iMarker;
+    unsigned long iPoint, iVertex, GlobalIndex;
 
     for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
-    	  string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
-
-    	  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
-    		  InputPoints = config->GetNUBC_InputPoints(Marker_Tag);
-    		  Total_Sens_Ttot[iMarker] = new su2double[InputPoints];
-
-    		  for (iPoint = 0; iPoint < InputPoints; iPoint++){
-    			  Local_Sens_Ttot = SU2_TYPE::GetDerivative(T_tot[iMarker][iPoint]);
-    			  Total_Sens_Ttot[iMarker][iPoint] = Local_Sens_Ttot;
-
-    			  cout << "Sens_Ttot[" << iMarker << "][" << iPoint << "] = " << Total_Sens_Ttot[iMarker][iPoint] << endl;
-
-    		  }
-    	  }
+      string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+      if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY){
+		for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
+		  iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+		  GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+		  if (geometry->node[iPoint]->GetDomain()) {
+			if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+			  Local_Sens_Ttot[GlobalIndex] = SU2_TYPE::GetDerivative(T_tot[GlobalIndex]);
+			}
+		  }
+		}
       }
+    }
+
+#ifdef HAVE_MPI
+    SU2_MPI::Allreduce(Local_Sens_Ttot, Total_Sens_Ttot, geometry->GetGlobal_nPointDomain(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#else
+    Total_Sens_Ttot = Local_Sens_Ttot;
+#endif
+
+//    if (rank == MASTER_NODE) {
+//    	for (iPoint = 0; iPoint<geometry->GetGlobal_nPointDomain(); iPoint++){
+//    		if (Total_Sens_Ttot[iPoint] != 0.0)
+//    			cout << "Sens_Ttot[" << iPoint << "] = " << Total_Sens_Ttot[iPoint] << endl;
+//    	}
+//    }
+
+
+
   }
 
 }

@@ -5961,8 +5961,8 @@ public:
   su2double GetRiemann_Var2(string val_marker);
   void SetRiemann_Var2(su2double newVar2, string val_marker) ;
   
-  su2double GetNUBC_Var2(string val_marker, unsigned short val_pos);
-  void SetNUBC_Var2(su2double newVar2, string val_marker, unsigned short val_pos);
+  su2double GetNUBC_Var2(string val_marker, unsigned long val_pos);
+  void SetNUBC_Var2(su2double newVar2, string val_marker, unsigned long val_pos);
   void Initialize_NonUniform_Variables(unsigned long val_points);
   void SetNUBC_InputPoints(unsigned long val_npoints, string val_marker);
   unsigned long GetNUBC_InputPoints(string val_marker);

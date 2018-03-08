@@ -13006,11 +13006,18 @@ void CEulerSolver::SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config,
 
     config->SetBoundaryData(InputPoints, PointIn, InputVar1, InputVar2, InputVar3, InputVar4, InputVar5, InputVar6, BoundaryData );
 
-    config->Initialize_NonUniform_Variables(InputPoints);
-    config->SetNUBC_InputPoints(InputPoints, name_marker);
-    for (iPos=0; iPos<InputPoints; iPos++){
-    	config->SetNUBC_Var2(InputVar2[iPos], name_marker, iPos);
+
+
+    unsigned short iVertex, iPoint;
+    unsigned long GlobalIndex;
+
+    config->Initialize_NonUniform_Variables(nPointDomain); //initialize array with as many points as the total number of points in the domain
+
+    for (iPos=0; iPos < InputPoints; iPos++){
+	  GlobalIndex = PointIn[iPos];
+	  config->SetNUBC_Var2(InputVar2[iPos], name_marker, GlobalIndex);
     }
+
 
 }
 
@@ -13064,8 +13071,6 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
   /*---Initialize the Non-Uniform boundary condition---*/
 //  SetBC_NonUniform_Direct(geometry, config, Marker_Tag);
 
-
-  unsigned short nubc_Pos = 0.0;
 
   /*--- Loop over all the vertices on this boundary marker ---*/
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
@@ -13138,7 +13143,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
 			  P_Total = BoundaryData[PointID][0];
 //			  T_Total = BoundaryData[PointID][1];
-			  T_Total = config->GetNUBC_Var2(Marker_Tag, nubc_Pos);
+			  T_Total = config->GetNUBC_Var2(Marker_Tag, PointID);
 //			  cout << "T_tot = " << T_Total << endl;
 			  Flow_Dir[0] = BoundaryData[PointID][3];
 			  Flow_Dir[1] = BoundaryData[PointID][4];
@@ -13182,8 +13187,6 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 			  if (tkeNeeded) Energy_e += GetTke_Inf();
 
 			  Pressure_e = FluidModel->GetPressure();
-
-			  nubc_Pos += 1;
 
 		  }
 
