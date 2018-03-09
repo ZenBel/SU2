@@ -137,6 +137,13 @@ CDiscAdjSolver::CDiscAdjSolver(CGeometry *geometry, CConfig *config, CSolver *di
   for (iPoint = 0; iPoint < nPoint; iPoint++)
     node[iPoint] = new CDiscAdjVariable(Solution, nDim, nVar, config);
 
+  Total_Sens_Ptot = new su2double[geometry->GetGlobal_nPointDomain()];
+  Total_Sens_Ttot = new su2double[geometry->GetGlobal_nPointDomain()];
+  Total_Sens_FlowX = new su2double[geometry->GetGlobal_nPointDomain()];
+  Total_Sens_FlowY = new su2double[geometry->GetGlobal_nPointDomain()];
+  if (nDim == 3 ) Total_Sens_FlowZ = new su2double[geometry->GetGlobal_nPointDomain()];
+  Total_Sens_Pstatic = new su2double[geometry->GetGlobal_nPointDomain()];
+
 }
 
 CDiscAdjSolver::~CDiscAdjSolver(void) { 
@@ -362,7 +369,12 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 
 	  cout << "registering input discrete adjoint NUBC" << endl;
 
-	  T_tot = new su2double[geometry->GetGlobal_nPointDomain()]; // could be initialized somewhere else
+	  P_tot = new su2double[geometry->GetGlobal_nPointDomain()]; // Thes quantities could be initialized somewhere else
+	  T_tot = new su2double[geometry->GetGlobal_nPointDomain()];
+	  Flow_x = new su2double[geometry->GetGlobal_nPointDomain()];
+	  Flow_y = new su2double[geometry->GetGlobal_nPointDomain()];
+	  Flow_z = new su2double[geometry->GetGlobal_nPointDomain()];
+	  P_static = new su2double[geometry->GetGlobal_nPointDomain()];
 
 	  unsigned long iVertex, iPoint, GlobalIndex;
 
@@ -374,13 +386,25 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 				  GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 			      if (geometry->node[iPoint]->GetDomain()) {
 					  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
-							  T_tot[GlobalIndex] = config->GetNUBC_Var2(Marker_Tag, GlobalIndex);
+							  P_tot[GlobalIndex] = config->GetNUBC_Var1(GlobalIndex);
+							  T_tot[GlobalIndex] = config->GetNUBC_Var2(GlobalIndex);
+							  Flow_x[GlobalIndex] = config->GetNUBC_Var4(GlobalIndex);
+							  Flow_y[GlobalIndex] = config->GetNUBC_Var5(GlobalIndex);
+							  if (nDim == 3 ) {Flow_z[GlobalIndex] = config->GetNUBC_Var6(GlobalIndex);}
 
 							  if (!reset){
+								  AD::RegisterInput(P_tot[GlobalIndex]);
 								  AD::RegisterInput(T_tot[GlobalIndex]);
+								  AD::RegisterInput(Flow_x[GlobalIndex]);
+								  AD::RegisterInput(Flow_y[GlobalIndex]);
+								  if (nDim == 3 ) {AD::RegisterInput(Flow_z[GlobalIndex]);}
 							  }
 
-							  config->SetNUBC_Var2(T_tot[GlobalIndex], Marker_Tag, GlobalIndex);
+							  config->SetNUBC_Var1(P_tot[GlobalIndex], GlobalIndex);
+							  config->SetNUBC_Var2(T_tot[GlobalIndex], GlobalIndex);
+							  config->SetNUBC_Var4(Flow_x[GlobalIndex], GlobalIndex);
+							  config->SetNUBC_Var5(Flow_y[GlobalIndex], GlobalIndex);
+							  if (nDim == 3 ) {config->SetNUBC_Var6(Flow_z[GlobalIndex], GlobalIndex);}
 					  }
 					  else{/*TODO add other GetKind_Data_NonUniform(Marker_Tag) options*/}
 			      }
@@ -614,10 +638,13 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
 
   if ((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_FLOW_SYS) && config->GetBoolNonUniform()){
 
-	Total_Sens_Ttot = new su2double[geometry->GetGlobal_nPointDomain()]; // could be initialized somewhere else
-	su2double *Local_Sens_Ttot;
+	su2double *Local_Sens_Ptot, *Local_Sens_Ttot, *Local_Sens_FlowX, *Local_Sens_FlowY, *Local_Sens_FlowZ, *Local_Sens_Pstatic;
+	Local_Sens_Ptot = new su2double[geometry->GetGlobal_nPointDomain()];
 	Local_Sens_Ttot = new su2double[geometry->GetGlobal_nPointDomain()];
-	cout << "nPoints = " << nPoint << endl;
+	Local_Sens_FlowX = new su2double[geometry->GetGlobal_nPointDomain()];
+	Local_Sens_FlowY = new su2double[geometry->GetGlobal_nPointDomain()];
+	if (nDim == 3 ) Local_Sens_FlowZ = new su2double[geometry->GetGlobal_nPointDomain()];
+	Local_Sens_Pstatic = new su2double[geometry->GetGlobal_nPointDomain()];
 
     unsigned short iMarker;
     unsigned long iPoint, iVertex, GlobalIndex;
@@ -630,7 +657,11 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
 		  GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 		  if (geometry->node[iPoint]->GetDomain()) {
 			if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+			  Local_Sens_Ptot[GlobalIndex] = SU2_TYPE::GetDerivative(P_tot[GlobalIndex]);
 			  Local_Sens_Ttot[GlobalIndex] = SU2_TYPE::GetDerivative(T_tot[GlobalIndex]);
+			  Local_Sens_FlowX[GlobalIndex] = SU2_TYPE::GetDerivative(Flow_x[GlobalIndex]);
+			  Local_Sens_FlowY[GlobalIndex] = SU2_TYPE::GetDerivative(Flow_y[GlobalIndex]);
+			  if (nDim == 3 ) Local_Sens_FlowZ[GlobalIndex] = SU2_TYPE::GetDerivative(Flow_z[GlobalIndex]);
 			}
 		  }
 		}
@@ -638,20 +669,36 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
     }
 
 #ifdef HAVE_MPI
+    SU2_MPI::Allreduce(Local_Sens_Ptot, Total_Sens_Ptot, geometry->GetGlobal_nPointDomain(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     SU2_MPI::Allreduce(Local_Sens_Ttot, Total_Sens_Ttot, geometry->GetGlobal_nPointDomain(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    SU2_MPI::Allreduce(Local_Sens_FlowX, Total_Sens_FlowX, geometry->GetGlobal_nPointDomain(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    SU2_MPI::Allreduce(Local_Sens_FlowY, Total_Sens_FlowY, geometry->GetGlobal_nPointDomain(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    if (nDim == 3 ) SU2_MPI::Allreduce(Local_Sens_FlowZ, Total_Sens_FlowZ, geometry->GetGlobal_nPointDomain(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #else
+    Total_Sens_Ptot = Local_Sens_Ptot;
     Total_Sens_Ttot = Local_Sens_Ttot;
+    Total_Sens_FlowX = Local_Sens_FlowX;
+    Total_Sens_FlowY = Local_Sens_FlowY;
+    if (nDim == 3 ) Total_Sens_FlowZ = Local_Sens_FlowZ;
 #endif
 
-//    if (rank == MASTER_NODE) {
-//    	for (iPoint = 0; iPoint<geometry->GetGlobal_nPointDomain(); iPoint++){
-//    		if (Total_Sens_Ttot[iPoint] != 0.0)
-//    			cout << "Sens_Ttot[" << iPoint << "] = " << Total_Sens_Ttot[iPoint] << endl;
-//    	}
-//    }
+    if (rank == MASTER_NODE) {
+    	for (iPoint = 0; iPoint<geometry->GetGlobal_nPointDomain(); iPoint++){
+    		if (Total_Sens_Ttot[iPoint] != 0.0){
+    			cout << "Sens_Ptot[" << iPoint << "] = " << Total_Sens_Ptot[iPoint] << endl;
+    			cout << "Sens_Ttot[" << iPoint << "] = " << Total_Sens_Ttot[iPoint] << endl;
+    			cout << "Sens_fX[" << iPoint << "] = " << Total_Sens_FlowX[iPoint] << endl;
+    			cout << "Sens_fY[" << iPoint << "] = " << Total_Sens_FlowY[iPoint] << endl;
+    		}
+    	}
+    }
 
-
-
+    delete[] Local_Sens_Ptot;
+    delete[] Local_Sens_Ttot;
+    delete[] Local_Sens_FlowX;
+    delete[] Local_Sens_FlowY;
+    if (nDim == 3 )delete[] Local_Sens_FlowZ;
+    delete[] Local_Sens_Pstatic;
   }
 
 }

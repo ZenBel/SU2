@@ -276,7 +276,7 @@ private:
   su2double *Inlet_Ttotal;    /*!< \brief Specified total temperatures for inlet boundaries. */
   su2double *Riemann_Var1, *Riemann_Var2;    /*!< \brief Specified values for Riemann boundary. */
   su2double **Riemann_FlowDir;  /*!< \brief Specified flow direction vector (unit vector) for Riemann boundaries. */
-  su2double **NonUniform_Var2;
+  su2double *NonUniform_Var1, *NonUniform_Var2, *NonUniform_Var3, *NonUniform_Var4, *NonUniform_Var5, *NonUniform_Var6;
   unsigned long *NonUniform_InputPoints;
   su2double *Giles_Var1, *Giles_Var2, *RelaxFactorAverage, *RelaxFactorFourier;    /*!< \brief Specified values for Giles BC. */
   su2double **Giles_FlowDir;  /*!< \brief Specified flow direction vector (unit vector) for Giles BC. */
@@ -5961,8 +5961,20 @@ public:
   su2double GetRiemann_Var2(string val_marker);
   void SetRiemann_Var2(su2double newVar2, string val_marker) ;
   
-  su2double GetNUBC_Var2(string val_marker, unsigned long val_pos);
-  void SetNUBC_Var2(su2double newVar2, string val_marker, unsigned long val_pos);
+  void SetNUBC_Var1(su2double newVar, unsigned long val_pos);
+  void SetNUBC_Var2(su2double newVar, unsigned long val_pos);
+  void SetNUBC_Var3(su2double newVar, unsigned long val_pos);
+  void SetNUBC_Var4(su2double newVar, unsigned long val_pos);
+  void SetNUBC_Var5(su2double newVar, unsigned long val_pos);
+  void SetNUBC_Var6(su2double newVar, unsigned long val_pos);
+
+  su2double GetNUBC_Var1(unsigned long val_pos);
+  su2double GetNUBC_Var2(unsigned long val_pos);
+  su2double GetNUBC_Var3(unsigned long val_pos);
+  su2double GetNUBC_Var4(unsigned long val_pos);
+  su2double GetNUBC_Var5(unsigned long val_pos);
+  su2double GetNUBC_Var6(unsigned long val_pos);
+
   void Initialize_NonUniform_Variables(unsigned long val_points);
   void SetNUBC_InputPoints(unsigned long val_npoints, string val_marker);
   unsigned long GetNUBC_InputPoints(string val_marker);

@@ -6874,18 +6874,55 @@ void CConfig::SetRiemann_Var2(su2double newVar2, string val_marker) {
   Riemann_Var2[iMarker_Riemann] = newVar2;
 }
 
-su2double CConfig::GetNUBC_Var2(string val_marker, unsigned long val_pos) {
-  unsigned short iMarker_NonUniform;
-  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
-    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
-  return NonUniform_Var2[iMarker_NonUniform][val_pos];
+void CConfig::SetNUBC_Var1(su2double newVar, unsigned long val_pos) {
+  NonUniform_Var1[val_pos] = newVar;
 }
 
-void CConfig::SetNUBC_Var2(su2double newVar2, string val_marker, unsigned long val_pos) {
-  unsigned short iMarker_NonUniform;
-  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
-    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
-  NonUniform_Var2[iMarker_NonUniform][val_pos] = newVar2;
+void CConfig::SetNUBC_Var2(su2double newVar, unsigned long val_pos) {
+  NonUniform_Var2[val_pos] = newVar;
+}
+
+void CConfig::SetNUBC_Var3(su2double newVar, unsigned long val_pos) {
+  NonUniform_Var3[val_pos] = newVar;
+}
+
+void CConfig::SetNUBC_Var4(su2double newVar, unsigned long val_pos) {
+  NonUniform_Var4[val_pos] = newVar;
+}
+
+void CConfig::SetNUBC_Var5(su2double newVar, unsigned long val_pos) {
+  NonUniform_Var5[val_pos] = newVar;
+}
+
+void CConfig::SetNUBC_Var6(su2double newVar, unsigned long val_pos) {
+  NonUniform_Var6[val_pos] = newVar;
+}
+
+su2double CConfig::GetNUBC_Var1(unsigned long val_pos) {
+  return NonUniform_Var1[val_pos];
+}
+
+su2double CConfig::GetNUBC_Var2(unsigned long val_pos) {
+  return NonUniform_Var2[val_pos];
+}
+
+su2double CConfig::GetNUBC_Var3(unsigned long val_pos) {
+  return NonUniform_Var3[val_pos];
+}
+
+
+su2double CConfig::GetNUBC_Var4(unsigned long val_pos) {
+  return NonUniform_Var4[val_pos];
+}
+
+
+su2double CConfig::GetNUBC_Var5(unsigned long val_pos) {
+  return NonUniform_Var5[val_pos];
+}
+
+
+su2double CConfig::GetNUBC_Var6(unsigned long val_pos) {
+  return NonUniform_Var6[val_pos];
 }
 
 unsigned long CConfig::GetNUBC_InputPoints(string val_marker) {
@@ -6903,11 +6940,12 @@ void CConfig::SetNUBC_InputPoints(unsigned long val_npoints, string val_marker) 
 }
 
 void CConfig::Initialize_NonUniform_Variables(unsigned long val_points) {
-  NonUniform_Var2 = new su2double*[nMarker_NonUniform];
-  NonUniform_InputPoints = new unsigned long[nMarker_NonUniform];
-  unsigned short iMarker_NonUniform;
-  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
-	  NonUniform_Var2[iMarker_NonUniform] = new su2double[val_points]; //here there is a bug: val_points should not necessarily be the same for all markers
+  NonUniform_Var1 = new su2double[val_points];
+  NonUniform_Var2 = new su2double[val_points];
+  NonUniform_Var3 = new su2double[val_points];
+  NonUniform_Var4 = new su2double[val_points];
+  NonUniform_Var5 = new su2double[val_points];
+  NonUniform_Var6 = new su2double[val_points];
 }
 
 su2double* CConfig::GetRiemann_FlowDir(string val_marker) {

@@ -13015,7 +13015,12 @@ void CEulerSolver::SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config,
 
     for (iPos=0; iPos < InputPoints; iPos++){
 	  GlobalIndex = PointIn[iPos];
-	  config->SetNUBC_Var2(InputVar2[iPos], name_marker, GlobalIndex);
+	  config->SetNUBC_Var1(InputVar1[iPos], GlobalIndex);
+	  config->SetNUBC_Var2(InputVar2[iPos], GlobalIndex);
+	  config->SetNUBC_Var3(InputVar3[iPos], GlobalIndex);
+	  config->SetNUBC_Var4(InputVar4[iPos], GlobalIndex);
+	  config->SetNUBC_Var5(InputVar5[iPos], GlobalIndex);
+	  config->SetNUBC_Var6(InputVar6[iPos], GlobalIndex);
     }
 
 
@@ -13141,13 +13146,17 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
 		  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
 
-			  P_Total = BoundaryData[PointID][0];
+//			  P_Total = BoundaryData[PointID][0];
 //			  T_Total = BoundaryData[PointID][1];
-			  T_Total = config->GetNUBC_Var2(Marker_Tag, PointID);
-//			  cout << "T_tot = " << T_Total << endl;
-			  Flow_Dir[0] = BoundaryData[PointID][3];
-			  Flow_Dir[1] = BoundaryData[PointID][4];
-			  if (nDim == 3){ Flow_Dir[2] = BoundaryData[PointID][5]; }
+//			  Flow_Dir[0] = BoundaryData[PointID][3];
+//			  Flow_Dir[1] = BoundaryData[PointID][4];
+//			  if (nDim == 3){ Flow_Dir[2] = BoundaryData[PointID][5]; }
+
+			  P_Total = config->GetNUBC_Var1(PointID);
+			  T_Total = config->GetNUBC_Var2(PointID);
+			  Flow_Dir[0] = config->GetNUBC_Var4(PointID);
+			  Flow_Dir[1] = config->GetNUBC_Var5(PointID);
+			  if (nDim == 3 ) {Flow_Dir[2] = config->GetNUBC_Var6(PointID);}
 
 			  /*--- Non-dim. the inputs if necessary. ---*/
 			  P_Total /= config->GetPressure_Ref();
@@ -13192,11 +13201,11 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
 		  else if (config->GetKind_Data_NonUniform(Marker_Tag) == DENSITY_VELOCITY){
 
-			  Density_e = BoundaryData[PointID][0];
-			  VelMag_e = BoundaryData[PointID][1];
-			  Flow_Dir[0] = BoundaryData[PointID][3];
-			  Flow_Dir[1] = BoundaryData[PointID][4];
-			  Flow_Dir[2] = BoundaryData[PointID][5];
+			  Density_e = config->GetNUBC_Var1(PointID);
+			  VelMag_e = config->GetNUBC_Var2(PointID);
+			  Flow_Dir[0] = config->GetNUBC_Var4(PointID);
+			  Flow_Dir[1] = config->GetNUBC_Var5(PointID);
+			  Flow_Dir[2] = config->GetNUBC_Var6(PointID);
 
 			  /*--- Non-dim. the inputs if necessary. ---*/
 			  Density_e /= config->GetDensity_Ref();
@@ -13232,7 +13241,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
         else if (ProjVelocity_i > 0.0) {
 
           /*--- Retrieve the staic pressure for this boundary. ---*/
-          Pressure_e = BoundaryData[PointID][2];
+          Pressure_e = config->GetNUBC_Var3(PointID);
           Pressure_e /= config->GetPressure_Ref();
           Density_e = Density_i;
 
@@ -13271,15 +13280,15 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 			//TODO Setting quantities possibly needed for optimization
         }
 
-      /*---Storing the values of the external state (to be used in solver_adjoint_mean.cpp) ---*/
-	  node[iPoint]->SetDensity_e(Density_e);
-	  node[iPoint]->SetEnergy_e(Energy_e);
-	  node[iPoint]->SetVelMag_e(VelMag_e);
-	  node[iPoint]->SetFlowDirX_e(Flow_Dir[0]);
-	  node[iPoint]->SetFlowDirY_e(Flow_Dir[1]);
-	  node[iPoint]->SetFlowDirZ_e(Flow_Dir[2]);
-	  node[iPoint]->SetPressure_e(Pressure_e);
-	  node[iPoint]->SetPtot_nubc(P_Total);
+//      /*---Storing the values of the external state (to be used in solver_adjoint_mean.cpp) ---*/
+//	  node[iPoint]->SetDensity_e(Density_e);
+//	  node[iPoint]->SetEnergy_e(Energy_e);
+//	  node[iPoint]->SetVelMag_e(VelMag_e);
+//	  node[iPoint]->SetFlowDirX_e(Flow_Dir[0]);
+//	  node[iPoint]->SetFlowDirY_e(Flow_Dir[1]);
+//	  node[iPoint]->SetFlowDirZ_e(Flow_Dir[2]);
+//	  node[iPoint]->SetPressure_e(Pressure_e);
+//	  node[iPoint]->SetPtot_nubc(P_Total);
 
       /*--- Compute P (matrix of right eigenvectors) ---*/
       conv_numerics->GetPMatrix(&Density_i, Velocity_i, &SoundSpeed_i, &Enthalpy_i, &Chi_i, &Kappa_i, UnitNormal, P_Tensor);
