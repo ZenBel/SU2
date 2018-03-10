@@ -12168,7 +12168,7 @@ private:
   su2double Mach, Alpha, Beta, Pressure, Temperature, BPressure;
   unsigned long nMarker;        /*!< \brief Total number of markers using the grid information. */
   
-  su2double *P_tot, *T_tot, *Flow_x, *Flow_y, *Flow_z, *P_static;
+  su2double *P_tot, *T_tot, *Density, *Vel_mag, *Flow_x, *Flow_y, *Flow_z, *P_static;
   su2double *Total_Sens_Ptot, *Total_Sens_Ttot, *Total_Sens_FlowX, *Total_Sens_FlowY, *Total_Sens_FlowZ, *Total_Sens_Pstatic;
 
   su2double *Solution_Geometry; /*!< \brief Auxiliary vector for the geometry solution (dimension nDim instead of nVar). */

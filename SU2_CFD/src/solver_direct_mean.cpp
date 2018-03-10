@@ -597,7 +597,7 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   SetInlet(config);
 
   /*--- Store pointIDs and values from the Non-Uniform boundary input file ---*/
-
+  config->Initialize_NonUniform_Variables(nPointDomain); //initialize array with as many points as the total number of points in the domain
   for (iMarker = 0; iMarker < nMarker; iMarker++) {
 	string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
 	switch (config->GetMarker_All_KindBC(iMarker)) {
@@ -12965,6 +12965,9 @@ void CEulerSolver::SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config,
 	string input_filename = config->GetNonUniform_file(name_marker);
 	unsigned long InputPoints, iPos, jPos;
 
+    unsigned short iVertex, iPoint;
+    unsigned long GlobalIndex;
+
 	input_file.open(input_filename.data(), ios::in);
 	if (input_file.fail()) {
 	cout << "There is no input file!! " << input_filename.data() << "."<< endl;
@@ -12994,25 +12997,6 @@ void CEulerSolver::SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config,
 		}
 	input_file.close();
 
-	unsigned long nPointDomain = geometry->GetGlobal_nPointDomain();
-
-    BoundaryData = new su2double*[nPointDomain];
-    for (iPos=0; iPos<nPointDomain; iPos++){BoundaryData[iPos] = new su2double[6];}
-    for (iPos=0; iPos<nPointDomain; iPos++){
-	  for (jPos=0; jPos<6; jPos++){
-	    BoundaryData[iPos][jPos] = 0.0;
-	  }
-    }
-
-    config->SetBoundaryData(InputPoints, PointIn, InputVar1, InputVar2, InputVar3, InputVar4, InputVar5, InputVar6, BoundaryData );
-
-
-
-    unsigned short iVertex, iPoint;
-    unsigned long GlobalIndex;
-
-    config->Initialize_NonUniform_Variables(nPointDomain); //initialize array with as many points as the total number of points in the domain
-
     for (iPos=0; iPos < InputPoints; iPos++){
 	  GlobalIndex = PointIn[iPos];
 	  config->SetNUBC_Var1(InputVar1[iPos], GlobalIndex);
@@ -13022,7 +13006,6 @@ void CEulerSolver::SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config,
 	  config->SetNUBC_Var5(InputVar5[iPos], GlobalIndex);
 	  config->SetNUBC_Var6(InputVar6[iPos], GlobalIndex);
     }
-
 
 }
 
@@ -13072,10 +13055,6 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
   	P_Tensor[iVar] = new su2double[nVar];
   	invP_Tensor[iVar] = new su2double[nVar];
   }
-
-  /*---Initialize the Non-Uniform boundary condition---*/
-//  SetBC_NonUniform_Direct(geometry, config, Marker_Tag);
-
 
   /*--- Loop over all the vertices on this boundary marker ---*/
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
@@ -13134,23 +13113,10 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 	  for (iDim = 0; iDim < nDim; iDim++)
 		  ProjVelocity_i += Velocity_i[iDim]*UnitNormal[iDim];
 
-//	  /*--- Retrive x, y coordinates of node ---*/
-//	  Coord = new su2double[3];
-//	  Coord[0] = geometry->node[iPoint]->GetCoord(nDim-2);
-//	  Coord[1] = geometry->node[iPoint]->GetCoord(nDim-1);
-//	  Coord[2] = 0.0;
-//	  if (nDim == 3) {Coord[2] = geometry->node[iPoint]->GetCoord(nDim);}
-
       /*--- Build the external state u_e from boundary data and internal node ---*/
       if (ProjVelocity_i < 0.0) {
 
 		  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
-
-//			  P_Total = BoundaryData[PointID][0];
-//			  T_Total = BoundaryData[PointID][1];
-//			  Flow_Dir[0] = BoundaryData[PointID][3];
-//			  Flow_Dir[1] = BoundaryData[PointID][4];
-//			  if (nDim == 3){ Flow_Dir[2] = BoundaryData[PointID][5]; }
 
 			  P_Total = config->GetNUBC_Var1(PointID);
 			  T_Total = config->GetNUBC_Var2(PointID);
@@ -13239,9 +13205,9 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
         }
 
         else if (ProjVelocity_i > 0.0) {
-
           /*--- Retrieve the staic pressure for this boundary. ---*/
           Pressure_e = config->GetNUBC_Var3(PointID);
+//          cout << "Pressure_e =  " << Pressure_e << endl;
           Pressure_e /= config->GetPressure_Ref();
           Density_e = Density_i;
 
@@ -13254,12 +13220,12 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
           }
           Energy_e = FluidModel->GetStaticEnergy() + 0.5*Velocity2_e;
 
-          /*--- Setting other quantities possibly needed for sensitivity computation ---*/
-          VelMag_e = sqrt(Velocity2_e);
-          for (iDim = 0; iDim < nDim; iDim++) {
-            Flow_Dir_norm[iDim] = Velocity_e[iDim]/VelMag_e;
-            Flow_Dir[iDim] = Flow_Dir_norm[iDim];		// only for the OUTLET case //
-          }
+//          /*--- Setting other quantities possibly needed for sensitivity computation ---*/
+//          VelMag_e = sqrt(Velocity2_e);
+//          for (iDim = 0; iDim < nDim; iDim++) {
+//            Flow_Dir_norm[iDim] = Velocity_e[iDim]/VelMag_e;
+//            Flow_Dir[iDim] = Flow_Dir_norm[iDim];		// only for the OUTLET case //
+//          }
         }
 
         else {
@@ -13526,7 +13492,6 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
     }
   }
-
 
   /*--- Free locally allocated memory ---*/
   delete [] Normal;

@@ -362,7 +362,7 @@ def read_config(filename):
                     else:
                         this_dvFFDTag = []
 
-                    if not data_dict["DV_KIND"][0] in ['NO_DEFORMATION']:
+                    if not data_dict["DV_KIND"][0] in ['NO_DEFORMATION', 'NUBC_DV']:
                         this_dvParam = [ float(x) for x in this_dvParam ]
 
                     if data_dict["DV_KIND"][0] in ['FFD_CONTROL_POINT_2D']:

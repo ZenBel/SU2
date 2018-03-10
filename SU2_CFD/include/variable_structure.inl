@@ -1644,3 +1644,27 @@ inline su2double CDiscAdjFEAVariable::Get_BGSSolution(unsigned short iDim) { ret
 
 inline su2double CDiscAdjFEAVariable::Get_BGSSolution_k(unsigned short iDim) { return Solution_BGS_k[iDim];}
 
+inline void CVariable::SetSensNUBC_Q1(su2double val_sens_nubc_q1) { SensNUBC_Q1 = val_sens_nubc_q1; }
+
+inline su2double CVariable::GetSensNUBC_Q1(void) { return SensNUBC_Q1; }
+
+inline void CVariable::SetSensNUBC_Q2(su2double val_sens_nubc_q2) { SensNUBC_Q2 = val_sens_nubc_q2; }
+
+inline su2double CVariable::GetSensNUBC_Q2(void) { return SensNUBC_Q2; }
+
+inline void CVariable::SetSensNUBC_Pressure(su2double val_sens_nubc_pressure) { SensNUBC_Pressure = val_sens_nubc_pressure; }
+
+inline su2double CVariable::GetSensNUBC_Pressure(void) { return SensNUBC_Pressure; }
+
+inline void CVariable::SetSensNUBC_FlowDirX(su2double val_sens_nubc_flowdirx) { SensNUBC_FlowDirX = val_sens_nubc_flowdirx; }
+
+inline su2double CVariable::GetSensNUBC_FlowDirX(void) { return SensNUBC_FlowDirX; }
+
+inline void CVariable::SetSensNUBC_FlowDirY(su2double val_sens_nubc_flowdiry) { SensNUBC_FlowDirY = val_sens_nubc_flowdiry; }
+
+inline su2double CVariable::GetSensNUBC_FlowDirY(void) { return SensNUBC_FlowDirY; }
+
+inline void CVariable::SetSensNUBC_FlowDirZ(su2double val_sens_nubc_flowdirz) { SensNUBC_FlowDirZ = val_sens_nubc_flowdirz; }
+
+inline su2double CVariable::GetSensNUBC_FlowDirZ(void) { return SensNUBC_FlowDirZ; }
+

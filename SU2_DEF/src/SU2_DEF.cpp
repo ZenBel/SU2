@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
     if (rank == MASTER_NODE) cout << "Identify edges and vertices." <<endl;
     geometry_container[iZone]->SetEdges(); geometry_container[iZone]->SetVertex(config_container[iZone]);
 
-    if (config_container[iZone]->GetDesign_Variable(0) != NO_DEFORMATION) {
+    if (config_container[iZone]->GetDesign_Variable(0) != NO_DEFORMATION ) {
       
       /*--- Compute center of gravity ---*/
       
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
   
   for (iZone = 0; iZone < nZone; iZone++){
     
-    if (config_container[iZone]->GetDesign_Variable(0) != NO_DEFORMATION) {
+    if (config_container[iZone]->GetDesign_Variable(0) != NO_DEFORMATION ) {
       
       if (rank == MASTER_NODE) cout << endl << "--------------------- Surface grid deformation (ZONE " << iZone <<") -----------------" << endl;
       
@@ -284,11 +284,12 @@ int main(int argc, char *argv[]) {
    requires to move all the data to the master node---*/
   
   bool NewFile = false;
-  if (config_container[ZONE_0]->GetDesign_Variable(0) == NO_DEFORMATION) NewFile = true;
+  if (config_container[ZONE_0]->GetDesign_Variable(0) == NO_DEFORMATION )
+	  NewFile = true;
   
   output->SetMesh_Files(geometry_container, config_container, SINGLE_ZONE, NewFile, true);
   
-  if (config_container[ZONE_0]->GetDesign_Variable(0) != NO_DEFORMATION) {
+  if (config_container[ZONE_0]->GetDesign_Variable(0) != NO_DEFORMATION ) {
   
     /*--- Write the the free-form deformation boxes after deformation. ---*/
     

@@ -4440,7 +4440,8 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
       
       if ((Design_Variable[iDV] != NO_DEFORMATION) &&
           (Design_Variable[iDV] != FFD_SETTING) &&
-          (Design_Variable[iDV] != SURFACE_FILE)) {
+          (Design_Variable[iDV] != SURFACE_FILE) &&
+		  (Design_Variable[iDV] != NUBC_DV)) {
         
         if (iDV == 0)
           cout << "Design variables definition (markers <-> value <-> param):" << endl;
@@ -4485,7 +4486,8 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
 
         if ((Design_Variable[iDV] == NO_DEFORMATION) ||
             (Design_Variable[iDV] == FFD_SETTING) ||
-            (Design_Variable[iDV] == SCALE) ) nParamDV = 0;
+            (Design_Variable[iDV] == SCALE) ||
+			(Design_Variable[iDV] == NUBC_DV) ) nParamDV = 1;
         if (Design_Variable[iDV] == ANGLE_OF_ATTACK) nParamDV = 1;
         if ((Design_Variable[iDV] == FFD_CAMBER_2D) ||
             (Design_Variable[iDV] == FFD_THICKNESS_2D) ||
@@ -4539,6 +4541,10 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
       
       else if (Design_Variable[iDV] == NO_DEFORMATION) {
         cout << "No deformation of the numerical grid. Just output .su2 file." << endl;
+      }
+
+      else if (Design_Variable[iDV] == NUBC_DV) {
+        cout << "Quantities at the Non-Uniform boundary/boundaries specified as DV" << endl;
       }
 
       else if (Design_Variable[iDV] == FFD_SETTING) {
@@ -6910,16 +6916,13 @@ su2double CConfig::GetNUBC_Var3(unsigned long val_pos) {
   return NonUniform_Var3[val_pos];
 }
 
-
 su2double CConfig::GetNUBC_Var4(unsigned long val_pos) {
   return NonUniform_Var4[val_pos];
 }
 
-
 su2double CConfig::GetNUBC_Var5(unsigned long val_pos) {
   return NonUniform_Var5[val_pos];
 }
-
 
 su2double CConfig::GetNUBC_Var6(unsigned long val_pos) {
   return NonUniform_Var6[val_pos];

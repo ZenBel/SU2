@@ -793,6 +793,11 @@ int main(int argc, char *argv[]) {
         surface_movement->SetParabolic(geometry_container[ZONE_0], config_container[ZONE_0]);
       }
       
+      /*--- Non-Uniform design variable ---*/
+
+      else if (config_container[ZONE_0]->GetDesign_Variable(iDV) == NUBC_DV and rank==MASTER_NODE)
+        cout <<"NUBC design variable will be used in an external script" << endl;
+
       /*--- Design variable not implement ---*/
       
       else {

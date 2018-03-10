@@ -107,7 +107,17 @@ def projection( config, state={}, step = 1e-3 ):
     os.remove(grad_filename)
     
     info = su2io.State()
-       
+    
+    if ('NUBC_DV' in konfig.DV_KIND):
+       import external_gradient # Must be defined in run folder
+       chaingrad = external_gradient.of_gradient(konfig, state, step)
+       n_dv = len(raw_gradients)
+       nubc_dv=0
+       for idv in range(n_dv):
+                if (konfig.DV_KIND[idv] == 'NUBC_DV'):
+                    raw_gradients[idv] = chaingrad[nubc_dv]
+                    nubc_dv = nubc_dv+1
+                    
     # Write Gradients
     data_plot = su2util.ordered_bunch()
     data_plot['VARIABLE']     = range(len(raw_gradients)) 

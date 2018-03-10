@@ -132,6 +132,22 @@ def gradient( func_name, method, config, state=None ):
         else:
             raise Exception('unrecognized gradient method')
         
+        #To be edited
+        #if ('CUSTOM NUBC_DV' in config.DV_KIND and 'OUTFLOW_GENERALIZED' in config.OBJECTIVE_FUNCTION ):
+        #    import downstream_function
+        #    # chaingrad is a vector containing the gradients of the OF with respect to the primitive variables and the custom_dv's.
+        #    chaingrad = downstream_function.downstream_gradient(config,state)
+        #    n_dv = len(grads[func_name_string])
+        #    custom_dv=1
+        #    # Update the gradients of the OF w.r.t. the custom_dv 
+        #    for idv in range(n_dv):
+        #        if (config.DV_KIND[idv] == 'CUSTOM'):
+        #            grads[func_name_string][idv] = chaingrad[4+custom_dv]   # the '4' is there because in downstream_function.downstream_gradient 
+        #                                                                    #the first 5 elements are other tyep of gradients
+        #            custom_dv = custom_dv+1
+        
+        
+        
         # store
         state['GRADIENTS'].update(grads)
 
@@ -265,6 +281,17 @@ def adjoint( func_name, config, state=None ):
     # files: target heat flux coefficient
     if 'INV_DESIGN_HEATFLUX' in special_cases:
         pull.append(files['TARGET_HEATFLUX'])
+        
+    if (config.has_key('MARKER_NONUNIFORM')):
+        path_nubc  = os.getcwd()
+        files_nubc = os.listdir(path_nubc)
+        nubc_filenames = []
+        for f in files_nubc:
+            if '.bc' in f:
+                nubc_filenames.append(f)
+        #pull.append(files['NUBC_CONFIG_FILE'])
+        for i in range(len(nubc_filenames)):
+            pull.append( files['NUBC_FILE_%s'%(i+1)])
 
     # output redirection
     with redirect_folder( ADJ_NAME, pull, link ) as push:
@@ -702,8 +729,21 @@ def findiff( config, state=None ):
     # files: target heat flux distribution
     if 'INV_DESIGN_HEATFLUX' in special_cases and 'TARGET_HEATFLUX' in files:
         pull.append(files['TARGET_HEATFLUX'])
+               
+    # files: Non-Uniform boundary input (.bc) files           
+    if (config.has_key('MARKER_NONUNIFORM')):
+        path_nubc  = os.getcwd()
+        files_nubc = os.listdir(path_nubc)
+        nubc_filenames = []
+        for f in files_nubc:
+            if '.bc' in f:
+                nubc_filenames.append(f)
+        #pull.append(files['NUBC_CONFIG_FILE'])
+        for i in range(len(nubc_filenames)):
+            pull.append( files['NUBC_FILE_%s'%(i+1)])
 
-       
+
+
     # output redirection
     with redirect_folder('FINDIFF',pull,link) as push:
         with redirect_output(log_findiff):

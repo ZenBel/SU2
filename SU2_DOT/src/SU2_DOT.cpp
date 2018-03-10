@@ -490,6 +490,13 @@ void SetProjection_FD(CGeometry *geometry, CConfig *config, CSurfaceMovement *su
       surface_movement->SetParabolic(geometry, config);
     }
     
+    /*--- Non-Uniform design variable ---*/
+
+    else if (config->GetDesign_Variable(iDV) == NUBC_DV){
+	if (rank == MASTER_NODE)
+     	  cout <<"NUBC_DV: this design variable will be used in an external script" << endl;
+    }
+
     /*--- Design variable not implement ---*/
     
     else {
