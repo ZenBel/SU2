@@ -8641,8 +8641,9 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
   ifstream Surface_file;
   char buffer[50], cstr[200];
   
-  
-  nPointLocal = geometry->GetnPoint();
+  nPointLocal = geometry->GetnPoint(); // Total number of mesh points on the decomposed geometry managed by a single processor
+//  cout << "nPointLocal = " << nPointLocal << endl;
+
 #ifdef HAVE_MPI
   SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
 #else
@@ -8656,29 +8657,33 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
     PointInDomain[iPoint] = false;
   
   for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+	unsigned short Marker_All_Designing = config->GetMarker_All_Designing(iMarker);
     Boundary   = config->GetMarker_All_KindBC(iMarker);
     
     if ((Boundary == EULER_WALL             ) ||
         (Boundary == HEAT_FLUX              ) ||
         (Boundary == ISOTHERMAL             ) ||
         (Boundary == NEARFIELD_BOUNDARY)) {
-      for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
+
+      if ( Marker_All_Designing == 1) {
+
+        for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
         
-        /*--- The Pressure file uses the global numbering ---*/
+          /*--- The Pressure file uses the global numbering ---*/
         
 #ifndef HAVE_MPI
-        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+          iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
 #else
-        iPoint = geometry->node[geometry->vertex[iMarker][iVertex]->GetNode()]->GetGlobalIndex();
+          iPoint = geometry->node[geometry->vertex[iMarker][iVertex]->GetNode()]->GetGlobalIndex();
 #endif
         
-        if (geometry->vertex[iMarker][iVertex]->GetNode() < geometry->GetnPointDomain()) {
-          Point2Vertex[iPoint][0] = iMarker;
-          Point2Vertex[iPoint][1] = iVertex;
-          PointInDomain[iPoint] = true;
-          solver_container->SetCPressureTarget(iMarker, iVertex, 0.0);
+          if (geometry->vertex[iMarker][iVertex]->GetNode() < geometry->GetnPointDomain()) {
+            Point2Vertex[iPoint][0] = iMarker;
+            Point2Vertex[iPoint][1] = iVertex;
+            PointInDomain[iPoint] = true;
+            solver_container->SetCPressureTarget(iMarker, iVertex, 0.0);
+          }
         }
-        
       }
     }
   }
@@ -8744,27 +8749,31 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
   
   PressDiff = 0.0;
   for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+    unsigned short Marker_All_Designing = config->GetMarker_All_Designing(iMarker);
     Boundary   = config->GetMarker_All_KindBC(iMarker);
     
     if ((Boundary == EULER_WALL             ) ||
         (Boundary == HEAT_FLUX              ) ||
         (Boundary == ISOTHERMAL             ) ||
         (Boundary == NEARFIELD_BOUNDARY)) {
-      for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
+
+      if ( Marker_All_Designing == 1) {
+
+        for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
         
-        Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
+          Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
         
-        Cp = solver_container->GetCPressure(iMarker, iVertex);
-        CpTarget = solver_container->GetCPressureTarget(iMarker, iVertex);
+          Cp = solver_container->GetCPressure(iMarker, iVertex);
+          CpTarget = solver_container->GetCPressureTarget(iMarker, iVertex);
         
-        Area = 0.0;
-        for (iDim = 0; iDim < geometry->GetnDim(); iDim++)
-          Area += Normal[iDim]*Normal[iDim];
-        Area = sqrt(Area);
+          Area = 0.0;
+          for (iDim = 0; iDim < geometry->GetnDim(); iDim++)
+            Area += Normal[iDim]*Normal[iDim];
+          Area = sqrt(Area);
         
-        PressDiff += Area * (CpTarget - Cp) * (CpTarget - Cp);
+          PressDiff += Area * (CpTarget - Cp) * (CpTarget - Cp);
+        }
       }
-      
     }
   }
   
