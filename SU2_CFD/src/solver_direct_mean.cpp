@@ -597,13 +597,22 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   SetInlet(config);
 
   /*--- Store pointIDs and values from the Non-Uniform boundary input file ---*/
-  config->Initialize_NonUniform_Variables(nPointDomain); //initialize array with as many points as the total number of points in the domain
+  unsigned long nPointLocal = 0, nPointGlobal = 0;
+  nPointLocal = geometry->GetnPoint();
+
+#ifdef HAVE_MPI
+  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+#else
+  nPointGlobal = nPointLocal;
+#endif
+
+  config->Initialize_NonUniform_Variables(nPointGlobal); //initialize array with as many points as the total number of points in the domain
   for (iMarker = 0; iMarker < nMarker; iMarker++) {
 	string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
 	switch (config->GetMarker_All_KindBC(iMarker)) {
-      case NONUNIFORM_BOUNDARY:
-  	    SetBC_NonUniform_Direct(geometry, config, Marker_Tag);
-  	    break;
+	  case NONUNIFORM_BOUNDARY:
+		SetBC_NonUniform_Direct(geometry, config, Marker_Tag);
+		break;
 	}
   }
 
@@ -615,6 +624,8 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
     CPressure[iMarker] = new su2double [geometry->nVertex[iMarker]];
     CPressureTarget[iMarker] = new su2double [geometry->nVertex[iMarker]];
     for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+      iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+      unsigned long PointID = geometry->node[iPoint]->GetGlobalIndex();
       CPressure[iMarker][iVertex] = 0.0;
       CPressureTarget[iMarker][iVertex] = 0.0;
     }

@@ -4637,27 +4637,27 @@ void COutput::SetConvHistory_Header(ofstream *ConvHist_file, CConfig *config, un
     if (!turbo) ConvHist_file[0] << flow_coeff;
     if (turbo) ConvHist_file[0] << turbo_coeff;
     if (thermal && !turbo) ConvHist_file[0] << heat_coeff;
-      if (equiv_area) ConvHist_file[0] << equivalent_area_coeff;
-      if (engine || actuator_disk) ConvHist_file[0] << engine_coeff;
-      if (inv_design) {
-        ConvHist_file[0] << Cp_inverse_design;
-      if (thermal && !turbo) ConvHist_file[0] << Heat_inverse_design;
-      }
+    if (equiv_area) ConvHist_file[0] << equivalent_area_coeff;
+    if (engine || actuator_disk) ConvHist_file[0] << engine_coeff;
+    if (inv_design) {
+      ConvHist_file[0] << Cp_inverse_design;
+    if (thermal && !turbo) ConvHist_file[0] << Heat_inverse_design;
+    }
     if (rotating_frame && !turbo) ConvHist_file[0] << rotating_frame_coeff;
-      ConvHist_file[0] << flow_resid;
-      if (turbulent) ConvHist_file[0] << turb_resid;
-      if (aeroelastic) ConvHist_file[0] << aeroelastic_coeff;
-      if (output_per_surface) ConvHist_file[0] << monitoring_coeff;
-      if (output_surface) ConvHist_file[0] << surface_outputs;
-      if (direct_diff != NO_DERIVATIVE) {
-        if (!turbo) ConvHist_file[0] << d_flow_coeff;
-        else        ConvHist_file[0] << d_turbo_coeff;
-        if (engine || actuator_disk) ConvHist_file[0] << d_engine;
-      }
-      if (output_comboObj) ConvHist_file[0] << combo_obj;
-      ConvHist_file[0] << end;
+    ConvHist_file[0] << flow_resid;
+    if (turbulent) ConvHist_file[0] << turb_resid;
+    if (aeroelastic) ConvHist_file[0] << aeroelastic_coeff;
+    if (output_per_surface) ConvHist_file[0] << monitoring_coeff;
+    if (output_surface) ConvHist_file[0] << surface_outputs;
+    if (direct_diff != NO_DERIVATIVE) {
+      if (!turbo) ConvHist_file[0] << d_flow_coeff;
+      else        ConvHist_file[0] << d_turbo_coeff;
+      if (engine || actuator_disk) ConvHist_file[0] << d_engine;
+    }
+    if (output_comboObj) ConvHist_file[0] << combo_obj;
+    ConvHist_file[0] << end;
       
-      break;
+    break;
       
     case ADJ_EULER      : case ADJ_NAVIER_STOKES      : case ADJ_RANS:
     case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
@@ -8649,7 +8649,7 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
 #else
   nPointGlobal = nPointLocal;
 #endif
-  
+
   Point2Vertex = new unsigned long[nPointGlobal][2];
   PointInDomain = new bool[nPointGlobal];
   
@@ -8677,12 +8677,12 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
           iPoint = geometry->node[geometry->vertex[iMarker][iVertex]->GetNode()]->GetGlobalIndex();
 #endif
         
-          if (geometry->vertex[iMarker][iVertex]->GetNode() < geometry->GetnPointDomain()) {
+//          if (geometry->vertex[iMarker][iVertex]->GetNode() < geometry->GetnPointDomain()) {
             Point2Vertex[iPoint][0] = iMarker;
             Point2Vertex[iPoint][1] = iVertex;
             PointInDomain[iPoint] = true;
             solver_container->SetCPressureTarget(iMarker, iVertex, 0.0);
-          }
+//          }
         }
       }
     }
@@ -8728,15 +8728,16 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
       if (geometry->GetnDim() == 2) point_line >> iPoint >> XCoord >> YCoord >> Pressure >> PressureCoeff;
       if (geometry->GetnDim() == 3) point_line >> iPoint >> XCoord >> YCoord >> ZCoord >> Pressure >> PressureCoeff;
       
+
       if (PointInDomain[iPoint]) {
-        
+
         /*--- Find the vertex for the Point and Marker ---*/
-        
+
         iMarker = Point2Vertex[iPoint][0];
         iVertex = Point2Vertex[iPoint][1];
-        
+
         solver_container->SetCPressureTarget(iMarker, iVertex, PressureCoeff);
-        
+
       }
       
     }
@@ -8744,7 +8745,7 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
     Surface_file.close();
     
   }
-  
+
   /*--- Compute the pressure difference ---*/
   
   PressDiff = 0.0;
@@ -8760,23 +8761,26 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
       if ( Marker_All_Designing == 1) {
 
         for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
-        
+          iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+          unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+
           Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
         
           Cp = solver_container->GetCPressure(iMarker, iVertex);
           CpTarget = solver_container->GetCPressureTarget(iMarker, iVertex);
-        
+
           Area = 0.0;
           for (iDim = 0; iDim < geometry->GetnDim(); iDim++)
             Area += Normal[iDim]*Normal[iDim];
           Area = sqrt(Area);
-        
+
           PressDiff += Area * (CpTarget - Cp) * (CpTarget - Cp);
         }
       }
     }
   }
   
+
 #ifdef HAVE_MPI
   su2double MyPressDiff = PressDiff;   PressDiff = 0.0;
   SU2_MPI::Allreduce(&MyPressDiff, &PressDiff, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);

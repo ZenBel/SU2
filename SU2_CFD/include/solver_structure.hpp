@@ -5956,7 +5956,7 @@ public:
    * \return Value of the pressure coefficient.
    */
   su2double GetCPressureTarget(unsigned short val_marker, unsigned long val_vertex);
-  
+
   /*!
    * \brief Set the value of the target Pressure coefficient.
    * \param[in] val_marker - Surface marker where the coefficient is computed.
