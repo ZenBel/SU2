@@ -13061,9 +13061,8 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
   P_Tensor = new su2double*[nVar];
   invP_Tensor = new su2double*[nVar];
-  for (iVar = 0; iVar < nVar; iVar++)
-  {
-  	P_Tensor[iVar] = new su2double[nVar];
+  for (iVar = 0; iVar < nVar; iVar++){
+    P_Tensor[iVar] = new su2double[nVar];
   	invP_Tensor[iVar] = new su2double[nVar];
   }
 

@@ -5637,6 +5637,299 @@ void CAdjEulerSolver::BC_ActDisk(CGeometry *geometry, CSolver **solver_container
   
 }
 
+void CAdjEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container,
+		CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
+
+  unsigned short iVar, jVar, kVar, iDim;
+  unsigned long iVertex, iPoint, Point_Normal;
+  su2double Area, ProjGridVel, *GridVel;
+  su2double ProjVelocity_i, Vn_i, Density_i=0.0, Pressure_i = 0.0, SoundSpeed_i = 0.0, Velocity2_i = 0.0, Energy_i = 0.0;
+  su2double ProjVelocity_b, Vn_b, Density_b=0.0, Pressure_b = 0.0, SoundSpeed_b = 0.0, Velocity2_b = 0.0, Energy_b = 0.0;
+  su2double *V_boundary, *V_domain, *Velocity_i, *Velocity_b, *UnitNormal, *Normal, *Psi_domain, *Psi_boundary, **P_Tensor, **invP_Tensor, **Jac_b;
+  su2double *c, rho_i_p, energy_i_p, *v_i_p;
+  su2double *lambda_i;
+  su2double **I_diagPsi, **Buf1, **Buf2;
+  su2double *u_i_prime, *u_i;
+
+  u_i_prime = new su2double[nVar];
+  u_i       = new su2double[nVar];
+  I_diagPsi = new su2double*[nVar];
+  Buf1 = new su2double*[nVar];
+  Buf2 = new su2double*[nVar];
+  for (iVar = 0; iVar < nVar; iVar++){
+  	I_diagPsi[iVar] = new su2double[nVar];
+  	Buf1[iVar] = new su2double[nVar];
+  	Buf2[iVar] = new su2double[nVar];
+  }
+
+  lambda_i = new su2double[nVar];
+  v_i_p = new su2double[nVar];
+  c = new su2double[nVar];
+
+  bool implicit = (config->GetKind_TimeIntScheme_AdjFlow() == EULER_IMPLICIT);
+  bool grid_movement = config->GetGrid_Movement();
+  string Marker_Tag = config->GetMarker_All_TagBound(val_marker);
+
+  Normal = new su2double[nDim];
+  UnitNormal = new su2double[nDim];
+  Psi_domain = new su2double[nVar];
+  Psi_boundary = new su2double[nVar];
+  Velocity_i = new su2double[nDim];
+  Velocity_b = new su2double[nDim];
+
+  P_Tensor = new su2double*[nVar];
+  invP_Tensor = new su2double*[nVar];
+  Jac_b = new su2double*[nVar];
+  for (iVar = 0; iVar < nVar; iVar++){
+    P_Tensor[iVar] = new su2double[nVar];
+    invP_Tensor[iVar] = new su2double[nVar];
+    Jac_b[iVar] = new su2double[nVar];
+  }
+
+  if (config->GetExtIter() == 0) {cout << "Executing adjoint NUBC" << endl;}
+
+  /*--- Loop over all the vertices on this boundary marker ---*/
+  for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
+    iPoint = geometry->vertex[val_marker][iVertex]->GetNode();
+
+    /*--- Check that the node belongs to the domain (i.e., not a halo node) ---*/
+    if (geometry->node[iPoint]->GetDomain()) {
+
+        /*--- Normal vector for this vertex (negate for outward convention) ---*/
+        geometry->vertex[val_marker][iVertex]->GetNormal(Normal);
+        for (iDim = 0; iDim < nDim; iDim++) Normal[iDim] = -Normal[iDim];
+        conv_numerics->SetNormal(Normal);
+
+        Area = 0.0;
+        for (iDim = 0; iDim < nDim; iDim++)
+          Area += Normal[iDim]*Normal[iDim];
+        Area = sqrt (Area);
+
+        for (iDim = 0; iDim < nDim; iDim++)
+          UnitNormal[iDim] = Normal[iDim]/Area;
+
+        /*--- Allocate the value at the inlet (values at boundary state) ---*/
+        V_boundary = solver_container[FLOW_SOL]->GetCharacPrimVar(val_marker, iVertex);
+
+        /*--- Retrieve solution at the boundary node (values at solution state) ---*/
+        V_domain = solver_container[FLOW_SOL]->node[iPoint]->GetPrimitive();
+
+        /*--- Adjoint flow solution at the boundary ---*/
+        for (iVar = 0; iVar < nVar; iVar++)
+          Psi_domain[iVar] = node[iPoint]->GetSolution(iVar);
+
+  		/* --- Compute the internal state u_i --- */
+  		ProjVelocity_i = 0.0; Vn_i = 0.0; Velocity2_i = 0.0;
+  		for (iDim=0; iDim < nDim; iDim++){
+  			Velocity_i[iDim] = V_domain[iDim+1]; // same as solver_container[FLOW_SOL]->node[iPoint]->GetVelocity(iDim)
+  			ProjVelocity_i += Velocity_i[iDim]*Normal[iDim];
+  			Vn_i += Velocity_i[iDim]*UnitNormal[iDim];
+  			Velocity2_i += Velocity_i[iDim]*Velocity_i[iDim];
+  		}
+
+        Pressure_i 	= V_domain[nDim+1];
+        Density_i 	= V_domain[nDim+2];
+        SoundSpeed_i  = sqrt(Pressure_i*Gamma/Density_i);
+        su2double SoundSpeed2_i;
+        SoundSpeed2_i  = SoundSpeed_i*SoundSpeed_i;
+        Energy_i    = Pressure_i/(Gamma_Minus_One*Density_i) + 0.5*Velocity2_i;
+
+//        cout << Density_i << ", " << Velocity_i[0] << ", " <<  Velocity_i[1] << ", " << SoundSpeed_i << endl;
+
+        conv_numerics->GetPMatrix(&Density_i, Velocity_i, &SoundSpeed_i, UnitNormal, P_Tensor);
+        conv_numerics->GetPMatrix_inv(&Density_i, Velocity_i, &SoundSpeed_i, UnitNormal, invP_Tensor);
+
+  		/* --- Compute the internal state u_b --- */
+  		ProjVelocity_b = 0.0; Vn_b = 0.0; Velocity2_b = 0.0;
+  		for (iDim=0; iDim < nDim; iDim++){
+  			Velocity_b[iDim] = V_boundary[iDim+1]; // same as solver_container[FLOW_SOL]->node[iPoint]->GetVelocity(iDim)
+  			ProjVelocity_b += Velocity_b[iDim]*Normal[iDim];
+  			Vn_b += Velocity_b[iDim]*UnitNormal[iDim];
+  			Velocity2_b += Velocity_b[iDim]*Velocity_b[iDim];
+  		}
+
+        Pressure_b 	= V_boundary[nDim+1];
+        Density_b 	= V_boundary[nDim+2];
+        Energy_b    = Pressure_b/(Gamma_Minus_One*Density_b) + 0.5*Velocity2_b;
+
+        for (iDim = 0; iDim < nDim; iDim++){ lambda_i[iDim] = ProjVelocity_i;}
+        lambda_i[nVar-2] = ProjVelocity_i + SoundSpeed_i*Area;	// Area is the modulus of the Normal (see above).
+        lambda_i[nVar-1] = ProjVelocity_i - SoundSpeed_i*Area;
+
+        /*--- Eigenvalue matrix times diag(psi): Lambda*diagPsi ---*/
+        for (iVar=0; iVar<nVar; iVar++){
+          for (jVar=0; jVar<nVar; jVar++){
+        	  I_diagPsi[iVar][jVar] = 0.0;
+        	  Buf1[iVar][jVar] = 0.0;
+        	  Buf2[iVar][jVar] = 0.0;
+          }
+        }
+
+        for (iVar=0; iVar<nVar; iVar++)
+        	if (lambda_i[iVar]>0)
+        		I_diagPsi[iVar][iVar] = 1.0;
+
+        u_i[0] = Density_i;
+        for (iDim=0; iDim < nDim; iDim++)
+        	u_i[iDim+1] = Velocity_i[iDim]*Density_i;
+        u_i[nVar-1] = Energy_i*Density_i;
+
+        for (iVar=0; iVar<nVar; iVar++){
+        	for (jVar=0; jVar<nVar; jVar++){
+        		for (kVar=0; kVar<nVar; kVar++){
+        			Buf1[iVar][jVar] += I_diagPsi[iVar][kVar]*invP_Tensor[kVar][jVar];
+        		}
+        	}
+        }
+
+        for (iVar=0; iVar<nVar; iVar++){
+        	for (jVar=0; jVar<nVar; jVar++){
+        		for (kVar=0; kVar<nVar; kVar++){
+        			Buf2[iVar][jVar] += P_Tensor[iVar][kVar]*Buf1[kVar][jVar];
+        		}
+        	}
+        }
+
+        for (iVar = 0; iVar < nVar; iVar++){ u_i_prime[iVar]=0; }
+        for (iVar=0; iVar<nVar; iVar++){
+        	for (jVar=0; jVar<nVar; jVar++){
+        		u_i_prime[iVar] += Buf2[iVar][jVar]*u_i[jVar];
+        	}
+        }
+
+        rho_i_p = u_i_prime[0];
+        energy_i_p = u_i_prime[nVar-1]/rho_i_p;
+        for (iDim=0; iDim<nDim; iDim++)
+        	v_i_p[iDim] = u_i_prime[iDim+1]/rho_i_p;
+
+//        cout << rho_i_p << ", " << v_i_p[0] << ", " <<  v_i_p[1] << ", " << energy_i_p << endl;
+
+        /*--- Compute the projected Jacobian at the boundary state U_b ---*/
+        conv_numerics->GetInviscidProjJac(v_i_p, &energy_i_p, Normal, 1.0, Jac_b);
+
+  		/*--- Distinguish between outflow and inflow ---*/
+        if (ProjVelocity_i < 0.0) {
+
+          if (config->GetExtIter() == 0) {cout << "Vn_i = " << Vn_i << " -> Inflow conditions"<< endl;}
+
+      	  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+
+      		  /*--- Set the numerical boundary conditions: extrapolate value from nearest neighbor. Then update Psi_rhoE ---*/
+      		  for (iVar = 0; iVar < nVar; iVar++)
+				Psi_boundary[iVar] = Psi_domain[iVar];
+
+      		  for (iVar = 0; iVar < nVar; iVar++){ c[iVar]=0; }
+      		  for (iVar=0; iVar<nVar; iVar++){
+      			for (jVar=0; jVar<nVar; jVar++){
+      				c[iVar] += Jac_b[iVar][jVar]*P_Tensor[jVar][nVar-2];
+      			}
+      		  }
+
+      		  /*--- Impose values for Psi_rhoE at the node using the other adjoint variables at the boundary as free-variables ---*/
+      		  if (nDim==2){ Psi_boundary[nVar-1] = -(Psi_domain[0]*c[0] +  Psi_domain[1]*c[1] + Psi_domain[2]*c[2])/c[nVar-1];}
+      		  if (nDim==3){ Psi_boundary[nVar-1] = -(Psi_domain[0]*c[0] +  Psi_domain[1]*c[1] + Psi_domain[2]*c[2] + Psi_domain[3]*c[3])/c[nVar-1];}
+
+      	  }
+
+      	  else if (config->GetKind_Data_NonUniform(Marker_Tag) == DENSITY_VELOCITY){
+
+      		  /* --- Homogeneous adjoint boundary conditions --*/
+      		  if (config->GetExtIter() == 0) {cout << "Only homogeneous adjoint BC implemented for the DENSITY_VELOCITY case. "<< endl;}
+
+      		  for (iVar = 0; iVar < nVar; iVar++) {
+      			  Psi_domain[iVar] = node[iPoint]->GetSolution(iVar);
+      		      Psi_boundary[iVar] = 0.0;
+      		  }
+      	  }
+        }
+
+        /*--- Outflow at the NUBC (implemented only for subsonic case) ---*/
+        else if (ProjVelocity_i > 0.0) {
+
+            if (config->GetExtIter() == 0) {cout << "Vn_i = " << ProjVelocity_i << " -> Outflow conditions"<< endl;}
+
+        	if (Vn_i > SoundSpeed_i) {
+            	cout << "Adjoint NUBC for supersonic outlet not implemented yet" << endl;
+            	break;
+            	//TODO: implement adjoint NUBC for supersonic outlet.
+            }
+
+            else{
+                /*--- Set the numerical boundary conditions: extrapolate value from nearest neighbor.
+                 * Then update Psi_rho, Psi_rhoU, Psi_rhoV, Psi_rhoW and use Psi_rhoE as free-variable. ---*/
+                for (iVar = 0; iVar < nVar; iVar++)
+                	Psi_boundary[iVar] = Psi_domain[iVar];
+                }
+            }
+
+        /*--- Set the flow and adjoint states in the solver ---*/
+        conv_numerics->SetPrimitive(V_domain, V_boundary);
+        conv_numerics->SetAdjointVar(Psi_domain, Psi_boundary);
+
+        /*--- Grid Movement ---*/
+        if (grid_movement)
+          conv_numerics->SetGridVel(geometry->node[iPoint]->GetGridVel(),
+        		  	  	  	  	    geometry->node[iPoint]->GetGridVel());
+
+        conv_numerics->ComputeResidual(Residual_i, Residual_j, Jacobian_ii, Jacobian_ij,
+                                       Jacobian_ji, Jacobian_jj, config);
+
+        /*--- Add and Subtract Residual ---*/
+        LinSysRes.SubtractBlock(iPoint, Residual_i);
+
+	    /*--- Implicit contribution to the residual ---*/
+	    if (implicit)
+		  Jacobian.SubtractBlock(iPoint, iPoint, Jacobian_ii);
+
+	    /*--- Viscous residual contribution, it doesn't work ---*/
+	    if (config->GetViscous()) {
+	      /*--- Index of the closest interior node ---*/
+          Point_Normal = geometry->vertex[val_marker][iVertex]->GetNormal_Neighbor();
+
+          /*--- Set laminar and eddy viscosity at the infinity (ONLY in BC_Outlet) ---*/
+//          V_outlet[nDim+5] = solver_container[FLOW_SOL]->node[iPoint]->GetLaminarViscosity();
+//          V_outlet[nDim+6] = solver_container[FLOW_SOL]->node[iPoint]->GetEddyViscosity();
+
+		  /*--- Points in edge, coordinates and normal vector---*/
+		  visc_numerics->SetCoord(geometry->node[iPoint]->GetCoord(), geometry->node[Point_Normal]->GetCoord());
+		  visc_numerics->SetNormal(Normal);
+
+		  /*--- Conservative variables w/o reconstruction and adjoint variables w/o reconstruction---*/
+		  visc_numerics->SetPrimitive(V_domain, V_boundary);
+		  visc_numerics->SetAdjointVar(Psi_domain, Psi_boundary);
+
+		  /*--- Gradient and limiter of Adjoint Variables ---*/
+		  visc_numerics->SetAdjointVarGradient(node[iPoint]->GetGradient(), node[iPoint]->GetGradient());
+
+		  /*--- Compute residual ---*/
+		  visc_numerics->ComputeResidual(Residual_i, Residual_j, Jacobian_ii, Jacobian_ij, Jacobian_ji, Jacobian_jj, config);
+
+		  /*--- Update adjoint viscous residual ---*/
+		  LinSysRes.SubtractBlock(iPoint, Residual_i);
+
+		  if (implicit)
+		    Jacobian.SubtractBlock(iPoint, iPoint, Jacobian_ii);
+
+        }
+      }
+    }
+
+    if (config->GetExtIter() == 0) {cout << "End adjoint NUBC" << endl;}
+
+    /*--- Free locally allocated memory ---*/
+    delete [] Normal;
+    delete [] Psi_domain; delete [] Psi_boundary;
+
+    for (iVar = 0; iVar < nVar; iVar++)
+    {
+      delete [] P_Tensor[iVar];
+      delete [] Jac_b[iVar];
+    }
+    delete [] P_Tensor;
+    delete [] Jac_b;
+
+}
+
 void CAdjEulerSolver::SetResidual_DualTime(CGeometry *geometry, CSolver **solver_container, CConfig *config, unsigned short iRKStep,
                                            unsigned short iMesh, unsigned short RunTime_EqSystem) {
   unsigned short iVar, jVar;

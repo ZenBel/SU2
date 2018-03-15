@@ -9829,6 +9829,9 @@ public:
   void BC_ActDisk(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, CNumerics *visc_numerics,
                   CConfig *config, unsigned short val_marker, bool inlet_surface);
 
+  void BC_NonUniform(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, CNumerics *visc_numerics,
+		  CConfig *config, unsigned short val_marker);
+
   /*!
    * \brief Impose via the residual the adjoint symmetry boundary condition.
    * \param[in] geometry - Geometrical definition of the problem.
