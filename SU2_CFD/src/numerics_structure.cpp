@@ -2706,3 +2706,41 @@ void CNumerics::SetRoe_Dissipation(su2double *Coord_i, su2double *Coord_j,
 CSourceNothing::CSourceNothing(unsigned short val_nDim, unsigned short val_nVar, CConfig *config) : CNumerics(val_nDim, val_nVar, config) { }
 
 CSourceNothing::~CSourceNothing(void) { }
+
+void CNumerics::GetMprimeMatrix(su2double *val_velocity, su2double *val_density, su2double *val_pressure,
+		su2double *val_energy, su2double *val_temperature, su2double **val_Mprime){
+
+	AD_BEGIN_PASSIVE
+	unsigned short iDim, jDim, iVar, jVar;
+	su2double sqvel;
+
+	sqvel = 0.0;
+	for (iDim = 0; iDim < nDim; iDim++) {sqvel+= val_velocity[iDim]*val_velocity[iDim];}
+
+    /*--- Compute non-zero matrix elements. Reference J.Blazek page 314 ---*/
+
+    val_Mprime[0][0] = (*val_density)/(*val_pressure);
+    val_Mprime[0][nDim+1] = -(*val_density)/(*val_temperature);
+
+	for (iDim = 0; iDim < nDim; iDim++){
+		val_Mprime[iDim+1][0] = (*val_density)/(*val_pressure)*val_velocity[iDim];
+		val_Mprime[iDim+1][iDim+1] = *val_density;
+	}
+	val_Mprime[nDim+1][0] = (*val_density)/(*val_pressure)*(*val_energy);
+	val_Mprime[nDim+1][nDim+1] = -(*val_density)/(*val_temperature)*0.5*sqvel;
+
+	for (iDim = 0; iDim < nDim; iDim++){
+		val_Mprime[nDim+1][iDim+1] = (*val_density)*val_velocity[iDim];
+		val_Mprime[iDim+1][nDim+1] = -(*val_density)/(*val_temperature)*val_velocity[iDim];
+	}
+
+//    for (iVar = 0; iVar < nVar; iVar++){
+//      for (jVar = 0; jVar < nVar; jVar++){
+//    	  cout << "Mprime[" << iVar << "][" << jVar << "] = " << val_Mprime[iVar][jVar] << ", ";
+//      }
+//      cout << endl;
+//    }
+//    cout << endl;
+
+	AD_END_PASSIVE
+}

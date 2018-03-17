@@ -1600,6 +1600,7 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   virtual void Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config);
+  virtual void NUBC_Sensitivity(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config);
   
   /*!
    * \brief A virtual member.
@@ -9972,6 +9973,7 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   void Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config);
+  void NUBC_Sensitivity(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config);
   
   /*!
    * \brief Smooth the inviscid sensitivity of the functional.

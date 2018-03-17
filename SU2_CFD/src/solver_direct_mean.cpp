@@ -9507,25 +9507,18 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
       u_i[nVar-1] = Energy_i*Density_i;
       
       /*--- Compute the characteristic jumps ---*/
-      for (iVar = 0; iVar < nVar; iVar++)
-      {
+      for (iVar = 0; iVar < nVar; iVar++){
         dw[iVar] = 0;
         for (jVar = 0; jVar < nVar; jVar++)
           dw[iVar] += invP_Tensor[iVar][jVar] * (u_e[jVar] - u_i[jVar]);
-        
       }
       
       /*--- Compute the boundary state u_b using characteristics ---*/
-      for (iVar = 0; iVar < nVar; iVar++)
-      {
+      for (iVar = 0; iVar < nVar; iVar++){
         u_b[iVar] = u_i[iVar];
-        
-        for (jVar = 0; jVar < nVar; jVar++)
-        {
-          if (Lambda_i[jVar] < 0)
-          {
+        for (jVar = 0; jVar < nVar; jVar++){
+          if (Lambda_i[jVar] < 0){
             u_b[iVar] += P_Tensor[iVar][jVar]*dw[jVar];
-            
           }
         }
       }
@@ -13230,12 +13223,12 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
           }
           Energy_e = FluidModel->GetStaticEnergy() + 0.5*Velocity2_e;
 
-//          /*--- Setting other quantities possibly needed for sensitivity computation ---*/
-//          VelMag_e = sqrt(Velocity2_e);
-//          for (iDim = 0; iDim < nDim; iDim++) {
-//            Flow_Dir_norm[iDim] = Velocity_e[iDim]/VelMag_e;
-//            Flow_Dir[iDim] = Flow_Dir_norm[iDim];		// only for the OUTLET case //
-//          }
+          /*--- Setting other quantities possibly needed for sensitivity computation ---*/
+          VelMag_e = sqrt(Velocity2_e);
+          for (iDim = 0; iDim < nDim; iDim++) {
+            Flow_Dir_norm[iDim] = Velocity_e[iDim]/VelMag_e;
+            Flow_Dir[iDim] = Flow_Dir_norm[iDim];		// only for the OUTLET case //
+          }
         }
 
         else {
@@ -13256,14 +13249,14 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 			//TODO Setting quantities possibly needed for optimization
         }
 
-//      /*---Storing the values of the external state (to be used in solver_adjoint_mean.cpp) ---*/
-//	  node[iPoint]->SetDensity_e(Density_e);
-//	  node[iPoint]->SetEnergy_e(Energy_e);
-//	  node[iPoint]->SetVelMag_e(VelMag_e);
-//	  node[iPoint]->SetFlowDirX_e(Flow_Dir[0]);
-//	  node[iPoint]->SetFlowDirY_e(Flow_Dir[1]);
-//	  node[iPoint]->SetFlowDirZ_e(Flow_Dir[2]);
-//	  node[iPoint]->SetPressure_e(Pressure_e);
+      /*---Storing the values of the external state (to be used in solver_adjoint_mean.cpp) ---*/
+	  node[iPoint]->SetDensity_e(Density_e);
+	  node[iPoint]->SetEnergy_e(Energy_e);
+	  node[iPoint]->SetVelMag_e(VelMag_e);
+	  node[iPoint]->SetFlowDirX_e(Flow_Dir[0]);
+	  node[iPoint]->SetFlowDirY_e(Flow_Dir[1]);
+	  node[iPoint]->SetFlowDirZ_e(Flow_Dir[2]);
+	  node[iPoint]->SetPressure_e(Pressure_e);
 //	  node[iPoint]->SetPtot_nubc(P_Total);
 
       /*--- Compute P (matrix of right eigenvectors) ---*/

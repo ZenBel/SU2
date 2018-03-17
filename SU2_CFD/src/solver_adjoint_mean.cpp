@@ -3686,29 +3686,394 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
     }
   }
 
-  
+
+
+
 #ifdef HAVE_MPI
-  
+
   su2double MyTotal_Sens_Geo   = Total_Sens_Geo;     Total_Sens_Geo = 0.0;
   su2double MyTotal_Sens_Mach  = Total_Sens_Mach;    Total_Sens_Mach = 0.0;
   su2double MyTotal_Sens_AoA   = Total_Sens_AoA;     Total_Sens_AoA = 0.0;
   su2double MyTotal_Sens_Press = Total_Sens_Press;   Total_Sens_Press = 0.0;
   su2double MyTotal_Sens_Temp  = Total_Sens_Temp;    Total_Sens_Temp = 0.0;
   su2double MyTotal_Sens_BPress  = Total_Sens_BPress;    Total_Sens_BPress = 0.0;
-  
+
   SU2_MPI::Allreduce(&MyTotal_Sens_Geo, &Total_Sens_Geo, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(&MyTotal_Sens_Mach, &Total_Sens_Mach, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(&MyTotal_Sens_AoA, &Total_Sens_AoA, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(&MyTotal_Sens_Press, &Total_Sens_Press, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(&MyTotal_Sens_Temp, &Total_Sens_Temp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(&MyTotal_Sens_BPress, &Total_Sens_BPress, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  
+
 #endif
-  
+
   delete [] USens;
   delete [] Velocity;
-  
+
 }
+
+void CAdjEulerSolver::NUBC_Sensitivity(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config) {
+
+  unsigned long iVertex, iPoint;
+  unsigned short iPos, jPos, iVar, jVar, kVar;
+  unsigned short iDim, jDim, iMarker;
+  su2double *Normal = NULL, *Psi = NULL, *U = NULL, Enthalpy, Mach_Inf,  Area, UnitNormal[3],
+		    r, ru, rv, rw, rE, p, T, H, scale = 1.0;
+  su2double RefVel2, RefDensity, Mach2Vel, *Velocity_Inf, factor;
+  su2double Vn, SoundSpeed;
+
+  su2double *Velocity_i, Velocity2_i,  SoundSpeed_i, Enthalpy_i, Energy_i, val_scale,
+		    Density_i, StaticEnergy_i, Pressure_i, Temperature_i, Kappa_i, Chi_i, ProjVelocity_i;
+  su2double VelMag_e, *Velocity_e, Velocity2_e, Density_e, Temperature_e, Energy_e, Pressure_e, *Flow_Dir, *Flow_Dir_norm,
+  	  	    modFlow_Dir, modFlow_Dir2;
+  su2double **P_Tensor, **invP_Tensor, **diagPsi, **Jac_e_p, *lambda_i, **Buf1, **Buf2, **Buf3, **Buf4, **Mprime;
+  su2double *SensNUBC;
+  su2double rho_e_p, energy_e_p, *v_e_p, *u_e, *u_e_p, *buf, *k;
+  su2double B=0.0, D=0.0;
+
+  SensNUBC = new su2double[nVar+1];
+  lambda_i = new su2double[nVar];
+  v_e_p = new su2double[nDim];
+  u_e = new su2double[nVar];
+  u_e_p = new su2double[nVar];
+  buf = new su2double[nVar];
+  k = new su2double[nVar];
+  diagPsi = new su2double*[nVar];
+  Buf1 = new su2double*[nVar];
+  Buf2 = new su2double*[nVar];
+  Buf3 = new su2double*[nVar];
+  Buf4 = new su2double*[nVar];
+  Mprime = new su2double*[nVar];
+  P_Tensor = new su2double*[nVar];
+  Jac_e_p = new su2double*[nVar];
+  invP_Tensor = new su2double*[nVar];
+  for (iVar = 0; iVar < nVar; iVar++){
+    diagPsi[iVar] = new su2double[nVar];
+    Buf1[iVar] = new su2double[nVar];
+    Buf2[iVar] = new su2double[nVar];
+    Buf3[iVar] = new su2double[nVar];
+    Buf4[iVar] = new su2double[nVar];
+    Mprime[iVar] = new su2double[nVar];
+  	P_Tensor[iVar] = new su2double[nVar];
+    invP_Tensor[iVar] = new su2double[nVar];
+    Jac_e_p[iVar] = new su2double[nVar];
+  }
+
+
+  Velocity_i = new su2double[nDim];
+  Velocity_e = new su2double[nDim];
+  Flow_Dir   = new su2double[nDim];
+  Flow_Dir_norm    = new su2double[nDim];
+
+  su2double Gas_Constant    = config->GetGas_ConstantND();
+  bool grid_movement        = config->GetGrid_Movement();
+  su2double RefArea         = config->GetRefArea();
+  su2double Mach_Motion     = config->GetMach_Motion();
+  unsigned short ObjFunc    = config->GetKind_ObjFunc();
+
+  if (config->GetSystemMeasurements() == US) scale = 1.0/12.0;
+  else scale = 1.0;
+
+  /*--- Compute non-dimensional factor. For dynamic meshes, use the motion Mach
+   number as a reference value for computing the force coefficients.
+   Otherwise, use the freestream values,
+   which is the standard convention. ---*/
+
+  if (grid_movement) {
+    Mach2Vel = sqrt(Gamma*Gas_Constant*config->GetTemperature_FreeStreamND());
+    RefVel2 = (Mach_Motion*Mach2Vel)*(Mach_Motion*Mach2Vel);
+  }
+  else {
+    Velocity_Inf = config->GetVelocity_FreeStreamND();
+    RefVel2 = 0.0;
+    for (iDim = 0; iDim < nDim; iDim++)
+      RefVel2  += Velocity_Inf[iDim]*Velocity_Inf[iDim];
+  }
+
+  RefDensity  = config->GetDensity_FreeStreamND();
+
+  factor = 1.0;
+  /*-- For multi-objective problems these scaling factors are applied before solution ---*/
+  if (config->GetnObj()==1) {
+    factor = 1.0/(0.5*RefDensity*RefArea*RefVel2);
+    if ((ObjFunc == INVERSE_DESIGN_HEATFLUX)  || (ObjFunc == TOTAL_HEATFLUX) ||
+    	(ObjFunc == MAXIMUM_HEATFLUX) ||  (ObjFunc == SURFACE_MASSFLOW) )
+      factor = 1.0;
+    if ((ObjFunc == SURFACE_TOTAL_PRESSURE) || (ObjFunc == SURFACE_STATIC_PRESSURE)) factor = 1.0/Area_Monitored;
+  }
+
+//  cout << "Computing NUBC sensitivities" << endl;
+
+  /*--- NUBC sensitivity (Implemented only for Ideal gases)---*/
+
+  for (iMarker = 0; iMarker < nMarker; iMarker++) {
+    if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY) {
+      /*--- Loop over all the cell vertices ---*/
+      for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+
+        if (geometry->node[iPoint]->GetDomain()) {
+
+          /*--- Retrieve the adjoint solution ---*/
+          Psi = node[iPoint]->GetSolution();
+          /*--- Retrieve the flow solution ---*/
+          U = solver_container[FLOW_SOL]->node[iPoint]->GetSolution();
+          Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
+
+          /*--- Define the conservative variables [r, ru, rv, rw, rE] ---*/
+          r = U[0]; ru = U[1]; rv = U[2];
+          if (nDim == 2) { rw = 0.0; rE = U[3]; }
+          else { rw = U[3]; rE = U[4]; }
+          p = Gamma_Minus_One*(rE-(ru*ru + rv*rv + rw*rw)/(2*r));
+          H = (rE + p)/r;
+
+          Area = 0.0; for (iDim = 0; iDim < nDim; iDim++) Area += Normal[iDim]*Normal[iDim];
+          Area = sqrt(Area);
+          for (iDim = 0; iDim < nDim; iDim++) UnitNormal[iDim] = -Normal[iDim]/Area;
+
+          /*--- Retrieve values at the internal (solution) state ---*/
+          // All the quantities below can also be obtained as solver_container[FLOW_SOL]->node[iPoint]->GetQuantity()
+          Velocity_i[0] = ru/r;
+          Velocity_i[1] = rv/r;
+          if (nDim == 3){Velocity_i[2]=rw/r;}
+          Density_i = r;
+          SoundSpeed_i = solver_container[FLOW_SOL]->node[iPoint]->GetSoundSpeed();
+
+          Velocity2_i = 0;
+          ProjVelocity_i = 0.0;
+          for (iDim = 0; iDim < nDim; iDim++){
+        	  Velocity2_i += Velocity_i[iDim]*Velocity_i[iDim];
+        	  ProjVelocity_i += Velocity_i[iDim]*(-Normal[iDim]);
+          }
+
+          for (iVar = 0; iVar < nVar; iVar++){
+            for (jVar = 0; jVar < nVar; jVar++){
+           	  P_Tensor[iVar][jVar]= 0.0;
+           	  invP_Tensor[iVar][jVar]= 0.0;
+            }
+          }
+
+          /*--- Compute P and invP (P=dU/dw, where U: conservative variables and w: characteristics variables) ---*/
+          numerics->GetPMatrix(&Density_i, Velocity_i, &SoundSpeed_i, UnitNormal, P_Tensor);
+          numerics->GetPMatrix_inv(&Density_i, Velocity_i, &SoundSpeed_i, UnitNormal, invP_Tensor);
+
+          /*--- Retrieve values at the external (infinity) state ---*/
+
+          VelMag_e   = solver_container[FLOW_SOL]->node[iPoint]->GetVelMag_e();
+          Flow_Dir[0] = solver_container[FLOW_SOL]->node[iPoint]->GetFlowDirX_e();
+          Flow_Dir[1] = solver_container[FLOW_SOL]->node[iPoint]->GetFlowDirY_e();
+          if (nDim ==3) { Flow_Dir[2] = solver_container[FLOW_SOL]->node[iPoint]->GetFlowDirZ_e();}
+          Density_e  = solver_container[FLOW_SOL]->node[iPoint]->GetDensity_e();
+          Pressure_e = solver_container[FLOW_SOL]->node[iPoint]->GetPressure_e();
+          Energy_e   = solver_container[FLOW_SOL]->node[iPoint]->GetEnergy_e();
+
+          /*--- Normalize flow direction components ---*/
+		  modFlow_Dir2 = 0.0;
+		  for (iDim = 0; iDim < nDim; iDim++){
+			modFlow_Dir2 += Flow_Dir[iDim]*Flow_Dir[iDim];
+		  }
+		  modFlow_Dir = sqrt(modFlow_Dir2);
+
+		  for (iDim = 0; iDim < nDim; iDim++){
+			Flow_Dir_norm[iDim] = Flow_Dir[iDim] / modFlow_Dir;
+		  }
+
+          Velocity2_e = 0.0;
+          for (iDim = 0; iDim < nDim; iDim++){
+           	Velocity_e[iDim] = VelMag_e*Flow_Dir_norm[iDim];
+           	Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
+          }
+          Temperature_e = Pressure_e/(Density_e*Gas_Constant);
+
+//          cout << "rho_i = " << Density_i << ", rho_e = "<< Density_e << ", v1_i = " << Velocity_i[0] << ", v1_e = "<< Velocity_e[0] << endl;
+//          cout << "E_i = " << rE/r << ", E_e = "<< Energy_e << ", c_i = " << SoundSpeed_i << ", c_e = "<< sqrt(Gamma*Gas_Constant*Temperature_e) << endl;
+//          cout << "p_i = " << p << ", p_e = "<< Pressure_e << ", v2_i = " << Velocity_i[1] << ", v2_e = "<< Velocity_e[1] << endl;
+
+          /*--- Compute M'=dU/dV' at the external state ---*/
+          for (iVar = 0; iVar < nVar; iVar++)
+            for (jVar = 0; jVar < nVar; jVar++)
+           	  Mprime[iVar][jVar]= 0.0;
+
+          numerics->GetMprimeMatrix(Velocity_e, &Density_e, &Pressure_e, &Energy_e, &Temperature_e, Mprime);
+
+//		  for (iVar = 0; iVar < nVar; iVar++){
+//		    for (jVar = 0; jVar < nVar; jVar++){
+//			  cout << "M'[" << iVar << "][" << jVar << "] = " << Mprime[iVar][jVar] << ", ";
+//		    }
+//		    cout << endl;
+//		  }
+//		  cout << endl;
+
+          for (iDim = 0; iDim < nDim; iDim++){ lambda_i[iDim] = ProjVelocity_i;}
+		  lambda_i[nVar-2] = ProjVelocity_i + SoundSpeed_i*Area;	// Area is the modulus of the Normal (see above).
+		  lambda_i[nVar-1] = ProjVelocity_i - SoundSpeed_i*Area;
+
+		  /*--- Eigenvalue matrix times diag(psi): Lambda*diagPsi ---*/
+		  for (iVar=0; iVar<nVar; iVar++){
+			for (jVar=0; jVar<nVar; jVar++){
+			  diagPsi[iVar][jVar] = 0.0;
+			  Buf1[iVar][jVar] = 0.0;
+			  Buf2[iVar][jVar] = 0.0;
+			  Buf3[iVar][jVar] = 0.0;
+			  Buf4[iVar][jVar] = 0.0;
+			  Jac_e_p[iVar][jVar] = 0.0;
+			}
+		  }
+
+		  for (iVar=0; iVar<nVar; iVar++)
+			if (lambda_i[iVar]<0)
+			  diagPsi[iVar][iVar] = 1.0;
+
+	      u_e[0] = Density_e;
+	      for (iDim=0; iDim < nDim; iDim++)
+	       	u_e[iDim+1] = Velocity_e[iDim]*Density_e;
+	      u_e[nVar-1] = Energy_e*Density_e;
+
+	      for (iVar = 0; iVar < nVar; iVar++){
+	        buf[iVar] = 0.0;
+	        for (jVar = 0; jVar < nVar; jVar++)
+	          buf[iVar] += invP_Tensor[iVar][jVar] * u_e[jVar] ;
+	      }
+
+	      for (iVar=0; iVar < nVar; iVar++){
+	        u_e_p[iVar] = 0.0;
+	        for (jVar = 0; jVar < nVar; jVar++){
+	          if (lambda_i[jVar] < 0)
+	        	u_e_p[iVar] += P_Tensor[iVar][jVar]*buf[jVar];
+	        }
+	      }
+
+	      rho_e_p = u_e_p[0];
+	      energy_e_p = u_e_p[nVar-1]/rho_e_p;
+	      for (iDim=0; iDim<nDim; iDim++)
+	       	v_e_p[iDim] = u_e_p[iDim+1]/rho_e_p;
+
+	      /*--- Allocate the value at the inlet (values at boundary state) ---*/
+	      su2double *V_boundary, *Velocity_b, Density_b, Energy_b, Pressure_b;
+	      Velocity_b = new su2double[nDim];
+	      V_boundary = solver_container[FLOW_SOL]->GetCharacPrimVar(iMarker, iVertex);
+
+		  /* --- Compute the internal state u_b --- */
+	      su2double Velocity2_b = 0.0;
+	  	  for (iDim=0; iDim < nDim; iDim++){
+	  		Velocity_b[iDim] = V_boundary[iDim+1]; // same as solver_container[FLOW_SOL]->node[iPoint]->GetVelocity(iDim)
+	  		Velocity2_b += Velocity_b[iDim]*Velocity_b[iDim];
+	  	  }
+
+	      Pressure_b 	= V_boundary[nDim+1];
+		  Density_b   = V_boundary[nDim+2];
+		  Energy_b    = Pressure_b/(Gamma_Minus_One*Density_b) + 0.5*Velocity2_b;
+
+	      /*--- Compute the projected Jacobian at the boundary state U_e' ---*/
+	      numerics->GetInviscidProjJac(v_e_p, &energy_e_p, Normal, 1.0, Jac_e_p);
+//	      numerics->GetInviscidProjJac(Velocity_b, &Energy_b, Normal, 1.0, Jac_e_p);
+
+	      /*--- Compute Buf1=Jac_e_p*P and Buf2 = diagPsi*invP ---*/
+          for (iVar=0; iVar<nVar; iVar++) {
+            for (jVar=0; jVar<nVar; jVar++) {
+              for (kVar=0; kVar<nVar; kVar++) {
+              	Buf1[iVar][jVar] += Jac_e_p[iVar][kVar]*P_Tensor[kVar][jVar];
+               	Buf2[iVar][jVar] += diagPsi[iVar][kVar]*invP_Tensor[kVar][jVar];
+              }
+            }
+          }
+
+          /*--- Compute Buf3 = Buf1*Buf2 = Jac_e_p*P*diagPsi*invP ---*/
+          for (iVar=0; iVar<nVar; iVar++) {
+            for (jVar=0; jVar<nVar; jVar++) {
+              for (kVar=0; kVar<nVar; kVar++) {
+              	Buf3[iVar][jVar] += Buf1[iVar][kVar]*Buf2[kVar][jVar];
+              }
+            }
+          }
+
+          /*--- Compute Buf4 = Buf3*M' = Jac_e_p*P*diagPsi*invP*M' ---*/
+          for (iVar=0; iVar<nVar; iVar++) {
+            for (jVar=0; jVar<nVar; jVar++) {
+              for (kVar=0; kVar<nVar; kVar++) {
+               	Buf4[iVar][jVar] += Buf3[iVar][kVar]*Mprime[kVar][jVar];
+              }
+            }
+          }
+
+          /*--- Compute the vector k = Psi.T*Buf4 = Psi.T*Jac_e_p*P*diagPsi*invP*M'---*/
+          for (iVar=0; iVar<nVar; iVar++){
+          	k[iVar] = 0;
+          	for (jVar=0; jVar<nVar; jVar++){
+           		k[iVar] += Psi[jVar]*Buf4[jVar][iVar];
+           	}
+          }
+
+          /*--- Define other coefficients ---*/
+          B = 1.0 + 0.5*Gamma_Minus_One*Velocity2_e/(Gamma*Gas_Constant*Temperature_e);
+          D = 0.5*(Pressure_e*Velocity2_e)/(Gas_Constant*Temperature_e*Temperature_e);
+
+          /*--- Initialize Sensitivity vector SensNUBC ---*/
+		  for (iVar=0; iVar < nVar+1 ; iVar++){ SensNUBC[iVar] = 0;}
+
+		  string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+
+          /*--- Sensitivities at the inflow ---*/
+          if (ProjVelocity_i < 0.0) {
+
+           	if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+
+              SensNUBC[0] = -( k[0] * pow(B, -Gamma/Gamma_Minus_One) ) * scale * factor;		// dI/dp_tot
+              SensNUBC[1] = -( k[0] * D / B + k[nDim+1] ) * scale * factor;					    // dI/dT_tot
+              for (iDim=0; iDim < nDim; iDim++){
+              	SensNUBC[iDim+2] = k[iDim+1]*VelMag_e/modFlow_Dir;							    // dI/df_x, dI/df_y, dI/df_z.
+                for (jDim=0; jDim < nDim; jDim++){
+                  SensNUBC[iDim+2] += -Velocity_e[iDim]/modFlow_Dir*( k[jDim+1]*Flow_Dir_norm[jDim] );
+                }
+              }
+              for (iDim=0; iDim < nDim; iDim++){ SensNUBC[iDim+2] = - SensNUBC[iDim+2] * scale * factor;}
+           	}
+
+			if (config->GetKind_Data_NonUniform(Marker_Tag) == DENSITY_VELOCITY){
+     		  cout << "DENSITY_VELOCITY sensitivities still to be implemented" << endl;
+			}
+          }
+
+          /*--- Sensitivities at the outflow ---*/
+          if (ProjVelocity_i > 0.0) {
+            SensNUBC[nVar] = -k[0] * scale * factor;
+          }
+
+          // NOTE: SensNUBC_* below declared similarly to CSensitivity (spline code)
+          node[iPoint]->SetSensNUBC_Q1(SensNUBC[0]);
+          node[iPoint]->SetSensNUBC_Q2(SensNUBC[1]);
+          node[iPoint]->SetSensNUBC_FlowDirX(SensNUBC[2]);
+          node[iPoint]->SetSensNUBC_FlowDirY(SensNUBC[3]);
+          if (nDim == 3 ){node[iPoint]->SetSensNUBC_FlowDirZ(SensNUBC[4]);}
+          node[iPoint]->SetSensNUBC_Pressure(SensNUBC[nDim+2]);
+        }
+      }
+    }
+  }
+
+
+  for (iVar = 0; iVar < nVar; iVar++)  {
+    delete [] P_Tensor[iVar];
+    delete [] Jac_e_p[iVar];
+    delete [] invP_Tensor[iVar];
+    delete [] Buf1[iVar];
+    delete [] Buf2[iVar];
+    delete [] Buf3[iVar];
+    delete [] Buf4[iVar];
+    delete [] diagPsi[iVar];
+  }
+  delete [] P_Tensor;
+  delete [] Jac_e_p;
+  delete [] invP_Tensor;
+  delete [] Buf1;
+  delete [] Buf2;
+  delete [] Buf3;
+  delete [] Buf4;
+  delete [] diagPsi;
+
+}
+
+
 
 void CAdjEulerSolver::Smooth_Sensitivity(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config) {
   unsigned short iMarker;
@@ -5804,8 +6169,9 @@ void CAdjEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_contai
 
 //        cout << rho_i_p << ", " << v_i_p[0] << ", " <<  v_i_p[1] << ", " << energy_i_p << endl;
 
-        /*--- Compute the projected Jacobian at the boundary state U_b ---*/
+        /*--- Compute the projected Jacobian at the boundary state U_i' ---*/
         conv_numerics->GetInviscidProjJac(v_i_p, &energy_i_p, Normal, 1.0, Jac_b);
+//        conv_numerics->GetInviscidProjJac(Velocity_b, &Energy_b, Normal, 1.0, Jac_b);
 
   		/*--- Distinguish between outflow and inflow ---*/
         if (ProjVelocity_i < 0.0) {

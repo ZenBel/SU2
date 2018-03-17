@@ -967,6 +967,9 @@ public:
                   su2double *val_soundspeed, su2double *val_normal,
                   su2double **val_p_tensor);
   
+  void GetMprimeMatrix(su2double *val_velocity, su2double *val_density, su2double *val_pressure,
+  		su2double *val_energy, su2double *val_temperature, su2double **val_Mprime);
+
   /*!
    * \brief Computation of the matrix Rinv*Pe.
    * \param[in] Beta2 - A variable in used to define Pe matrix.
