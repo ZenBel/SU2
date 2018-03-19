@@ -8751,7 +8751,7 @@ void CEulerSolver::Evaluate_ObjFunc(CConfig *config) {
         break;
         
         /*--- The following are not per-surface, and as a result will be
-         double-counted iff multiple surfaces are specified as well as multi-objective ---*/
+         double-counted if multiple surfaces are specified as well as multi-objective ---*/
         
       case EQUIVALENT_AREA:
         Total_ComboObj+=Weight_ObjFunc*Total_CEquivArea;

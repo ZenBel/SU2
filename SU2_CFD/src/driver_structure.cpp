@@ -3023,9 +3023,10 @@ void CDriver::PreprocessExtIter(unsigned long ExtIter) {
 
   /*--- Read the target pressure ---*/
 
-  if (config_container[ZONE_0]->GetInvDesign_Cp() == YES)
-    output->SetCp_InverseDesign(solver_container[ZONE_0][MESH_0][FLOW_SOL],
-        geometry_container[ZONE_0][MESH_0], config_container[ZONE_0], ExtIter);
+  if (config_container[ZONE_0]->GetInvDesign_Cp() == YES){
+	output->SetCp_InverseDesign(solver_container[ZONE_0][MESH_0][FLOW_SOL],
+		geometry_container[ZONE_0][MESH_0], config_container[ZONE_0], ExtIter);
+  }
 
   /*--- Read the target heat flux ---*/
 
@@ -3624,11 +3625,10 @@ bool CTurbomachineryDriver::Monitor(unsigned long ExtIter) {
 
 }
 
-CDiscAdjFluidDriver::CDiscAdjFluidDriver(char* confFile,
-                                                 unsigned short val_nZone,
-                                                 unsigned short val_nDim, SU2_Comm MPICommunicator) : CFluidDriver(confFile,
-                                                                                    val_nZone,
-                                                                                    val_nDim, MPICommunicator) {
+CDiscAdjFluidDriver::CDiscAdjFluidDriver(char* confFile, unsigned short val_nZone,
+		                                 unsigned short val_nDim, SU2_Comm MPICommunicator) : CFluidDriver(confFile,
+                                                                                                           val_nZone,
+                                                                                                           val_nDim, MPICommunicator) {
   RecordingState = NONE;
   unsigned short iZone;
 
@@ -3678,7 +3678,6 @@ void CDiscAdjFluidDriver::Run() {
                                                      surface_movement, grid_movement, FFDBox, iZone);
   }
 
-
   /*--- For the adjoint iteration we need the derivatives of the iteration function with
    *    respect to the conservative flow variables. Since these derivatives do not change in the steady state case
    *    we only have to record if the current recording is different from cons. variables. ---*/
@@ -3709,6 +3708,7 @@ void CDiscAdjFluidDriver::Run() {
       iteration_container[iZone]->InitializeAdjoint(solver_container, geometry_container, config_container, iZone);
 
     }
+
 
     /*--- Initialize the adjoint of the objective function with 1.0. ---*/
 
@@ -3795,7 +3795,6 @@ void CDiscAdjFluidDriver::SetRecording(unsigned short kind_recording){
   unsigned short iZone, iMesh;
 
   AD::Reset();
-
   /*--- Prepare for recording by resetting the flow solution to the initial converged solution---*/
 
   for (iZone = 0; iZone < nZone; iZone++) {
@@ -3806,7 +3805,6 @@ void CDiscAdjFluidDriver::SetRecording(unsigned short kind_recording){
       solver_container[iZone][MESH_0][ADJTURB_SOL]->SetRecording(geometry_container[iZone][MESH_0], config_container[iZone]);
     }
   }
-
 
   /*---Enable recording and register input of the flow iteration (conservative variables or node coordinates) --- */
 
@@ -3833,6 +3831,13 @@ void CDiscAdjFluidDriver::SetRecording(unsigned short kind_recording){
   /*--- Do one iteration of the direct flow solver ---*/
 
   DirectRun();
+
+  /*--- Set the value of Total_CpDiff using the Cp values at the last flow iteration
+   * (probably needed also for INVERSE_DESIGN_HEATFLUX )---*/
+  if (config_container[ZONE_0]->GetInvDesign_Cp() == YES){
+    output->SetCp_InverseDesign(solver_container[ZONE_0][MESH_0][FLOW_SOL],
+	  geometry_container[ZONE_0][MESH_0], config_container[ZONE_0], ExtIter);
+  }
 
   /*--- Print residuals in the first iteration ---*/
 
@@ -3928,7 +3933,6 @@ void CDiscAdjFluidDriver::SetObjFunction(){
 }
 
 void CDiscAdjFluidDriver::DirectRun(){
-
 
   unsigned short iZone, jZone;
   bool unsteady = config_container[ZONE_0]->GetUnsteady_Simulation() != STEADY;
