@@ -6182,7 +6182,8 @@ void CAdjEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_contai
 
       		  /*--- Set the numerical boundary conditions: extrapolate value from nearest neighbor. Then update Psi_rhoE ---*/
       		  for (iVar = 0; iVar < nVar; iVar++)
-				Psi_boundary[iVar] = Psi_domain[iVar];
+      			Psi_boundary[iVar] = node[iPoint]->GetSolution(iVar);
+//				Psi_boundary[iVar] = Psi_domain[iVar];
 
       		  for (iVar = 0; iVar < nVar; iVar++){ c[iVar]=0; }
       		  for (iVar=0; iVar<nVar; iVar++){
