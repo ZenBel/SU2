@@ -92,7 +92,7 @@ def gradient( func_name, method, config, state=None ):
             func_name = func_name[0]
     else:
         config.OPT_COMBINE_OBJECTIVE="NO"
-        config.OBJECTIVE_WEIGHT = "1.0"
+        config.OBJECTIVE_WEIGHT = "1.0" 
 
     # redundancy check
     if not func_output in state['GRADIENTS']:
@@ -292,7 +292,7 @@ def adjoint( func_name, config, state=None ):
         #pull.append(files['NUBC_CONFIG_FILE'])
         for i in range(len(nubc_filenames)):
             pull.append( files['NUBC_FILE_%s'%(i+1)])
-
+            
     # output redirection
     with redirect_folder( ADJ_NAME, pull, link ) as push:
         with redirect_output(log_adjoint):        
@@ -323,6 +323,7 @@ def adjoint( func_name, config, state=None ):
     # return output 
     grads = su2util.ordered_bunch()
     grads[func_output] = state['GRADIENTS'][func_output]
+    
     return grads
 
 #: def adjoint()

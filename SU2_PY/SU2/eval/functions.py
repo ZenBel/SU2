@@ -44,6 +44,7 @@ from .. import run  as su2run
 from .. import io   as su2io
 from .. import util as su2util
 from ..io import redirect_folder, redirect_output
+import numpy
 
 
 # ----------------------------------------------------------------------
@@ -79,7 +80,7 @@ def function( func_name, config, state=None ):
             and values of objective function floats.
             Otherwise returns a float.
     """
-    
+       
     # initialize
     state = su2io.State(state)
     
@@ -168,7 +169,7 @@ def aerodynamics( config, state=None ):
     # ----------------------------------------------------
     #  Initialize    
     # ----------------------------------------------------
-    
+       
     # initialize
     state = su2io.State(state)
     if not 'MESH' in state.FILES:
@@ -184,10 +185,10 @@ def aerodynamics( config, state=None ):
     # ----------------------------------------------------    
     #  Update Mesh
     # ----------------------------------------------------
-    
+
     # does decomposition and deformation
     info = update_mesh(config,state)
-    
+
     # ----------------------------------------------------    
     #  Adaptation (not implemented)
     # ----------------------------------------------------
@@ -252,10 +253,15 @@ def aerodynamics( config, state=None ):
         for f in files_nubc:
             if '.bc' in f:
                 nubc_filenames.append(f)
-        #pull.append(files['NUBC_CONFIG_FILE'])
         for i in range(len(nubc_filenames)):
             pull.append( files['NUBC_FILE_%s'%(i+1)])
             
+    ### Update inlet.bc file
+    buf = numpy.loadtxt('inlet.bc', skiprows=1)
+    nubc_new = config['DV_VALUE_NEW']
+    nubc_new = numpy.array(nubc_new).reshape((buf.shape[0],6))
+    buf[:,1:] = nubc_new
+    numpy.savetxt('inlet.bc', buf, fmt='%i\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f', comments='', header=str(buf.shape[0]))    
 
     # output redirection
     with redirect_folder( 'DIRECT', pull, link ) as push:

@@ -234,6 +234,15 @@ class State(ordered_bunch):
         targetea_name = 'TargetEA.dat'
         targetcp_name = 'TargetCp.dat'
         targetheatflux_name = 'TargetHeatFlux.dat'
+        
+        # files: Non-Uniform boundary input (.bc) files           
+        if (config.has_key('MARKER_NONUNIFORM')):
+            path_nubc  = os.getcwd()
+            files_nubc = os.listdir(path_nubc)
+            nubc_filenames = []
+            for f in files_nubc:
+                if '.bc' in f:
+                    nubc_filenames.append(f)
 
         adj_map = get_adjointSuffix()
         restart = config.RESTART_SOL == 'YES'
@@ -292,6 +301,10 @@ class State(ordered_bunch):
         # heat flux inverse design
         if 'INV_DESIGN_HEATFLUX' in special_cases:
           register_file('TARGET_HEATFLUX',targetheatflux_name)
+        
+        if (config.has_key('MARKER_NONUNIFORM')): 
+            for i in range(len(nubc_filenames)):
+                register_file('NUBC_FILE_%s'%(i+1), nubc_filenames[i])
         
         return
     

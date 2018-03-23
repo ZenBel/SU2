@@ -221,7 +221,7 @@ def obj_f(dvs,config,state=None):
         
         Outputs a float.
     """
-    
+       
     # unpack config and state 
     config.unpack_dvs(dvs)
     state = su2io.State(state)
@@ -269,7 +269,8 @@ def obj_p(config,state,this_obj,def_objs):
         penalty = (constraint - funcval)**2.0
     # If 'DEFAULT' objtype this returns the function value. 
     else:
-        penalty = funcval
+        penalty = funcval 
+        
     return penalty
 
 #: def obj_p()
@@ -376,13 +377,14 @@ def obj_df(dvs,config,state=None):
                 sign = 1.0
                         
             # Evaluate Objective Gradient
-            grad = su2grad(this_obj,grad_method,config,state)
-           
+            grad = su2grad(this_obj,grad_method,config,state)  
+             
             # scaling and sign
             k = 0
             for i_dv,dv_scl in enumerate(dv_scales):
                 for i_grd in range(dv_size[i_dv]):
-                    grad[k] = grad[k] * sign * scale * global_factor / dv_scl
+                    #grad[k] = grad[k] * sign * scale * global_factor / dv_scl
+                    grad[k] = grad[k] * sign * scale * global_factor * dv_scl   #modfication to account NUBC scaling
                     k = k + 1
             
             vals_out.append(grad)

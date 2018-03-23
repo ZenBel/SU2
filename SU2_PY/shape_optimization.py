@@ -39,6 +39,7 @@ import os, sys, shutil
 from optparse import OptionParser
 sys.path.append(os.environ['SU2_RUN'])
 import SU2
+import numpy
 
 # -------------------------------------------------------------------
 #  Main 
@@ -142,22 +143,35 @@ def shape_optimization( filename                           ,
     def_dv           = config.DEFINITION_DV                               # complete definition of the desing variable
     n_dv             = sum(def_dv['SIZE'])                                # number of design variables
     accu             = float ( config.OPT_ACCURACY ) * gradient_factor    # optimizer accuracy
-    x0          = [0.0]*n_dv # initial design
+    x0               = [0.0]*n_dv # initial design
     xb_low           = [float(bound_lower)/float(relax_factor)]*n_dv      # lower dv bound it includes the line search acceleration factor
     xb_up            = [float(bound_upper)/float(relax_factor)]*n_dv      # upper dv bound it includes the line search acceleration fa
-    xb          = list(zip(xb_low, xb_up)) # design bounds
-    
+    xb               = list(zip(xb_low, xb_up)) # design bounds
+              
     # State
     state = SU2.io.State()
-    state.find_files(config)
-    
+    state.find_files(config)  
+       
     # Project
     if os.path.exists(projectname):
         project = SU2.io.load_data(projectname)
         project.config = config
     else:
-        project = SU2.opt.Project(config,state)
+        project = SU2.opt.Project(config,state)  
+        
+    # Update initial design in case NUBC are used
+    i=0; x_0=[]
+    for file in state['FILES']:
+        if 'NUBC' in file:
+            i+=1
+            nubc_f = 'NUBC_FILE_%i'%i
+            if 'inlet' in state['FILES'][nubc_f]:
+                buf = numpy.loadtxt(state['FILES'][nubc_f], skiprows=1, usecols=(1,2,3,4,5,6))
+                for elem in buf.flatten():
+                    x_0.append(elem)
     
+    x0 = x_0    
+                   
     # Optimize
     if optimization == 'SLSQP':
       SU2.opt.SLSQP(project,x0,xb,its,accu)

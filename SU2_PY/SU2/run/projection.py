@@ -102,18 +102,18 @@ def projection( config, state={}, step = 1e-3 ):
     # Run Projection
     SU2_DOT(konfig)
     
-    # read raw gradients
+    # read raw gradients            
     raw_gradients = su2io.read_gradients(grad_filename)
     os.remove(grad_filename)
     
     info = su2io.State()
     
+    # If NUBC_DV, read gradients from SensNUBC.csv file
     if ('NUBC_DV' in konfig.DV_KIND):
        import external_gradient # Must be defined in run folder
        chaingrad = external_gradient.of_gradient(konfig, state, step)
-       n_dv = len(raw_gradients)
        nubc_dv=0
-       for idv in range(n_dv):
+       for idv in range(n_DV):
                 if (konfig.DV_KIND[idv] == 'NUBC_DV'):
                     raw_gradients[idv] = chaingrad[nubc_dv]
                     nubc_dv = nubc_dv+1
