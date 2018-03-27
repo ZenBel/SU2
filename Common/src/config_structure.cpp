@@ -6880,6 +6880,10 @@ void CConfig::SetRiemann_Var2(su2double newVar2, string val_marker) {
   Riemann_Var2[iMarker_Riemann] = newVar2;
 }
 
+void CConfig::SetNUBC_Coord(su2double newVar, unsigned long val_pos) {
+  NonUniform_Coord[val_pos] = newVar;
+}
+
 void CConfig::SetNUBC_Var1(su2double newVar, unsigned long val_pos) {
   NonUniform_Var1[val_pos] = newVar;
 }
@@ -6902,6 +6906,10 @@ void CConfig::SetNUBC_Var5(su2double newVar, unsigned long val_pos) {
 
 void CConfig::SetNUBC_Var6(su2double newVar, unsigned long val_pos) {
   NonUniform_Var6[val_pos] = newVar;
+}
+
+su2double CConfig::GetNUBC_Coord(unsigned long val_pos) {
+  return NonUniform_Coord[val_pos];
 }
 
 su2double CConfig::GetNUBC_Var1(unsigned long val_pos) {
@@ -6928,27 +6936,83 @@ su2double CConfig::GetNUBC_Var6(unsigned long val_pos) {
   return NonUniform_Var6[val_pos];
 }
 
-unsigned long CConfig::GetNUBC_InputPoints(string val_marker) {
-  unsigned short iMarker_NonUniform;
-  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
-    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
-  return NonUniform_InputPoints[iMarker_NonUniform];
+unsigned long CConfig::GetNUBC_InputPoints() {
+  return NonUniform_InputPoints;
 }
 
-void CConfig::SetNUBC_InputPoints(unsigned long val_npoints, string val_marker) {
-  unsigned short iMarker_NonUniform;
-  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
-    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
-  NonUniform_InputPoints[iMarker_NonUniform] = val_npoints;
+void CConfig::SetNUBC_InputPoints(unsigned long val_npoints) {
+  NonUniform_InputPoints = val_npoints;
+}
+
+void CConfig::SetNUBC_d2Var1(vector<su2double> InputCoord, vector<su2double> InputVar,
+		                     unsigned long InputPoints, su2double dVar_1, su2double dVar_N) {
+  SetSpline(InputCoord, InputVar, InputPoints, dVar_1, dVar_N, NonUniform_d2Var1);
+}
+
+void CConfig::SetNUBC_d2Var2(vector<su2double> InputCoord, vector<su2double> InputVar,
+		                     unsigned long InputPoints, su2double dVar_1, su2double dVar_N) {
+  SetSpline(InputCoord, InputVar, InputPoints, dVar_1, dVar_N, NonUniform_d2Var2);
+}
+
+void CConfig::SetNUBC_d2Var3(vector<su2double> InputCoord, vector<su2double> InputVar,
+		                     unsigned long InputPoints, su2double dVar_1, su2double dVar_N) {
+  SetSpline(InputCoord, InputVar, InputPoints, dVar_1, dVar_N, NonUniform_d2Var3);
+}
+
+void CConfig::SetNUBC_d2Var4(vector<su2double> InputCoord, vector<su2double> InputVar,
+		                     unsigned long InputPoints, su2double dVar_1, su2double dVar_N) {
+  SetSpline(InputCoord, InputVar, InputPoints, dVar_1, dVar_N, NonUniform_d2FlowDir_x);
+}
+
+void CConfig::SetNUBC_d2Var5(vector<su2double> InputCoord, vector<su2double> InputVar,
+		                     unsigned long InputPoints, su2double dVar_1, su2double dVar_N) {
+  SetSpline(InputCoord, InputVar, InputPoints, dVar_1, dVar_N, NonUniform_d2FlowDir_y);
+}
+
+void CConfig::SetNUBC_d2Var6(vector<su2double> InputCoord, vector<su2double> InputVar,
+		                     unsigned long InputPoints, su2double dVar_1, su2double dVar_N) {
+  SetSpline(InputCoord, InputVar, InputPoints, dVar_1, dVar_N, NonUniform_d2FlowDir_z);
+}
+
+su2double* CConfig::GetNUBC_d2Var1() {
+  return NonUniform_d2Var1;
+}
+
+su2double* CConfig::GetNUBC_d2Var2() {
+  return NonUniform_d2Var2;
+}
+
+su2double* CConfig::GetNUBC_d2Var3() {
+  return NonUniform_d2Var3;
+}
+
+su2double* CConfig::GetNUBC_d2Var4() {
+  return NonUniform_d2FlowDir_x;
+}
+
+su2double* CConfig::GetNUBC_d2Var5() {
+  return NonUniform_d2FlowDir_y;
+}
+
+su2double* CConfig::GetNUBC_d2Var6() {
+  return NonUniform_d2FlowDir_z;
 }
 
 void CConfig::Initialize_NonUniform_Variables(unsigned long val_points) {
+  NonUniform_Coord = new su2double[val_points];
   NonUniform_Var1 = new su2double[val_points];
   NonUniform_Var2 = new su2double[val_points];
   NonUniform_Var3 = new su2double[val_points];
   NonUniform_Var4 = new su2double[val_points];
   NonUniform_Var5 = new su2double[val_points];
   NonUniform_Var6 = new su2double[val_points];
+
+  NonUniform_d2Var1 = new su2double[val_points];
+  NonUniform_d2Var2 = new su2double[val_points];
+  NonUniform_d2Var3 = new su2double[val_points];
+  NonUniform_d2FlowDir_x = new su2double[val_points];
+  NonUniform_d2FlowDir_y = new su2double[val_points];
+  NonUniform_d2FlowDir_z = new su2double[val_points];
 }
 
 su2double* CConfig::GetRiemann_FlowDir(string val_marker) {
@@ -7523,7 +7587,7 @@ su2double CConfig::GetFlowLoad_Value(string val_marker) {
   return FlowLoad_Value[iMarker_FlowLoad];
 }
 
-void CConfig::SetSpline(vector<su2double> &x, vector<su2double> &y, unsigned long n, su2double yp1, su2double ypn, vector<su2double> &y2) {
+void CConfig::SetSpline(vector<su2double> &x, vector<su2double> &y, unsigned long n, su2double yp1, su2double ypn, su2double *y2) {
   unsigned long i, k;
   su2double p, qn, sig, un, *u;
 
@@ -7558,7 +7622,7 @@ void CConfig::SetSpline(vector<su2double> &x, vector<su2double> &y, unsigned lon
 
 }
 
-su2double CConfig::GetSpline(vector<su2double>&xa, vector<su2double>&ya, vector<su2double>&y2a, unsigned long n, su2double x) {
+su2double CConfig::GetSpline(vector<su2double>&xa, vector<su2double>&ya, su2double *y2a, unsigned long n, su2double x) {
   unsigned long klo, khi, k;
   su2double h, b, a, y;
 
@@ -7591,6 +7655,10 @@ string CConfig::GetNonUniform_file(string val_marker) {
   for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
     if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
   return NonUniform_filename[iMarker_NonUniform];
+}
+
+string* CConfig::GetNonUniform_file() {
+  return NonUniform_filename;
 }
 
 unsigned short CConfig::GetKind_Data_NonUniform(string val_marker) {

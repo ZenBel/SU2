@@ -584,6 +584,18 @@ inline su2double CSolver::GetTotal_Sens_Temp() { return 0; }
 
 inline su2double CSolver::GetTotal_Sens_BPress() { return 0; }
 
+inline su2double* CSolver::GetTotal_Sens_Ttot() { return 0; }
+
+inline su2double* CSolver::GetTotal_Sens_Ptot() { return 0; }
+
+inline su2double* CSolver::GetTotal_Sens_Pstatic() { return 0; }
+
+inline su2double* CSolver::GetTotal_Sens_FlowX() { return 0; }
+
+inline su2double* CSolver::GetTotal_Sens_FlowY() { return 0; }
+
+inline su2double* CSolver::GetTotal_Sens_FlowZ() { return 0; }
+
 inline su2double CSolver::GetDensity_Inf(void) { return 0; }
 
 inline su2double CSolver::GetDensity_Inf(unsigned short val_var) { return 0; }
@@ -2058,6 +2070,20 @@ inline su2double CDiscAdjSolver::GetTotal_Sens_Press() { return Total_Sens_Press
 inline su2double CDiscAdjSolver::GetTotal_Sens_Temp() { return Total_Sens_Temp; }
 
 inline su2double CDiscAdjSolver::GetTotal_Sens_BPress() { return Total_Sens_BPress; }
+
+
+inline su2double* CDiscAdjSolver::GetTotal_Sens_Ttot() { return Total_Sens_Ttot; }
+
+inline su2double* CDiscAdjSolver::GetTotal_Sens_Ptot() { return Total_Sens_Ptot; }
+
+inline su2double* CDiscAdjSolver::GetTotal_Sens_Pstatic() { return Total_Sens_Pstatic; }
+
+inline su2double* CDiscAdjSolver::GetTotal_Sens_FlowX() { return Total_Sens_FlowX; }
+
+inline su2double* CDiscAdjSolver::GetTotal_Sens_FlowY() { return Total_Sens_FlowY; }
+
+inline su2double* CDiscAdjSolver::GetTotal_Sens_FlowZ() { return Total_Sens_FlowZ; }
+
 
 inline su2double CDiscAdjSolver::GetCSensitivity(unsigned short val_marker, unsigned long val_vertex) { return CSensitivity[val_marker][val_vertex]; }
 

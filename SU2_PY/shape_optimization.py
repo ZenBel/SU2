@@ -166,7 +166,8 @@ def shape_optimization( filename                           ,
             i+=1
             nubc_f = 'NUBC_FILE_%i'%i
             if 'inlet' in state['FILES'][nubc_f]:
-                buf = numpy.loadtxt(state['FILES'][nubc_f], skiprows=1, usecols=(1,2,3,4,5,6))
+                #buf = numpy.loadtxt(state['FILES'][nubc_f], skiprows=1, usecols=(1,2,3,4,5,6))
+                buf = numpy.loadtxt(state['FILES'][nubc_f], skiprows=1, usecols=(3,4,5,6,7,8))
                 for elem in buf.flatten():
                     x_0.append(elem)
     

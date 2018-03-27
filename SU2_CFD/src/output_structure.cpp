@@ -1166,218 +1166,263 @@ void COutput::SetSurfaceCSV_Adjoint(CConfig *config, CGeometry *geometry, CSolve
 #endif
 }
 
-void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *AdjSolver, CSolver *FlowSolution, unsigned long iExtIter, unsigned short val_iZone) {
+void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *AdjSolver, CSolver *FlowSolution, unsigned long iExtIter, unsigned short val_iZone){
 
-#ifndef HAVE_MPI
+  if (rank == MASTER_NODE){
 
-  /*--- Print sensitivities values to file: SensNUBC_file.csv ---*/
-  unsigned long iPoint, iVertex, Global_Index;
-  su2double SensNUBC_Q1, SensNUBC_Q2, SensNUBC_Pressure, SensNUBC_FlowDirX, SensNUBC_FlowDirY, SensNUBC_FlowDirZ, xCoord, yCoord, zCoord;
-  unsigned short iMarker;
-  char cstr[200], buffer[50];
-  ofstream SensNUBC_file;
-  su2double **SensNUBCmatrix;
+	  /*--- Print sensitivities values to file: SensNUBC_file.csv ---*/
+	  su2double *SensNUBC_Q1, *SensNUBC_Q2, *SensNUBC_Pressure, *SensNUBC_FlowDirX, *SensNUBC_FlowDirY, *SensNUBC_FlowDirZ, *xCoord, *yCoord, *zCoord;
+	  su2double SensNUBC_Fz;
+	  unsigned long iPoint;
+	  unsigned short iMarker;
+	  char cstr[200], buffer[50];
+	  ofstream SensNUBC_file;
+	  unsigned long NUBCInputPoints = config->GetNUBC_InputPoints();
+	  unsigned short nDim = geometry->GetnDim();
 
-  strcpy (cstr, "SensNUBC_file");
-  SPRINTF (buffer, ".csv");
-  strcat(cstr, buffer);
-  SensNUBC_file.precision(15);
-  SensNUBC_file.open(cstr, ios::out);
+	  strcpy (cstr, "SensNUBC_file");
+	  SPRINTF (buffer, ".csv");
+	  strcat(cstr, buffer);
+	  SensNUBC_file.precision(15);
+	  SensNUBC_file.open(cstr, ios::out);
 
-  SensNUBC_file <<  "\"Point\",\"SensNUBC_Q1\",\"SensNUBC_Q2\",\"SensNUBC_Pressure\",\"SensNUBC_FlowDirX\",\"SensNUBC_FlowDirY\", \"SensNUBC_FlowDirZ\", \"x_coord\",\"y_coord\", \"z_coord\"";
-  SensNUBC_file << "\n";
+	  SensNUBC_file <<  "\"SensNUBC_Q1\",\"SensNUBC_Q2\",\"SensNUBC_Pressure\",\"SensNUBC_FlowDirX\",\"SensNUBC_FlowDirY\", \"SensNUBC_FlowDirZ\", \"coord\"";
+	  SensNUBC_file << "\n";
 
-  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
-	  if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY){
+	  SensNUBC_Q1 = AdjSolver->GetTotal_Sens_Ptot();
+	  SensNUBC_Q2 = AdjSolver->GetTotal_Sens_Ttot();
+	  SensNUBC_Pressure = AdjSolver->GetTotal_Sens_Pstatic();
+	  SensNUBC_FlowDirX = AdjSolver->GetTotal_Sens_FlowX();
+	  SensNUBC_FlowDirY = AdjSolver->GetTotal_Sens_FlowY();
+	  if (nDim == 3) {SensNUBC_FlowDirZ = AdjSolver->GetTotal_Sens_FlowZ();}
 
-		  /*--- Retrieve the adjoint sensitivities ---*/
+	  for (iPoint=0; iPoint<NUBCInputPoints; iPoint++){
 
-		  for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
-			  iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-			  Global_Index = geometry->node[iPoint]->GetGlobalIndex();
-			  xCoord = geometry->node[iPoint]->GetCoord(0);
-			  yCoord = geometry->node[iPoint]->GetCoord(1);
-			  zCoord = geometry->node[iPoint]->GetCoord(2);
+		  SensNUBC_Fz = 0.0;
+		  if (nDim==3){SensNUBC_Fz = SensNUBC_FlowDirZ[iPoint];}
 
-			  SensNUBC_Q1 = AdjSolver->node[iPoint]->GetSensNUBC_Q1();
-			  SensNUBC_Q2 = AdjSolver->node[iPoint]->GetSensNUBC_Q2();
-			  SensNUBC_Pressure = AdjSolver->node[iPoint]->GetSensNUBC_Pressure();
-			  SensNUBC_FlowDirX = AdjSolver->node[iPoint]->GetSensNUBC_FlowDirX();
-			  SensNUBC_FlowDirY = AdjSolver->node[iPoint]->GetSensNUBC_FlowDirY();
-			  SensNUBC_FlowDirZ = 0.0;
-			  if (geometry->GetnDim() == 3) {SensNUBC_FlowDirZ = AdjSolver->node[iPoint]->GetSensNUBC_FlowDirZ();}
 
-			  SensNUBC_file << scientific << Global_Index << ", " << SensNUBC_Q1 << ", " << SensNUBC_Q2 << ", " << SensNUBC_Pressure << ", "
-					        << SensNUBC_FlowDirX << ", " << SensNUBC_FlowDirY <<", " << SensNUBC_FlowDirZ << ", "
-							<< xCoord << ", " << yCoord << ", " << zCoord;
-			  SensNUBC_file << "\n";
-		  }
+		  SensNUBC_file << scientific << SensNUBC_Q1[iPoint] << ", " << SensNUBC_Q2[iPoint] << ", " << SensNUBC_Pressure[iPoint] << ", "
+				        << SensNUBC_FlowDirX[iPoint] << ", " << SensNUBC_FlowDirY[iPoint] <<", " << SensNUBC_Fz << ", " << config->GetNUBC_Coord(iPoint);
+		  SensNUBC_file << "\n";
 	  }
+	  SensNUBC_file.close();
   }
-
-  SensNUBC_file.close();
-
-#else
-  int rank, iProcessor, nProcessor;
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &nProcessor);
-
-  unsigned short nDim = geometry->GetnDim(), iMarker;
-  su2double *Solution, *Coord;
-  unsigned long Buffer_Send_nVertex[1], iVertex, iPoint, nVertex_Surface = 0, nLocalVertex_Surface = 0,
-  MaxLocalVertex_Surface = 0, nBuffer_Scalar;
-  unsigned long *Buffer_Receive_nVertex = NULL;
-  ofstream SensNUBC_file;
-
-  /*--- Write the surface .csv file ---*/
-  nLocalVertex_Surface = 0;
-  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++)
-	if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY)
-      for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
-        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-        if (geometry->node[iPoint]->GetDomain()) nLocalVertex_Surface ++;
-      }
-
-  if (rank == MASTER_NODE)
-    Buffer_Receive_nVertex = new unsigned long [nProcessor];
-
-  Buffer_Send_nVertex[0] = nLocalVertex_Surface;
-
-  SU2_MPI::Allreduce(&nLocalVertex_Surface, &MaxLocalVertex_Surface, 1, MPI_UNSIGNED_LONG, MPI_MAX, MPI_COMM_WORLD);
-  SU2_MPI::Gather(&Buffer_Send_nVertex, 1, MPI_UNSIGNED_LONG, Buffer_Receive_nVertex, 1, MPI_UNSIGNED_LONG, MASTER_NODE, MPI_COMM_WORLD);
-
-  su2double *Buffer_Send_Coord_x = new su2double[MaxLocalVertex_Surface];
-  su2double *Buffer_Send_Coord_y= new su2double[MaxLocalVertex_Surface];
-  su2double *Buffer_Send_Coord_z= new su2double[MaxLocalVertex_Surface];
-  unsigned long *Buffer_Send_GlobalPoint= new unsigned long[MaxLocalVertex_Surface];
-  su2double *Buffer_Send_SensNUBC_Q1= new su2double[MaxLocalVertex_Surface];
-  su2double *Buffer_Send_SensNUBC_Q2= new su2double[MaxLocalVertex_Surface];
-  su2double *Buffer_Send_SensNUBC_Pressure= new su2double[MaxLocalVertex_Surface];
-  su2double *Buffer_Send_SensNUBC_FlowDirX= new su2double[MaxLocalVertex_Surface];
-  su2double *Buffer_Send_SensNUBC_FlowDirY= new su2double[MaxLocalVertex_Surface];
-  su2double *Buffer_Send_SensNUBC_FlowDirZ= new su2double[MaxLocalVertex_Surface];
-
-  su2double *Buffer_Send_Sens_x = NULL, *Buffer_Send_Sens_y = NULL, *Buffer_Send_Sens_z = NULL;
-
-  nVertex_Surface = 0;
-  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++)
-    if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY)
-      for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
-        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-        if (geometry->node[iPoint]->GetDomain()) {
-          Coord = geometry->node[iPoint]->GetCoord();
-          Buffer_Send_GlobalPoint[nVertex_Surface] = geometry->node[iPoint]->GetGlobalIndex();
-          Buffer_Send_Coord_x[nVertex_Surface] = Coord[0];
-          Buffer_Send_Coord_y[nVertex_Surface] = Coord[1];
-          Buffer_Send_Coord_z[nVertex_Surface] = 0.0;
-          if (nDim == 3) { Buffer_Send_Coord_z[nVertex_Surface] = Coord[2];}
-          Buffer_Send_SensNUBC_Q1[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_Q1();
-          Buffer_Send_SensNUBC_Q2[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_Q2();
-          Buffer_Send_SensNUBC_Pressure[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_Pressure();
-          Buffer_Send_SensNUBC_FlowDirX[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_FlowDirX();
-          Buffer_Send_SensNUBC_FlowDirY[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_FlowDirY();
-          Buffer_Send_SensNUBC_FlowDirZ[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_FlowDirZ();
-          nVertex_Surface++;
-        }
-      }
-
-  su2double *Buffer_Receive_Coord_x = NULL, *Buffer_Receive_Coord_y = NULL, *Buffer_Receive_Coord_z = NULL, *Buffer_Receive_SensNUBC_Q1 = NULL,
-  *Buffer_Receive_SensNUBC_Q2 = NULL, *Buffer_Receive_SensNUBC_Pressure = NULL, *Buffer_Receive_SensNUBC_FlowDirX = NULL,
-  *Buffer_Receive_SensNUBC_FlowDirY = NULL, *Buffer_Receive_SensNUBC_FlowDirZ = NULL;
-  unsigned long *Buffer_Receive_GlobalPoint = NULL;
-
-  if (rank == MASTER_NODE) {
-    Buffer_Receive_Coord_x = new su2double [nProcessor*MaxLocalVertex_Surface];
-    Buffer_Receive_Coord_y = new su2double [nProcessor*MaxLocalVertex_Surface];
-    Buffer_Receive_Coord_z = new su2double [nProcessor*MaxLocalVertex_Surface];
-    Buffer_Receive_GlobalPoint = new unsigned long [nProcessor*MaxLocalVertex_Surface];
-    Buffer_Receive_SensNUBC_Q1 = new su2double [nProcessor*MaxLocalVertex_Surface];
-    Buffer_Receive_SensNUBC_Q2 = new su2double [nProcessor*MaxLocalVertex_Surface];
-	Buffer_Receive_SensNUBC_Pressure = new su2double [nProcessor*MaxLocalVertex_Surface];
-	Buffer_Receive_SensNUBC_FlowDirX = new su2double [nProcessor*MaxLocalVertex_Surface];
-	Buffer_Receive_SensNUBC_FlowDirY = new su2double [nProcessor*MaxLocalVertex_Surface];
-	Buffer_Receive_SensNUBC_FlowDirZ = new su2double [nProcessor*MaxLocalVertex_Surface];
-  }
-
-  nBuffer_Scalar = MaxLocalVertex_Surface;
-
-  /*--- Send the information to the Master node ---*/
-  SU2_MPI::Gather(Buffer_Send_Coord_x, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_Coord_x, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-  SU2_MPI::Gather(Buffer_Send_Coord_y, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_Coord_y, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-  SU2_MPI::Gather(Buffer_Send_Coord_z, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_Coord_z, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-  SU2_MPI::Gather(Buffer_Send_GlobalPoint, nBuffer_Scalar, MPI_UNSIGNED_LONG, Buffer_Receive_GlobalPoint, nBuffer_Scalar, MPI_UNSIGNED_LONG, MASTER_NODE, MPI_COMM_WORLD);
-  SU2_MPI::Gather(Buffer_Send_SensNUBC_Q1, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_Q1, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-  SU2_MPI::Gather(Buffer_Send_SensNUBC_Q2, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_Q2, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-  SU2_MPI::Gather(Buffer_Send_SensNUBC_Pressure, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_Pressure, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-  SU2_MPI::Gather(Buffer_Send_SensNUBC_FlowDirX, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_FlowDirX, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-  SU2_MPI::Gather(Buffer_Send_SensNUBC_FlowDirY, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_FlowDirY, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-  SU2_MPI::Gather(Buffer_Send_SensNUBC_FlowDirZ, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_FlowDirZ, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-
-  /*--- The master node is the one who writes the surface files ---*/
-  if (rank == MASTER_NODE) {
-    unsigned long iVertex, GlobalPoint, position;
-    char cstr[200], buffer[50];
-    ofstream SensNUBC_file;
-    string filename = "SensNUBC_file";
-
-    /*--- Write file name with extension if unsteady ---*/
-    strcpy (cstr, filename.c_str());
-    SPRINTF (buffer, ".csv");
-    strcat (cstr, buffer);
-    SensNUBC_file.open(cstr, ios::out);
-    SensNUBC_file.precision(15);
-
-    /*--- Write the 2D surface flow coefficient file ---*/
-    if (geometry->GetnDim() == 2) {
-      SensNUBC_file <<  "\"Point\",\"SensNUBC_Q1\",\"SensNUBC_Q2\",\"SensNUBC_Pressure\",\"SensNUBC_FlowDirX\",\"SensNUBC_FlowDirY\", \"SensNUBC_FlowDirZ\", \"x_coord\",\"y_coord\", \"z_coord\"";
-      SensNUBC_file << "\n";
-
-      for (iProcessor = 0; iProcessor < nProcessor; iProcessor++)
-        for (iVertex = 0; iVertex < Buffer_Receive_nVertex[iProcessor]; iVertex++) {
-
-          position = iProcessor*MaxLocalVertex_Surface+iVertex;
-          GlobalPoint = Buffer_Receive_GlobalPoint[position];
-
-          SensNUBC_file << scientific << GlobalPoint << ", " << Buffer_Receive_SensNUBC_Q1[position] << ", "
-        		       << Buffer_Receive_SensNUBC_Q2[position] << ", " << Buffer_Receive_SensNUBC_Pressure[position] << ", "
-					   << Buffer_Receive_SensNUBC_FlowDirX[position] << ", " << Buffer_Receive_SensNUBC_FlowDirY[position] << ", " << Buffer_Receive_SensNUBC_FlowDirZ[position] << ", "
-					   << Buffer_Receive_Coord_x[position] << ", " << Buffer_Receive_Coord_y[position] << ", " << Buffer_Receive_Coord_z[position];
-          SensNUBC_file << "\n";
-        }
-    }
-  }
-
-  if (rank == MASTER_NODE) {
-    delete [] Buffer_Receive_nVertex;
-    delete [] Buffer_Receive_Coord_x;
-    delete [] Buffer_Receive_Coord_y;
-    delete [] Buffer_Receive_Coord_z;
-    delete [] Buffer_Receive_SensNUBC_Q1;
-    delete [] Buffer_Receive_SensNUBC_Q2;
-    delete [] Buffer_Receive_SensNUBC_Pressure;
-    delete [] Buffer_Receive_SensNUBC_FlowDirX;
-    delete [] Buffer_Receive_SensNUBC_FlowDirY;
-    delete [] Buffer_Receive_SensNUBC_FlowDirZ;
-    delete [] Buffer_Receive_GlobalPoint;
-  }
-
-  delete [] Buffer_Send_Coord_x;
-  delete [] Buffer_Send_Coord_y;
-  delete [] Buffer_Send_Coord_z;
-  delete [] Buffer_Send_GlobalPoint;
-  delete [] Buffer_Send_SensNUBC_Q1;
-  delete [] Buffer_Send_SensNUBC_Q2;
-  delete [] Buffer_Send_SensNUBC_Pressure;
-  delete [] Buffer_Send_SensNUBC_FlowDirX;
-  delete [] Buffer_Send_SensNUBC_FlowDirY;
-  delete [] Buffer_Send_SensNUBC_FlowDirZ;
-
-  SensNUBC_file.close();
-
-#endif
 
 }
+
+//void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *AdjSolver, CSolver *FlowSolution, unsigned long iExtIter, unsigned short val_iZone) {
+//
+//#ifndef HAVE_MPI
+//
+//  /*--- Print sensitivities values to file: SensNUBC_file.csv ---*/
+//  unsigned long iPoint, iVertex, Global_Index;
+//  su2double SensNUBC_Q1, SensNUBC_Q2, SensNUBC_Pressure, SensNUBC_FlowDirX, SensNUBC_FlowDirY, SensNUBC_FlowDirZ, xCoord, yCoord, zCoord;
+//  unsigned short iMarker;
+//  char cstr[200], buffer[50];
+//  ofstream SensNUBC_file;
+//  su2double **SensNUBCmatrix;
+//
+//  strcpy (cstr, "SensNUBC_file");
+//  SPRINTF (buffer, ".csv");
+//  strcat(cstr, buffer);
+//  SensNUBC_file.precision(15);
+//  SensNUBC_file.open(cstr, ios::out);
+//
+//  SensNUBC_file <<  "\"Point\",\"SensNUBC_Q1\",\"SensNUBC_Q2\",\"SensNUBC_Pressure\",\"SensNUBC_FlowDirX\",\"SensNUBC_FlowDirY\", \"SensNUBC_FlowDirZ\", \"x_coord\",\"y_coord\", \"z_coord\"";
+//  SensNUBC_file << "\n";
+//
+//  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+//	  if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY){
+//
+//		  /*--- Retrieve the adjoint sensitivities ---*/
+//
+//		  for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+//			  iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+//			  Global_Index = geometry->node[iPoint]->GetGlobalIndex();
+//			  xCoord = geometry->node[iPoint]->GetCoord(0);
+//			  yCoord = geometry->node[iPoint]->GetCoord(1);
+//			  zCoord = geometry->node[iPoint]->GetCoord(2);
+//
+//			  SensNUBC_Q1 = AdjSolver->node[iPoint]->GetSensNUBC_Q1();
+//			  SensNUBC_Q2 = AdjSolver->node[iPoint]->GetSensNUBC_Q2();
+//			  SensNUBC_Pressure = AdjSolver->node[iPoint]->GetSensNUBC_Pressure();
+//			  SensNUBC_FlowDirX = AdjSolver->node[iPoint]->GetSensNUBC_FlowDirX();
+//			  SensNUBC_FlowDirY = AdjSolver->node[iPoint]->GetSensNUBC_FlowDirY();
+//			  SensNUBC_FlowDirZ = 0.0;
+//			  if (geometry->GetnDim() == 3) {SensNUBC_FlowDirZ = AdjSolver->node[iPoint]->GetSensNUBC_FlowDirZ();}
+//
+//			  SensNUBC_file << scientific << Global_Index << ", " << SensNUBC_Q1 << ", " << SensNUBC_Q2 << ", " << SensNUBC_Pressure << ", "
+//					        << SensNUBC_FlowDirX << ", " << SensNUBC_FlowDirY <<", " << SensNUBC_FlowDirZ << ", "
+//							<< xCoord << ", " << yCoord << ", " << zCoord;
+//			  SensNUBC_file << "\n";
+//		  }
+//	  }
+//  }
+//
+//  SensNUBC_file.close();
+//
+//#else
+//  int rank, iProcessor, nProcessor;
+//
+//  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+//  MPI_Comm_size(MPI_COMM_WORLD, &nProcessor);
+//
+//  unsigned short nDim = geometry->GetnDim(), iMarker;
+//  su2double *Solution, *Coord;
+//  unsigned long Buffer_Send_nVertex[1], iVertex, iPoint, nVertex_Surface = 0, nLocalVertex_Surface = 0,
+//  MaxLocalVertex_Surface = 0, nBuffer_Scalar;
+//  unsigned long *Buffer_Receive_nVertex = NULL;
+//  ofstream SensNUBC_file;
+//
+//  /*--- Write the surface .csv file ---*/
+//  nLocalVertex_Surface = 0;
+//  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++)
+//	if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY)
+//      for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
+//        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+//        if (geometry->node[iPoint]->GetDomain()) nLocalVertex_Surface ++;
+//      }
+//
+//  if (rank == MASTER_NODE)
+//    Buffer_Receive_nVertex = new unsigned long [nProcessor];
+//
+//  Buffer_Send_nVertex[0] = nLocalVertex_Surface;
+//
+//  SU2_MPI::Allreduce(&nLocalVertex_Surface, &MaxLocalVertex_Surface, 1, MPI_UNSIGNED_LONG, MPI_MAX, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(&Buffer_Send_nVertex, 1, MPI_UNSIGNED_LONG, Buffer_Receive_nVertex, 1, MPI_UNSIGNED_LONG, MASTER_NODE, MPI_COMM_WORLD);
+//
+//  su2double *Buffer_Send_Coord_x = new su2double[MaxLocalVertex_Surface];
+//  su2double *Buffer_Send_Coord_y= new su2double[MaxLocalVertex_Surface];
+//  su2double *Buffer_Send_Coord_z= new su2double[MaxLocalVertex_Surface];
+//  unsigned long *Buffer_Send_GlobalPoint= new unsigned long[MaxLocalVertex_Surface];
+//  su2double *Buffer_Send_SensNUBC_Q1= new su2double[MaxLocalVertex_Surface];
+//  su2double *Buffer_Send_SensNUBC_Q2= new su2double[MaxLocalVertex_Surface];
+//  su2double *Buffer_Send_SensNUBC_Pressure= new su2double[MaxLocalVertex_Surface];
+//  su2double *Buffer_Send_SensNUBC_FlowDirX= new su2double[MaxLocalVertex_Surface];
+//  su2double *Buffer_Send_SensNUBC_FlowDirY= new su2double[MaxLocalVertex_Surface];
+//  su2double *Buffer_Send_SensNUBC_FlowDirZ= new su2double[MaxLocalVertex_Surface];
+//
+//  su2double *Buffer_Send_Sens_x = NULL, *Buffer_Send_Sens_y = NULL, *Buffer_Send_Sens_z = NULL;
+//
+//  nVertex_Surface = 0;
+//  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++)
+//    if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY)
+//      for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
+//        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+//        if (geometry->node[iPoint]->GetDomain()) {
+//          Coord = geometry->node[iPoint]->GetCoord();
+//          Buffer_Send_GlobalPoint[nVertex_Surface] = geometry->node[iPoint]->GetGlobalIndex();
+//          Buffer_Send_Coord_x[nVertex_Surface] = Coord[0];
+//          Buffer_Send_Coord_y[nVertex_Surface] = Coord[1];
+//          Buffer_Send_Coord_z[nVertex_Surface] = 0.0;
+//          if (nDim == 3) { Buffer_Send_Coord_z[nVertex_Surface] = Coord[2];}
+//          Buffer_Send_SensNUBC_Q1[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_Q1();
+//          Buffer_Send_SensNUBC_Q2[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_Q2();
+//          Buffer_Send_SensNUBC_Pressure[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_Pressure();
+//          Buffer_Send_SensNUBC_FlowDirX[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_FlowDirX();
+//          Buffer_Send_SensNUBC_FlowDirY[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_FlowDirY();
+//          Buffer_Send_SensNUBC_FlowDirZ[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_FlowDirZ();
+//          nVertex_Surface++;
+//        }
+//      }
+//
+//  su2double *Buffer_Receive_Coord_x = NULL, *Buffer_Receive_Coord_y = NULL, *Buffer_Receive_Coord_z = NULL, *Buffer_Receive_SensNUBC_Q1 = NULL,
+//  *Buffer_Receive_SensNUBC_Q2 = NULL, *Buffer_Receive_SensNUBC_Pressure = NULL, *Buffer_Receive_SensNUBC_FlowDirX = NULL,
+//  *Buffer_Receive_SensNUBC_FlowDirY = NULL, *Buffer_Receive_SensNUBC_FlowDirZ = NULL;
+//  unsigned long *Buffer_Receive_GlobalPoint = NULL;
+//
+//  if (rank == MASTER_NODE) {
+//    Buffer_Receive_Coord_x = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    Buffer_Receive_Coord_y = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    Buffer_Receive_Coord_z = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    Buffer_Receive_GlobalPoint = new unsigned long [nProcessor*MaxLocalVertex_Surface];
+//    Buffer_Receive_SensNUBC_Q1 = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    Buffer_Receive_SensNUBC_Q2 = new su2double [nProcessor*MaxLocalVertex_Surface];
+//	Buffer_Receive_SensNUBC_Pressure = new su2double [nProcessor*MaxLocalVertex_Surface];
+//	Buffer_Receive_SensNUBC_FlowDirX = new su2double [nProcessor*MaxLocalVertex_Surface];
+//	Buffer_Receive_SensNUBC_FlowDirY = new su2double [nProcessor*MaxLocalVertex_Surface];
+//	Buffer_Receive_SensNUBC_FlowDirZ = new su2double [nProcessor*MaxLocalVertex_Surface];
+//  }
+//
+//  nBuffer_Scalar = MaxLocalVertex_Surface;
+//
+//  /*--- Send the information to the Master node ---*/
+//  SU2_MPI::Gather(Buffer_Send_Coord_x, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_Coord_x, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(Buffer_Send_Coord_y, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_Coord_y, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(Buffer_Send_Coord_z, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_Coord_z, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(Buffer_Send_GlobalPoint, nBuffer_Scalar, MPI_UNSIGNED_LONG, Buffer_Receive_GlobalPoint, nBuffer_Scalar, MPI_UNSIGNED_LONG, MASTER_NODE, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(Buffer_Send_SensNUBC_Q1, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_Q1, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(Buffer_Send_SensNUBC_Q2, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_Q2, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(Buffer_Send_SensNUBC_Pressure, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_Pressure, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(Buffer_Send_SensNUBC_FlowDirX, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_FlowDirX, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(Buffer_Send_SensNUBC_FlowDirY, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_FlowDirY, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(Buffer_Send_SensNUBC_FlowDirZ, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_FlowDirZ, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//
+//  /*--- The master node is the one who writes the surface files ---*/
+//  if (rank == MASTER_NODE) {
+//    unsigned long iVertex, GlobalPoint, position;
+//    char cstr[200], buffer[50];
+//    ofstream SensNUBC_file;
+//    string filename = "SensNUBC_file";
+//
+//    /*--- Write file name with extension if unsteady ---*/
+//    strcpy (cstr, filename.c_str());
+//    SPRINTF (buffer, ".csv");
+//    strcat (cstr, buffer);
+//    SensNUBC_file.open(cstr, ios::out);
+//    SensNUBC_file.precision(15);
+//
+//    /*--- Write the 2D surface flow coefficient file ---*/
+//    if (geometry->GetnDim() == 2) {
+//      SensNUBC_file <<  "\"Point\",\"SensNUBC_Q1\",\"SensNUBC_Q2\",\"SensNUBC_Pressure\",\"SensNUBC_FlowDirX\",\"SensNUBC_FlowDirY\", \"SensNUBC_FlowDirZ\", \"x_coord\",\"y_coord\", \"z_coord\"";
+//      SensNUBC_file << "\n";
+//
+//      for (iProcessor = 0; iProcessor < nProcessor; iProcessor++)
+//        for (iVertex = 0; iVertex < Buffer_Receive_nVertex[iProcessor]; iVertex++) {
+//
+//          position = iProcessor*MaxLocalVertex_Surface+iVertex;
+//          GlobalPoint = Buffer_Receive_GlobalPoint[position];
+//
+//          SensNUBC_file << scientific << GlobalPoint << ", " << Buffer_Receive_SensNUBC_Q1[position] << ", "
+//        		       << Buffer_Receive_SensNUBC_Q2[position] << ", " << Buffer_Receive_SensNUBC_Pressure[position] << ", "
+//					   << Buffer_Receive_SensNUBC_FlowDirX[position] << ", " << Buffer_Receive_SensNUBC_FlowDirY[position] << ", " << Buffer_Receive_SensNUBC_FlowDirZ[position] << ", "
+//					   << Buffer_Receive_Coord_x[position] << ", " << Buffer_Receive_Coord_y[position] << ", " << Buffer_Receive_Coord_z[position];
+//          SensNUBC_file << "\n";
+//        }
+//    }
+//  }
+//
+//  if (rank == MASTER_NODE) {
+//    delete [] Buffer_Receive_nVertex;
+//    delete [] Buffer_Receive_Coord_x;
+//    delete [] Buffer_Receive_Coord_y;
+//    delete [] Buffer_Receive_Coord_z;
+//    delete [] Buffer_Receive_SensNUBC_Q1;
+//    delete [] Buffer_Receive_SensNUBC_Q2;
+//    delete [] Buffer_Receive_SensNUBC_Pressure;
+//    delete [] Buffer_Receive_SensNUBC_FlowDirX;
+//    delete [] Buffer_Receive_SensNUBC_FlowDirY;
+//    delete [] Buffer_Receive_SensNUBC_FlowDirZ;
+//    delete [] Buffer_Receive_GlobalPoint;
+//  }
+//
+//  delete [] Buffer_Send_Coord_x;
+//  delete [] Buffer_Send_Coord_y;
+//  delete [] Buffer_Send_Coord_z;
+//  delete [] Buffer_Send_GlobalPoint;
+//  delete [] Buffer_Send_SensNUBC_Q1;
+//  delete [] Buffer_Send_SensNUBC_Q2;
+//  delete [] Buffer_Send_SensNUBC_Pressure;
+//  delete [] Buffer_Send_SensNUBC_FlowDirX;
+//  delete [] Buffer_Send_SensNUBC_FlowDirY;
+//  delete [] Buffer_Send_SensNUBC_FlowDirZ;
+//
+//  SensNUBC_file.close();
+//
+//#endif
+//
+//}
 
 void COutput::MergeConnectivity(CConfig *config, CGeometry *geometry, unsigned short val_iZone) {
   

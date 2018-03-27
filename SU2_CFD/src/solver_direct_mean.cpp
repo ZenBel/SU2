@@ -606,15 +606,28 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   nPointGlobal = nPointLocal;
 #endif
 
-  config->Initialize_NonUniform_Variables(nPointGlobal); //initialize array with as many points as the total number of points in the domain
-  for (iMarker = 0; iMarker < nMarker; iMarker++) {
-	string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
-	switch (config->GetMarker_All_KindBC(iMarker)) {
-	  case NONUNIFORM_BOUNDARY:
-		SetBC_NonUniform_Direct(geometry, config, Marker_Tag);
-		break;
-	}
+//  config->Initialize_NonUniform_Variables(nPointGlobal); //initialize array with as many points as the total number of points in the domain
+//  for (iMarker = 0; iMarker < nMarker; iMarker++) {
+//	string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+//	switch (config->GetMarker_All_KindBC(iMarker)) {
+//      case NONUNIFORM_BOUNDARY:
+//  	    SetBC_NonUniform_Direct(geometry, config, Marker_Tag);
+//  	    break;
+//	}
+//  }
+
+  /*---Make all the processors store the NUBC input files (for discrete_adjoint purposes) ---*/
+  string *NUBC_filename;
+  NUBC_filename = config->GetNonUniform_file();
+
+  if (config->GetBoolNonUniform() ){
+	  for (unsigned short iFile=0; iFile<config->GetnMarkerNonUniform(); iFile++ ){
+		  SetBC_NonUniform(geometry, config, NUBC_filename[iFile]);
+	  }
   }
+
+
+
 
   /*--- Force definition and coefficient arrays for all of the markers ---*/
   
@@ -12968,6 +12981,101 @@ void CEulerSolver::BC_Dirichlet(CGeometry *geometry, CSolver **solver_container,
 
 void CEulerSolver::BC_Custom(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short val_marker) { }
 
+void CEulerSolver::SetBC_NonUniform(CGeometry *geometry, CConfig *config, string input_filename){
+
+  /*--- Initialize NonUniform Boundary condition from external input file ---*/
+  string text_line;
+  ifstream input_file;
+//  string input_filename = config->GetNonUniform_file(name_marker);
+
+  input_file.open(input_filename.data(), ios::in);
+  if (input_file.fail()) {
+  	cout << "There is no input file!! " << input_filename.data() << "."<< endl;
+  	exit(EXIT_FAILURE);
+  }
+  su2double *CoordIn, Var1In, Var2In, Var3In, FlowDir_x, FlowDir_y, FlowDir_z;
+  su2double dVar1_1, dVar1_N, dVar2_1, dVar2_N, dVar3_1, dVar3_N, dFlowDir_x1, dFlowDir_xN, dFlowDir_y1, dFlowDir_yN, dFlowDir_z1, dFlowDir_zN;
+  vector<su2double> InputCoord, InputVar1, InputVar2, InputVar3, InputFlowDir_x, InputFlowDir_y, InputFlowDir_z;
+  vector<su2double> InputCoord_, InputVar1_, InputVar2_, InputVar3_, InputFlowDir_x_, InputFlowDir_y_, InputFlowDir_z_;
+  unsigned long InputPoints;
+  CoordIn = new su2double[3]; //always read the 3D coordinates (also for 2D or 1D boundaries).
+  unsigned long iPos, jPos;
+
+  /*--- Read head of the file for allocation ---*/
+  getline (input_file, text_line);
+  istringstream point_line(text_line);
+  point_line >> InputPoints;
+
+  config->Initialize_NonUniform_Variables(InputPoints);
+  config->SetNUBC_InputPoints(InputPoints);
+
+  while (getline (input_file, text_line)) {
+	istringstream point_line(text_line);
+	point_line >> CoordIn[0] >> CoordIn[1] >> CoordIn[2] >> Var1In >> Var2In >> Var3In >> FlowDir_x >> FlowDir_y >> FlowDir_z;
+	InputCoord_.push_back(CoordIn[1]);
+	InputVar1_.push_back(Var1In);
+	InputVar2_.push_back(Var2In);
+	InputVar3_.push_back(Var3In);
+	InputFlowDir_x_.push_back(FlowDir_x);
+	InputFlowDir_y_.push_back(FlowDir_y);
+	InputFlowDir_z_.push_back(FlowDir_z);
+	}
+  input_file.close();
+
+  for (iPos=0; iPos < InputPoints; iPos++){
+	  config->SetNUBC_Coord(InputCoord_[iPos], iPos);
+	  config->SetNUBC_Var1(InputVar1_[iPos], iPos);
+	  config->SetNUBC_Var2(InputVar2_[iPos], iPos);
+	  config->SetNUBC_Var3(InputVar3_[iPos], iPos);
+	  config->SetNUBC_Var4(InputFlowDir_x_[iPos], iPos);
+	  config->SetNUBC_Var5(InputFlowDir_y_[iPos], iPos);
+	  config->SetNUBC_Var6(InputFlowDir_z_[iPos], iPos);
+  }
+
+  for (iPos=0; iPos<InputPoints; iPos++){
+	InputCoord.push_back(config->GetNUBC_Coord(iPos));
+	InputVar1.push_back(config->GetNUBC_Var1(iPos));
+	InputVar2.push_back(config->GetNUBC_Var2(iPos));
+	InputVar3.push_back(config->GetNUBC_Var3(iPos));
+	InputFlowDir_x.push_back(config->GetNUBC_Var4(iPos));
+	InputFlowDir_y.push_back(config->GetNUBC_Var5(iPos));
+	InputFlowDir_z.push_back(config->GetNUBC_Var6(iPos));
+  }
+
+  /*---  Check if input file is sorted ---*/
+  if (InputCoord[1]<InputCoord[0]) {
+	cout << "The input file " << input_filename.data() << " is not sorted in ascending order!"<< endl;
+	exit(EXIT_FAILURE);
+  }
+
+  /*---  Compute first derivatives   ---*/
+  dVar1_1 = (InputVar1[1]-InputVar1[0])/(InputCoord[1]-InputCoord[0]);
+  dVar1_N = (InputVar1[InputPoints-2]-InputVar1[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+
+  dVar2_1 = (InputVar2[1]-InputVar2[0])/(InputCoord[1]-InputCoord[0]);
+  dVar2_N = (InputVar2[InputPoints-2]-InputVar2[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+
+  dVar3_1 = (InputVar3[1]-InputVar3[0])/(InputCoord[1]-InputCoord[0]);
+  dVar3_N = (InputVar3[InputPoints-2]-InputVar3[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+
+  dFlowDir_x1 = (InputFlowDir_x[1]-InputFlowDir_x[0])/(InputCoord[1]-InputCoord[0]);
+  dFlowDir_xN = (InputFlowDir_x[InputPoints-2]-InputFlowDir_x[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+
+  dFlowDir_y1 = (InputFlowDir_y[1]-InputFlowDir_y[0])/(InputCoord[1]-InputCoord[0]);
+  dFlowDir_yN = (InputFlowDir_y[InputPoints-2]-InputFlowDir_y[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+
+  dFlowDir_z1 = (InputFlowDir_z[1]-InputFlowDir_z[0])/(InputCoord[1]-InputCoord[0]);
+  dFlowDir_zN = (InputFlowDir_z[InputPoints-2]-InputFlowDir_z[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+
+  config->SetNUBC_d2Var1(InputCoord, InputVar1, InputPoints, dVar1_1, dVar1_N);
+  config->SetNUBC_d2Var2(InputCoord, InputVar2, InputPoints, dVar2_1, dVar2_N);
+  config->SetNUBC_d2Var3(InputCoord, InputVar3, InputPoints, dVar3_1, dVar3_N);
+  config->SetNUBC_d2Var4(InputCoord, InputFlowDir_x, InputPoints, dFlowDir_x1, dFlowDir_xN);
+  config->SetNUBC_d2Var5(InputCoord, InputFlowDir_y, InputPoints, dFlowDir_y1, dFlowDir_yN);
+  config->SetNUBC_d2Var6(InputCoord, InputFlowDir_z, InputPoints, dFlowDir_z1, dFlowDir_zN);
+
+}
+
 void CEulerSolver::SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config, string name_marker){
 
 	/*--- Initialize NonUniform Boundary condition from external input file ---*/
@@ -13066,6 +13174,32 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
   	P_Tensor[iVar] = new su2double[nVar];
   	invP_Tensor[iVar] = new su2double[nVar];
   }
+  unsigned long iPos;
+  vector<su2double> InputCoord, InputVar1, InputVar2, InputVar3, InputFlowDir_x, InputFlowDir_y, InputFlowDir_z;
+  unsigned long InputPoints = config->GetNUBC_InputPoints();
+  for (iPos=0; iPos<InputPoints; iPos++){
+	InputCoord.push_back(config->GetNUBC_Coord(iPos));
+	InputVar1.push_back(config->GetNUBC_Var1(iPos));
+	InputVar2.push_back(config->GetNUBC_Var2(iPos));
+	InputVar3.push_back(config->GetNUBC_Var3(iPos));
+	InputFlowDir_x.push_back(config->GetNUBC_Var4(iPos));
+	InputFlowDir_y.push_back(config->GetNUBC_Var5(iPos));
+	InputFlowDir_z.push_back(config->GetNUBC_Var6(iPos));
+  }
+  su2double *NUBC_d2Var1, *NUBC_d2Var2, *NUBC_d2Var3, *NUBC_d2Var4, *NUBC_d2Var5, *NUBC_d2Var6;
+  NUBC_d2Var1 = new su2double[InputPoints];
+  NUBC_d2Var2 = new su2double[InputPoints];
+  NUBC_d2Var3 = new su2double[InputPoints];
+  NUBC_d2Var4 = new su2double[InputPoints];
+  NUBC_d2Var5 = new su2double[InputPoints];
+  NUBC_d2Var6 = new su2double[InputPoints];
+
+  NUBC_d2Var1 = config->GetNUBC_d2Var1();
+  NUBC_d2Var2 = config->GetNUBC_d2Var2();
+  NUBC_d2Var3 = config->GetNUBC_d2Var3();
+  NUBC_d2Var4 = config->GetNUBC_d2Var4();
+  NUBC_d2Var5 = config->GetNUBC_d2Var5();
+  NUBC_d2Var6 = config->GetNUBC_d2Var6();
 
   /*--- Loop over all the vertices on this boundary marker ---*/
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
@@ -13124,16 +13258,31 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 	  for (iDim = 0; iDim < nDim; iDim++)
 		  ProjVelocity_i += Velocity_i[iDim]*UnitNormal[iDim];
 
+	  /*--- Retrive x, y coordinates of node ---*/
+	  su2double *Coord;
+	  Coord = new su2double[3];
+	  Coord[0] = geometry->node[iPoint]->GetCoord(nDim-2);
+	  Coord[1] = geometry->node[iPoint]->GetCoord(nDim-1);
+	  Coord[2] = 0.0;
+	  if (nDim == 3) {Coord[2] = geometry->node[iPoint]->GetCoord(nDim);}
+
       /*--- Build the external state u_e from boundary data and internal node ---*/
       if (ProjVelocity_i < 0.0) {
 
 		  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
 
-			  P_Total = config->GetNUBC_Var1(PointID);
-			  T_Total = config->GetNUBC_Var2(PointID);
-			  Flow_Dir[0] = config->GetNUBC_Var4(PointID);
-			  Flow_Dir[1] = config->GetNUBC_Var5(PointID);
-			  if (nDim == 3 ) {Flow_Dir[2] = config->GetNUBC_Var6(PointID);}
+//			  P_Total = config->GetNUBC_Var1(PointID);
+//			  T_Total = config->GetNUBC_Var2(PointID);
+//			  Flow_Dir[0] = config->GetNUBC_Var4(PointID);
+//			  Flow_Dir[1] = config->GetNUBC_Var5(PointID);
+//			  if (nDim == 3 ) {Flow_Dir[2] = config->GetNUBC_Var6(PointID);}
+
+			  /*--- Retrieve the specified total conditions for this boundary. ---*/
+			  P_Total = config->GetSpline(InputCoord, InputVar1, NUBC_d2Var1, InputPoints, Coord[1]);
+			  T_Total  = config->GetSpline(InputCoord, InputVar2, NUBC_d2Var2, InputPoints, Coord[1]);
+			  Flow_Dir[0] = config->GetSpline(InputCoord, InputFlowDir_x, NUBC_d2Var4, InputPoints, Coord[1]);
+			  Flow_Dir[1] = config->GetSpline(InputCoord, InputFlowDir_y, NUBC_d2Var5, InputPoints, Coord[1]);
+			  if (nDim == 3 ){ Flow_Dir[2] = config->GetSpline(InputCoord, InputFlowDir_z, NUBC_d2Var6, InputPoints, Coord[1]);}
 
 			  /*--- Non-dim. the inputs if necessary. ---*/
 			  P_Total /= config->GetPressure_Ref();
@@ -13152,6 +13301,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 			  }
 
 //			  cout << "PointID: " << PointID << ", p = " << P_Total <<", T = " << T_Total << ", fx = " << Flow_Dir[0] << ", fy = " << Flow_Dir[1] << ", fz = " << Flow_Dir[2] << endl;
+//			  cout << "y_coord: " << Coord[1] << ", p = " << P_Total <<", T = " << T_Total << ", fx = " << Flow_Dir[0] << ", fy = " << Flow_Dir[1] <<  endl;
 
 			  /* --- Computes the total state --- */
 			  FluidModel->SetTDState_PT(P_Total, T_Total);

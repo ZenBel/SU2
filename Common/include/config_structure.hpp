@@ -277,7 +277,10 @@ private:
   su2double *Riemann_Var1, *Riemann_Var2;    /*!< \brief Specified values for Riemann boundary. */
   su2double **Riemann_FlowDir;  /*!< \brief Specified flow direction vector (unit vector) for Riemann boundaries. */
   su2double *NonUniform_Var1, *NonUniform_Var2, *NonUniform_Var3, *NonUniform_Var4, *NonUniform_Var5, *NonUniform_Var6;
-  unsigned long *NonUniform_InputPoints;
+  su2double *NonUniform_Coord;
+  su2double *NonUniform_d2Var1, *NonUniform_d2Var2, *NonUniform_d2Var3,
+            *NonUniform_d2FlowDir_x, *NonUniform_d2FlowDir_y, *NonUniform_d2FlowDir_z;
+  unsigned long NonUniform_InputPoints;
   su2double *Giles_Var1, *Giles_Var2, *RelaxFactorAverage, *RelaxFactorFourier;    /*!< \brief Specified values for Giles BC. */
   su2double **Giles_FlowDir;  /*!< \brief Specified flow direction vector (unit vector) for Giles BC. */
   su2double *Inlet_Ptotal;    /*!< \brief Specified total pressures for inlet boundaries. */
@@ -4214,6 +4217,7 @@ public:
    * \return NonUniform_FileName
    */
   string GetNonUniform_file(string val_marker);
+  string* GetNonUniform_file();
 
   /*!
    * \brief Get Kind Data of NonUniform boundary.
@@ -5961,12 +5965,41 @@ public:
   su2double GetRiemann_Var2(string val_marker);
   void SetRiemann_Var2(su2double newVar2, string val_marker) ;
   
+  void SetNUBC_Coord(su2double newVar, unsigned long val_pos);
+  void SetNUBC_d2Var1(vector<su2double> InputCoord, vector<su2double> InputVar,
+  		              unsigned long InputPoints, su2double dVar_1, su2double dVar_N);
+
+  void SetNUBC_d2Var2(vector<su2double> InputCoord, vector<su2double> InputVar,
+  		              unsigned long InputPoints, su2double dVar_1, su2double dVar_N);
+
+  void SetNUBC_d2Var3(vector<su2double> InputCoord, vector<su2double> InputVar,
+  		              unsigned long InputPoints, su2double dVar_1, su2double dVar_N);
+
+  void SetNUBC_d2Var4(vector<su2double> InputCoord, vector<su2double> InputVar,
+  		              unsigned long InputPoints, su2double dVar_1, su2double dVar_N);
+
+  void SetNUBC_d2Var5(vector<su2double> InputCoord, vector<su2double> InputVar,
+  		              unsigned long InputPoints, su2double dVar_1, su2double dVar_N);
+
+  void SetNUBC_d2Var6(vector<su2double> InputCoord, vector<su2double> InputVar,
+  		              unsigned long InputPoints, su2double dVar_1, su2double dVar_N);
+
+
   void SetNUBC_Var1(su2double newVar, unsigned long val_pos);
   void SetNUBC_Var2(su2double newVar, unsigned long val_pos);
   void SetNUBC_Var3(su2double newVar, unsigned long val_pos);
   void SetNUBC_Var4(su2double newVar, unsigned long val_pos);
   void SetNUBC_Var5(su2double newVar, unsigned long val_pos);
   void SetNUBC_Var6(su2double newVar, unsigned long val_pos);
+
+
+  su2double GetNUBC_Coord(unsigned long val_pos);
+  su2double* GetNUBC_d2Var1();
+  su2double* GetNUBC_d2Var2();
+  su2double* GetNUBC_d2Var3();
+  su2double* GetNUBC_d2Var4();
+  su2double* GetNUBC_d2Var5();
+  su2double* GetNUBC_d2Var6();
 
   su2double GetNUBC_Var1(unsigned long val_pos);
   su2double GetNUBC_Var2(unsigned long val_pos);
@@ -5976,8 +6009,8 @@ public:
   su2double GetNUBC_Var6(unsigned long val_pos);
 
   void Initialize_NonUniform_Variables(unsigned long val_points);
-  void SetNUBC_InputPoints(unsigned long val_npoints, string val_marker);
-  unsigned long GetNUBC_InputPoints(string val_marker);
+  void SetNUBC_InputPoints(unsigned long val_npoints);
+  unsigned long GetNUBC_InputPoints();
 
   /*!
    * \brief Get the Flowdir at Riemann boundary.
@@ -7565,7 +7598,7 @@ public:
    condition for a natural spline, with zero second derivative on that boundary.
    Numerical Recipes: The Art of Scientific Computing, Third Edition in C++.
    */
-  void SetSpline(vector<su2double> &x, vector<su2double> &y, unsigned long n, su2double yp1, su2double ypn, vector<su2double> &y2);
+  void SetSpline(vector<su2double> &x, vector<su2double> &y, unsigned long n, su2double yp1, su2double ypn, su2double *y2);
   
   /*!
    * \brief Given the arrays xa[1..n] and ya[1..n], which tabulate a function (with the xai’s in order),
@@ -7574,7 +7607,7 @@ public:
    Numerical Recipes: The Art of Scientific Computing, Third Edition in C++.
    * \returns The interpolated value of for x.
    */
-  su2double GetSpline(vector<su2double> &xa, vector<su2double> &ya, vector<su2double> &y2a, unsigned long n, su2double x);
+  su2double GetSpline(vector<su2double> &xa, vector<su2double> &ya, su2double *y2a, unsigned long n, su2double x);
   
 
   /*!

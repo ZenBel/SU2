@@ -2943,6 +2943,19 @@ public:
    */
   virtual su2double GetTotal_Sens_BPress(void);
   
+  virtual su2double* GetTotal_Sens_Ttot(void);
+
+  virtual su2double* GetTotal_Sens_Ptot(void);
+
+  virtual su2double* GetTotal_Sens_Pstatic(void);
+
+  virtual su2double* GetTotal_Sens_FlowX(void);
+
+  virtual su2double* GetTotal_Sens_FlowY(void);
+
+  virtual su2double* GetTotal_Sens_FlowZ(void);
+
+
   /*!
    * \brief A virtual member.
    * \return Value of the density at the infinity.
@@ -4349,7 +4362,11 @@ protected:
   *Surface_HF_Visc,            /*!< \brief Total (integrated) heat flux for each monitored surface. */
   *Surface_MaxHF_Visc;         /*!< \brief Maximum heat flux for each monitored surface. */
   
-  su2double **BoundaryData;    /*!< \brief pointer to array storing the pointID and values of Non-Uniform boundary. */
+  unsigned long NonUniformBC_InputPoints;
+  vector<su2double> NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_Var2, NonUniformBC_Var3,
+                    NonUniformBC_FlowDir_x, NonUniformBC_FlowDir_y, NonUniformBC_FlowDir_z,
+					NonUniformBC_d2Var1, NonUniformBC_d2Var2, NonUniformBC_d2Var3, NonUniformBC_d2FlowDir_x,
+					NonUniformBC_d2FlowDir_y, NonUniformBC_d2FlowDir_z;
 
   su2double *iPoint_UndLapl,  /*!< \brief Auxiliary variable for the undivided Laplacians. */
   *jPoint_UndLapl;      /*!< \brief Auxiliary variable for the undivided Laplacians. */
@@ -6560,7 +6577,7 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-//  void SetBC_NonUniform(CGeometry *geometry, CConfig *config, unsigned short val_marker, string val_marker1);
+  void SetBC_NonUniform(CGeometry *geometry, CConfig *config, string name_marker);
 //  void SetBC_NonUniform_RBF(CGeometry *geometry, CConfig *config, unsigned short val_marker, string name_marker);
   void SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config, string name_marker);
 
@@ -12345,6 +12362,19 @@ public:
    */
   su2double GetTotal_Sens_BPress(void);
   
+
+  su2double* GetTotal_Sens_Ttot(void);
+
+  su2double* GetTotal_Sens_Ptot(void);
+
+  su2double* GetTotal_Sens_Pstatic(void);
+
+  su2double* GetTotal_Sens_FlowX(void);
+
+  su2double* GetTotal_Sens_FlowY(void);
+
+  su2double* GetTotal_Sens_FlowZ(void);
+
   /*!
    * \brief Get the shape sensitivity coefficient.
    * \param[in] val_marker - Surface marker where the coefficient is computed.
