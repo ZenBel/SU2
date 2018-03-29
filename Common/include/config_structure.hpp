@@ -5994,12 +5994,12 @@ public:
 
 
   su2double GetNUBC_Coord(unsigned long val_pos);
-  su2double* GetNUBC_d2Var1();
-  su2double* GetNUBC_d2Var2();
-  su2double* GetNUBC_d2Var3();
-  su2double* GetNUBC_d2Var4();
-  su2double* GetNUBC_d2Var5();
-  su2double* GetNUBC_d2Var6();
+  su2double GetNUBC_d2Var1(unsigned long val_pos);
+  su2double GetNUBC_d2Var2(unsigned long val_pos);
+  su2double GetNUBC_d2Var3(unsigned long val_pos);
+  su2double GetNUBC_d2Var4(unsigned long val_pos);
+  su2double GetNUBC_d2Var5(unsigned long val_pos);
+  su2double GetNUBC_d2Var6(unsigned long val_pos);
 
   su2double GetNUBC_Var1(unsigned long val_pos);
   su2double GetNUBC_Var2(unsigned long val_pos);
@@ -7607,7 +7607,7 @@ public:
    Numerical Recipes: The Art of Scientific Computing, Third Edition in C++.
    * \returns The interpolated value of for x.
    */
-  su2double GetSpline(vector<su2double> &xa, vector<su2double> &ya, su2double *y2a, unsigned long n, su2double x);
+  su2double GetSpline(vector<su2double> &xa, vector<su2double> &ya, vector<su2double> &y2a, unsigned long n, su2double x);
   
 
   /*!

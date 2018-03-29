@@ -446,6 +446,8 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 			  if (nDim == 3 ) {Flow_z[iPoint] = config->GetNUBC_Var6(iPoint);}
 			  P_static[iPoint] = config->GetNUBC_Var3(iPoint);
 
+//			  cout << P_tot[iPoint] << ", " << T_tot[iPoint] << ", " << Flow_x[iPoint] << ", " << Flow_y[iPoint] << ", " << P_static[iPoint] << endl;
+
 			  if (!reset){
 				AD::RegisterInput(P_tot[iPoint]);
 				AD::RegisterInput(T_tot[iPoint]);
@@ -774,6 +776,8 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
 			  LocalNUBCSens_fx[iPoint] = SU2_TYPE::GetDerivative(Flow_x[iPoint]);
 			  LocalNUBCSens_fy[iPoint] = SU2_TYPE::GetDerivative(Flow_y[iPoint]);
 			  if (nDim==3) {LocalNUBCSens_fz[iPoint] = SU2_TYPE::GetDerivative(Flow_z[iPoint]);}
+			  cout << LocalNUBCSens_Q1[iPoint] << ", " << LocalNUBCSens_Q2[iPoint] << ", " << LocalNUBCSens_Q3[iPoint]
+				   << ", " << LocalNUBCSens_fx[iPoint] << ", " << LocalNUBCSens_fy[iPoint] << endl;
 
 			}
 			else if (config->GetKind_Data_NonUniform(Marker_Tag) == MASS_FLOW){
