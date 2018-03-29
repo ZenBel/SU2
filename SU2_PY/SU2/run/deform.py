@@ -43,7 +43,7 @@ import copy
 
 from .. import io  as su2io
 from .interface import DEF as SU2_DEF
-
+import numpy, os
 
 # ----------------------------------------------------------------------
 #  Mesh Deformation
@@ -79,13 +79,13 @@ def deform ( config, dv_new=None, dv_old=None ):
     
     # error check
     if dv_old and not dv_new: raise Exception('must provide dv_old with dv_new')
-    
+          
     # local copy
     konfig = copy.deepcopy(config)
     
     # unpack design variables
     if dv_new: konfig.unpack_dvs(dv_new,dv_old)
-    
+        
     # redundancy check
     if konfig['DV_VALUE_NEW'] == konfig['DV_VALUE_OLD']:
         info = su2io.State()
@@ -101,15 +101,15 @@ def deform ( config, dv_new=None, dv_old=None ):
     
     # Run Deformation
     SU2_DEF(konfig)
-    
+        
     # update super config
     config.update({ 'MESH_FILENAME' : konfig['MESH_OUT_FILENAME'] , 
                     'DV_KIND'       : konfig['DV_KIND']           ,
                     'DV_MARKER'     : konfig['DV_MARKER']         ,
                     'DV_PARAM'      : konfig['DV_PARAM']          ,
-                    'DV_VALUE_OLD'  : konfig['DV_VALUE_NEW']      ,
+                    'DV_VALUE_OLD'  : konfig['DV_VALUE_NEW']      , #This is where the update to DV_VALUE_OLD happens
                     'DV_VALUE_NEW'  : konfig['DV_VALUE_NEW']      })
-    # not modified: config['MESH_OUT_FILENAME']
+    # not modified: config['MESH_OUT_FILENAME']  
         
     # info out
     info = su2io.State()

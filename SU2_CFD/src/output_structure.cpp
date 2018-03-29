@@ -8676,7 +8676,6 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
 #else
           iPoint = geometry->node[geometry->vertex[iMarker][iVertex]->GetNode()]->GetGlobalIndex();
 #endif
-        
 //          if (geometry->vertex[iMarker][iVertex]->GetNode() < geometry->GetnPointDomain()) {
             Point2Vertex[iPoint][0] = iMarker;
             Point2Vertex[iPoint][1] = iVertex;
@@ -8775,6 +8774,8 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
           Area = sqrt(Area);
 
           PressDiff += Area * (CpTarget - Cp) * (CpTarget - Cp);
+
+//          cout << "Globalindex: "<< GlobalIndex << ", CpTarget = " << CpTarget << ", Cp = " << Cp << endl;
         }
       }
     }
