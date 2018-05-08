@@ -260,10 +260,10 @@ def aerodynamics( config, state=None ):
     buf = numpy.loadtxt('inlet.bc', skiprows=1)
     nubc_new = config['DV_VALUE_NEW']
     nubc_new = numpy.array(nubc_new).reshape((buf.shape[0],6))
-    ### buf[:,1:] = nubc_new #valid when DVs are specified at each cell node
-    buf[:,3:] = nubc_new    #valid when DVs are specified as cubic-spline nodes
-    ###numpy.savetxt('inlet.bc', buf, fmt='%i\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f', comments='', header=str(buf.shape[0]))    
-    numpy.savetxt('inlet.bc', buf, fmt='%.5f\t %.5f\t %.5f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f', comments='', header=str(buf.shape[0])) 
+    buf[:,1:] = nubc_new #valid when DVs are specified at each cell node
+    numpy.savetxt('inlet.bc', buf, fmt='%i\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f', comments='', header=str(buf.shape[0]))  
+    ###buf[:,3:] = nubc_new    #valid when DVs are specified as cubic-spline nodes  
+    ###numpy.savetxt('inlet.bc', buf, fmt='%.5f\t %.5f\t %.5f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f', comments='', header=str(buf.shape[0])) 
       
     # output redirection
     with redirect_folder( 'DIRECT', pull, link ) as push:
