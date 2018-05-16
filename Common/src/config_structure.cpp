@@ -5097,6 +5097,8 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
             << Cauchy_Elems << " elements and epsilon " <<Cauchy_Eps<< "."<< endl; break;
           case SENS_MACH: cout << "Cauchy criteria for Mach number sensitivity using "
             << Cauchy_Elems << " elements and epsilon " <<Cauchy_Eps<< "."<< endl; break;
+          case SENS_PRESS: cout << "Cauchy criteria for Total Pressure sensitivity using "
+        	<< Cauchy_Elems << " elements and epsilon " <<Cauchy_Eps<< "."<< endl; break;
         }
 
       cout << "Start convergence criteria at iteration " << StartConv_Iter<< "."<< endl;

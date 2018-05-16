@@ -749,6 +749,7 @@ void CMultiGridIntegration::NonDimensional_Parameters(CGeometry **geometry, CSol
       if (config->GetConvCriteria() == CAUCHY) {
         if (config->GetCauchy_Func_AdjFlow() == SENS_GEOMETRY) (*monitor) = solver_container[FinestMesh][ADJFLOW_SOL]->GetTotal_Sens_Geo();
         if (config->GetCauchy_Func_AdjFlow() == SENS_MACH) (*monitor) = solver_container[FinestMesh][ADJFLOW_SOL]->GetTotal_Sens_Mach();
+        if (config->GetCauchy_Func_AdjFlow() == SENS_PRESS) (*monitor) = solver_container[FinestMesh][ADJFLOW_SOL]->GetTotal_Sens_Press();
       }
       
       if (config->GetConvCriteria() == RESIDUAL) {

@@ -1252,15 +1252,17 @@ static const map<string, ENUM_RESFEM> ResFem_Map = CCreateMap<string, ENUM_RESFE
  */
 enum ENUM_SENS {
   SENS_GEOMETRY = 1,    	/*!< \brief Geometrical sensitivity. */
-  SENS_MACH = 2,		/*!< \brief Mach number sensitivity. */
-  SENS_AOA = 3, 		/*!< \brief Angle of attack sensitivity. */
-  SENS_AOS = 4  		/*!< \brief Angle of Sideslip sensitivity. */
+  SENS_MACH  = 2,		/*!< \brief Mach number sensitivity. */
+  SENS_AOA   = 3, 		/*!< \brief Angle of attack sensitivity. */
+  SENS_AOS   = 4,  		/*!< \brief Angle of Sideslip sensitivity. */
+  SENS_PRESS = 5		/*!< \brief Total Pressure sensitivity. */
 };
 static const map<string, ENUM_SENS> Sens_Map = CCreateMap<string, ENUM_SENS>
 ("SENS_GEOMETRY", SENS_GEOMETRY)
 ("SENS_MACH", SENS_MACH)
 ("SENS_AOA", SENS_AOA)
-("SENS_AOS", SENS_AOS);
+("SENS_AOS", SENS_AOS)
+("SENS_PRESS", SENS_PRESS);
 
 /*!
  * \brief types of grid adaptation/refinement
