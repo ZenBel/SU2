@@ -8631,6 +8631,171 @@ void COutput::SpecialOutput_SpanLoad(CSolver *solver, CGeometry *geometry, CConf
 }
 
 
+//void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry, CConfig *config, unsigned long iExtIter) {
+//
+//  unsigned short iMarker, icommas, Boundary, iDim;
+//  unsigned long iVertex, iPoint, (*Point2Vertex)[2], nPointLocal = 0, nPointGlobal = 0;
+//  su2double XCoord, YCoord, ZCoord, Pressure, PressureCoeff = 0, Cp, CpTarget, *Normal = NULL, Area, PressDiff;
+//  bool *PointInDomain;
+//  string text_line, surfCp_filename;
+//  ifstream Surface_file;
+//  char buffer[50], cstr[200];
+//
+//  nPointLocal = geometry->GetnPoint(); // Total number of mesh points on the decomposed geometry managed by a single processor
+////  cout << "nPointLocal = " << nPointLocal << endl;
+//
+//#ifdef HAVE_MPI
+//  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+//#else
+//  nPointGlobal = nPointLocal;
+//#endif
+//
+//  Point2Vertex = new unsigned long[nPointGlobal][2];
+//  PointInDomain = new bool[nPointGlobal];
+//
+//  for (iPoint = 0; iPoint < nPointGlobal; iPoint ++)
+//    PointInDomain[iPoint] = false;
+//
+//  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+//	unsigned short Marker_All_Designing = config->GetMarker_All_Designing(iMarker);
+//    Boundary   = config->GetMarker_All_KindBC(iMarker);
+//
+//    if ((Boundary == EULER_WALL             ) ||
+//        (Boundary == HEAT_FLUX              ) ||
+//        (Boundary == ISOTHERMAL             ) ||
+//        (Boundary == NEARFIELD_BOUNDARY)) {
+//
+//      if ( Marker_All_Designing == 1) {
+//
+//        for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
+//
+//          /*--- The Pressure file uses the global numbering ---*/
+//
+//#ifndef HAVE_MPI
+//          iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+//#else
+//          iPoint = geometry->node[geometry->vertex[iMarker][iVertex]->GetNode()]->GetGlobalIndex();
+//#endif
+////          if (geometry->vertex[iMarker][iVertex]->GetNode() < geometry->GetnPointDomain()) {
+//            Point2Vertex[iPoint][0] = iMarker;
+//            Point2Vertex[iPoint][1] = iVertex;
+//            PointInDomain[iPoint] = true;
+//            solver_container->SetCPressureTarget(iMarker, iVertex, 0.0);
+////          }
+//        }
+//      }
+//    }
+//  }
+//
+//  /*--- Prepare to read the surface pressure files (CSV) ---*/
+//
+//  surfCp_filename = "TargetCp";
+//  strcpy (cstr, surfCp_filename.c_str());
+//
+//  /*--- Write file name with extension if unsteady or steady ---*/
+//
+//  if ((config->GetUnsteady_Simulation() && config->GetWrt_Unsteady()) ||
+//      (config->GetUnsteady_Simulation() == HARMONIC_BALANCE)) {
+//    if ((SU2_TYPE::Int(iExtIter) >= 0)    && (SU2_TYPE::Int(iExtIter) < 10))    SPRINTF (buffer, "_0000%d.dat", SU2_TYPE::Int(iExtIter));
+//    if ((SU2_TYPE::Int(iExtIter) >= 10)   && (SU2_TYPE::Int(iExtIter) < 100))   SPRINTF (buffer, "_000%d.dat",  SU2_TYPE::Int(iExtIter));
+//    if ((SU2_TYPE::Int(iExtIter) >= 100)  && (SU2_TYPE::Int(iExtIter) < 1000))  SPRINTF (buffer, "_00%d.dat",   SU2_TYPE::Int(iExtIter));
+//    if ((SU2_TYPE::Int(iExtIter) >= 1000) && (SU2_TYPE::Int(iExtIter) < 10000)) SPRINTF (buffer, "_0%d.dat",    SU2_TYPE::Int(iExtIter));
+//    if (SU2_TYPE::Int(iExtIter) >= 10000) SPRINTF (buffer, "_%d.dat", SU2_TYPE::Int(iExtIter));
+//  }
+//  else
+//    SPRINTF (buffer, ".dat");
+//
+//  strcat (cstr, buffer);
+//
+//  /*--- Read the surface pressure file ---*/
+//
+//  string::size_type position;
+//
+//  Surface_file.open(cstr, ios::in);
+//
+//  if (!(Surface_file.fail())) {
+//
+//    getline(Surface_file, text_line);
+//
+//    while (getline(Surface_file, text_line)) {
+//      for (icommas = 0; icommas < 50; icommas++) {
+//        position = text_line.find( ",", 0 );
+//        if (position!=string::npos) text_line.erase (position,1);
+//      }
+//      stringstream  point_line(text_line);
+//
+//      if (geometry->GetnDim() == 2) point_line >> iPoint >> XCoord >> YCoord >> Pressure >> PressureCoeff;
+//      if (geometry->GetnDim() == 3) point_line >> iPoint >> XCoord >> YCoord >> ZCoord >> Pressure >> PressureCoeff;
+//
+//
+//      if (PointInDomain[iPoint]) {
+//
+//        /*--- Find the vertex for the Point and Marker ---*/
+//
+//        iMarker = Point2Vertex[iPoint][0];
+//        iVertex = Point2Vertex[iPoint][1];
+//
+//        solver_container->SetCPressureTarget(iMarker, iVertex, PressureCoeff);
+//
+//      }
+//
+//    }
+//
+//    Surface_file.close();
+//
+//  }
+//
+//  /*--- Compute the pressure difference ---*/
+//
+//  PressDiff = 0.0;
+//  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+//    unsigned short Marker_All_Designing = config->GetMarker_All_Designing(iMarker);
+//    Boundary   = config->GetMarker_All_KindBC(iMarker);
+//
+//    if ((Boundary == EULER_WALL             ) ||
+//        (Boundary == HEAT_FLUX              ) ||
+//        (Boundary == ISOTHERMAL             ) ||
+//        (Boundary == NEARFIELD_BOUNDARY)) {
+//
+//      if ( Marker_All_Designing == 1) {
+//
+//        for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
+//          iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+//          unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+//
+//          Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
+//
+//          Cp = solver_container->GetCPressure(iMarker, iVertex);
+//          CpTarget = solver_container->GetCPressureTarget(iMarker, iVertex);
+//
+//          Area = 0.0;
+//          for (iDim = 0; iDim < geometry->GetnDim(); iDim++)
+//            Area += Normal[iDim]*Normal[iDim];
+//          Area = sqrt(Area);
+//
+//          PressDiff += Area * (CpTarget - Cp) * (CpTarget - Cp);
+//
+////          cout << "Globalindex: "<< GlobalIndex << ", CpTarget = " << CpTarget << ", Cp = " << Cp << endl;
+//        }
+//      }
+//    }
+//  }
+//
+//
+//#ifdef HAVE_MPI
+//  su2double MyPressDiff = PressDiff;   PressDiff = 0.0;
+//  SU2_MPI::Allreduce(&MyPressDiff, &PressDiff, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+//#endif
+//
+//  /*--- Update the total Cp difference coeffient ---*/
+//
+//  solver_container->SetTotal_CpDiff(PressDiff);
+//
+//  delete [] Point2Vertex;
+//  delete [] PointInDomain;
+//
+//}
+
 void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry, CConfig *config, unsigned long iExtIter) {
   
   unsigned short iMarker, icommas, Boundary, iDim;
@@ -8663,14 +8828,14 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
     if ((Boundary == EULER_WALL             ) ||
         (Boundary == HEAT_FLUX              ) ||
         (Boundary == ISOTHERMAL             ) ||
-        (Boundary == NEARFIELD_BOUNDARY)) {
+        (Boundary == NEARFIELD_BOUNDARY     ) ||
+		(Boundary == NONUNIFORM_BOUNDARY    )) {
 
-      if ( Marker_All_Designing == 1) {
+      if ( Marker_All_Designing == 1 || Marker_All_Designing == 88) {			//boundary marker must have belong to MARKER_DESIGNING
 
         for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
-        
+
           /*--- The Pressure file uses the global numbering ---*/
-        
 #ifndef HAVE_MPI
           iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
 #else
@@ -8755,11 +8920,13 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
     if ((Boundary == EULER_WALL             ) ||
         (Boundary == HEAT_FLUX              ) ||
         (Boundary == ISOTHERMAL             ) ||
-        (Boundary == NEARFIELD_BOUNDARY)) {
+        (Boundary == NEARFIELD_BOUNDARY     ) ||
+		(Boundary == NONUNIFORM_BOUNDARY    )) {
 
-      if ( Marker_All_Designing == 1) {
+      if ( Marker_All_Designing == 1 || Marker_All_Designing == 88) {
 
         for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
+
           iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
           unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 
@@ -8795,7 +8962,6 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
   delete [] PointInDomain;
   
 }
-
 void COutput::SetHeatFlux_InverseDesign(CSolver *solver_container, CGeometry *geometry, CConfig *config, unsigned long iExtIter) {
   
   unsigned short iMarker, icommas, Boundary, iDim;

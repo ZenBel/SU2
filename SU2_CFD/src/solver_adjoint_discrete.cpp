@@ -364,28 +364,28 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 			      if (geometry->node[iPoint]->GetDomain()) {
 
 					  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
-							  P_tot[GlobalIndex] = config->GetNUBC_Var1(GlobalIndex);
-							  T_tot[GlobalIndex] = config->GetNUBC_Var2(GlobalIndex);
-							  Flow_x[GlobalIndex] = config->GetNUBC_Var4(GlobalIndex);
-							  Flow_y[GlobalIndex] = config->GetNUBC_Var5(GlobalIndex);
-							  if (nDim == 3 ) {Flow_z[GlobalIndex] = config->GetNUBC_Var6(GlobalIndex);}
-							  P_static[GlobalIndex] = config->GetNUBC_Var3(GlobalIndex);
+						  P_tot[GlobalIndex] = config->GetNUBC_Var1(GlobalIndex);
+						  T_tot[GlobalIndex] = config->GetNUBC_Var2(GlobalIndex);
+						  Flow_x[GlobalIndex] = config->GetNUBC_Var4(GlobalIndex);
+						  Flow_y[GlobalIndex] = config->GetNUBC_Var5(GlobalIndex);
+						  if (nDim == 3 ) {Flow_z[GlobalIndex] = config->GetNUBC_Var6(GlobalIndex);}
+						  P_static[GlobalIndex] = config->GetNUBC_Var3(GlobalIndex);
 
-							  if (!reset){
-								  AD::RegisterInput(P_tot[GlobalIndex]);
-								  AD::RegisterInput(T_tot[GlobalIndex]);
-								  AD::RegisterInput(Flow_x[GlobalIndex]);
-								  AD::RegisterInput(Flow_y[GlobalIndex]);
-								  if (nDim == 3 ) {AD::RegisterInput(Flow_z[GlobalIndex]);}
-								  AD::RegisterInput(P_static[GlobalIndex]);
-							  }
+						  if (!reset){
+							  AD::RegisterInput(P_tot[GlobalIndex]);
+							  AD::RegisterInput(T_tot[GlobalIndex]);
+							  AD::RegisterInput(Flow_x[GlobalIndex]);
+							  AD::RegisterInput(Flow_y[GlobalIndex]);
+							  if (nDim == 3 ) {AD::RegisterInput(Flow_z[GlobalIndex]);}
+							  AD::RegisterInput(P_static[GlobalIndex]);
+						  }
 
-							  config->SetNUBC_Var1(P_tot[GlobalIndex], GlobalIndex);
-							  config->SetNUBC_Var2(T_tot[GlobalIndex], GlobalIndex);
-							  config->SetNUBC_Var4(Flow_x[GlobalIndex], GlobalIndex);
-							  config->SetNUBC_Var5(Flow_y[GlobalIndex], GlobalIndex);
-							  if (nDim == 3 ) {config->SetNUBC_Var6(Flow_z[GlobalIndex], GlobalIndex);}
-							  config->SetNUBC_Var3(P_static[GlobalIndex], GlobalIndex);
+						  config->SetNUBC_Var1(P_tot[GlobalIndex], GlobalIndex);
+						  config->SetNUBC_Var2(T_tot[GlobalIndex], GlobalIndex);
+						  config->SetNUBC_Var4(Flow_x[GlobalIndex], GlobalIndex);
+						  config->SetNUBC_Var5(Flow_y[GlobalIndex], GlobalIndex);
+						  if (nDim == 3 ) {config->SetNUBC_Var6(Flow_z[GlobalIndex], GlobalIndex);}
+						  config->SetNUBC_Var3(P_static[GlobalIndex], GlobalIndex);
 					  }
 					  else if (config->GetKind_Data_NonUniform(Marker_Tag) == MASS_FLOW){
 						  Density[GlobalIndex] = config->GetNUBC_Var1(GlobalIndex);
