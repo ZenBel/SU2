@@ -5652,7 +5652,8 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
             else if (rotating_frame && nDim == 3 && !turbo) cout << "     Res[Rho]" << "     Res[RhoE]" << " CThrust(Total)" << " CTorque(Total)" << endl;
             else if (aeroelastic) cout << "     Res[Rho]" << "     Res[RhoE]" << "   CLift(Total)" << "   CDrag(Total)" << "         plunge" << "          pitch" << endl;
             else if (equiv_area) cout << "     Res[Rho]" << "   CLift(Total)" << "   CDrag(Total)" << "    CPress(N-F)" << endl;
-              
+            else if (inv_design) cout << "     Res[Rho]" << "     Res[RhoE]" <<  "   CLift(Total)" << "    CDrag(Total)" << "     CpDiff" << endl;
+
             else if (turbo){
 
               if(nZone  < 2){
@@ -5950,6 +5951,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
                 cout.unsetf(ios_base::floatfield);
                 
               }
+              else if (inv_design){ cout.width(15); cout << min(10000.0, max(-10000.0, Total_CL)); cout.width(15); cout << min(10000.0, max(-10000.0, Total_CD)); cout.width(10); cout << fixed; cout <<  Cp_inverse_design; }
               else { cout.width(15); cout << min(10000.0, max(-10000.0, Total_CL)); cout.width(15); cout << min(10000.0, max(-10000.0, Total_CD)); }
               if (aeroelastic) {
                 cout.setf(ios::scientific, ios::floatfield);

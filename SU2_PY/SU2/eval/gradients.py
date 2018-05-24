@@ -284,12 +284,10 @@ def adjoint( func_name, config, state=None ):
         
     if (config.has_key('MARKER_NONUNIFORM')):
         path_nubc  = os.getcwd()
-        files_nubc = os.listdir(path_nubc)
         nubc_filenames = []
-        for f in files_nubc:
-            if '.bc' in f:
-                nubc_filenames.append(f)
-        #pull.append(files['NUBC_CONFIG_FILE'])
+        for elem in (config.MARKER_NONUNIFORM).split():
+            if '.bc' in elem:
+                nubc_filenames.append(elem)
         for i in range(len(nubc_filenames)):
             pull.append( files['NUBC_FILE_%s'%(i+1)])
             
@@ -734,12 +732,10 @@ def findiff( config, state=None ):
     # files: Non-Uniform boundary input (.bc) files           
     if (config.has_key('MARKER_NONUNIFORM')):
         path_nubc  = os.getcwd()
-        files_nubc = os.listdir(path_nubc)
         nubc_filenames = []
-        for f in files_nubc:
-            if '.bc' in f:
-                nubc_filenames.append(f)
-        #pull.append(files['NUBC_CONFIG_FILE'])
+        for elem in (config.MARKER_NONUNIFORM).split():
+            if '.bc' in elem:
+                nubc_filenames.append(elem)
         for i in range(len(nubc_filenames)):
             pull.append( files['NUBC_FILE_%s'%(i+1)])
 
