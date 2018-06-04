@@ -750,7 +750,6 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   Total_CMx_Prev      = 0.0; Total_CMy_Prev      = 0.0; Total_CMz_Prev      = 0.0;
   Total_AeroCD = 0.0;  Total_SolidCD = 0.0;   Total_IDR   = 0.0;    Total_IDC   = 0.0;
 
-  Total_PressureAtOnePoint = 0.0;
   Total_ErrorFunc		   = 0.0;
 
   /*--- Read farfield conditions ---*/
@@ -5460,18 +5459,104 @@ void CEulerSolver::ReadErrorFuncFile(CGeometry *geometry, CConfig *config){
 
 }
 
+void CEulerSolver::SetErrorFuncOF(CGeometry *geometry, CConfig *config){
+
+  unsigned long iVertex, iPoint;
+  unsigned short iDim, iMarker, Boundary, Monitoring, iMarker_Monitoring;
+  su2double Buffer_ErrorFunc, Pressure = 0.0, *Normal = NULL, Area, Target, Computed, *Coord,
+		    RefVel2, RefTemp, RefDensity, RefPressure, Mach2Vel, Mach_Motion, factor;
+  su2double RefArea    = config->GetRefArea();
+
+#ifdef HAVE_MPI
+  su2double MyAllBound_ErrorFunc;
+#endif
+
+  /*--- Evaluate reference values for non-dimensionalization. ---*/
+
+  RefTemp     = Temperature_Inf;
+  RefDensity  = Density_Inf;
+  RefPressure = Pressure_Inf;
+  RefVel2 = 0.0;
+  for (iDim = 0; iDim < nDim; iDim++)
+    RefVel2  += Velocity_Inf[iDim]*Velocity_Inf[iDim];
+
+  factor = 1.0 / (0.5*RefDensity*RefVel2);
+
+  /*--- Initialize objective function ---*/
+
+  Buffer_ErrorFunc   = 0.0;
+  Total_ErrorFunc	 = 0.0;
+  AllBound_ErrorFunc = 0.0;
+
+  /*--- Read Target ErrorFunc file (TargetCp at the moment) ---*/
+  ReadErrorFuncFile(geometry, config);
+
+  for (iMarker = 0; iMarker < nMarker; iMarker++) {
+
+    Boundary   = config->GetMarker_All_KindBC(iMarker);
+	Monitoring = config->GetMarker_All_Monitoring(iMarker);
+
+	if ((Boundary == EULER_WALL) || (Boundary == HEAT_FLUX)          ||
+	    (Boundary == ISOTHERMAL) || (Boundary == NEARFIELD_BOUNDARY) ||
+	    (Boundary == INLET_FLOW) || (Boundary == OUTLET_FLOW)        ||
+	    (Boundary == ACTDISK_INLET) || (Boundary == ACTDISK_OUTLET)  ||
+	    (Boundary == ENGINE_INFLOW) || (Boundary == ENGINE_EXHAUST)) {
+
+	  for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
+
+	    iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+	    Pressure = node[iPoint]->GetPressure();
+	    CPressure[iMarker][iVertex] = (Pressure - RefPressure)*factor*RefArea;
+
+	    /*--- Note that the pressure coefficient is computed at the
+	    halo cells (for visualization purposes), but not the forces ---*/
+
+	    if ((geometry->node[iPoint]->GetDomain()) && (Monitoring == YES)){
+
+          Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
+          Coord = geometry->node[iPoint]->GetCoord();
+
+          Area = 0.0;
+          for (iDim = 0; iDim < geometry->GetnDim(); iDim++)
+            Area += Normal[iDim]*Normal[iDim];
+          Area = sqrt(Area);
+
+		  unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+		  if (node[iPoint]->GetBoolErrorFunc() == true ){
+		    Target   = node[iPoint]->GetTargetQuantityErrorFunc();
+		    Computed = CPressure[iMarker][iVertex];
+		  	Buffer_ErrorFunc += Area * (Target - Computed) * (Target - Computed);
+		  }
+	    }
+	  }
+
+	  if (Monitoring == YES) { AllBound_ErrorFunc += Buffer_ErrorFunc; }
+
+	}
+  }
+
+#ifdef HAVE_MPI
+
+  /*--- Add AllBound information using all the nodes ---*/
+  MyAllBound_ErrorFunc	= AllBound_ErrorFunc;	AllBound_ErrorFunc = 0.0;
+  SU2_MPI::Allreduce(&MyAllBound_ErrorFunc, &AllBound_ErrorFunc, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+#endif
+
+  Total_ErrorFunc	  = AllBound_ErrorFunc;
+
+}
+
 void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   
   unsigned long iVertex, iPoint;
   unsigned short iDim, iMarker, Boundary, Monitoring, iMarker_Monitoring;
   su2double Pressure = 0.0, *Normal = NULL, MomentDist[3] = {0.0,0.0,0.0}, *Coord,
   factor, NFPressOF, RefVel2, RefTemp, RefDensity, RefPressure, Mach2Vel, Mach_Motion,
-  Force[3] = {0.0,0.0,0.0}, Area, Target, Computed, Buffer_ErrorFunc=0.0;
+  Force[3] = {0.0,0.0,0.0};
   string Marker_Tag, Monitoring_Tag;
   su2double MomentX_Force[3] = {0.0,0.0,0.0}, MomentY_Force[3] = {0.0,0.0,0.0}, MomentZ_Force[3] = {0.0,0.0,0.0};
   su2double AxiFactor;
-
-  su2double PressureAtOnePoint;
 
 #ifdef HAVE_MPI
   su2double MyAllBound_CD_Inv, MyAllBound_CL_Inv, MyAllBound_CSF_Inv, MyAllBound_CMx_Inv, MyAllBound_CMy_Inv, MyAllBound_CMz_Inv, MyAllBound_CoPx_Inv, MyAllBound_CoPy_Inv, MyAllBound_CoPz_Inv, MyAllBound_CFx_Inv, MyAllBound_CFy_Inv, MyAllBound_CFz_Inv, MyAllBound_CT_Inv, MyAllBound_CQ_Inv, MyAllBound_CNearFieldOF_Inv, *MySurface_CL_Inv = NULL, *MySurface_CD_Inv = NULL, *MySurface_CSF_Inv = NULL, *MySurface_CEff_Inv = NULL, *MySurface_CFx_Inv = NULL, *MySurface_CFy_Inv = NULL, *MySurface_CFz_Inv = NULL, *MySurface_CMx_Inv = NULL, *MySurface_CMy_Inv = NULL, *MySurface_CMz_Inv = NULL;
@@ -5530,12 +5615,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   AllBound_CT_Inv = 0.0;           AllBound_CQ_Inv = 0.0;    AllBound_CMerit_Inv = 0.0;
   AllBound_CNearFieldOF_Inv = 0.0; AllBound_CEff_Inv = 0.0;
   
-  Total_PressureAtOnePoint = 0.0;
-  AllBound_PressureAtOnePoint = 0.0;
-
-  Total_ErrorFunc	 = 0.0;
-  AllBound_ErrorFunc = 0.0;
-
   for (iMarker_Monitoring = 0; iMarker_Monitoring < config->GetnMarker_Monitoring(); iMarker_Monitoring++) {
     Surface_CL_Inv[iMarker_Monitoring]      = 0.0; Surface_CD_Inv[iMarker_Monitoring]      = 0.0;
     Surface_CSF_Inv[iMarker_Monitoring] = 0.0; Surface_CEff_Inv[iMarker_Monitoring]       = 0.0;
@@ -5551,9 +5630,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
     Surface_ErrorFunc[iMarker_Monitoring] = 0.0; //Extend to entire domain afterwards
   }
   
-
-  ReadErrorFuncFile(geometry, config);
-
   /*--- Loop over the Euler and Navier-Stokes markers ---*/
   
   for (iMarker = 0; iMarker < nMarker; iMarker++) {
@@ -5587,8 +5663,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
       CT_Inv[iMarker] = 0.0;           CQ_Inv[iMarker] = 0.0;    CMerit_Inv[iMarker] = 0.0;
       CNearFieldOF_Inv[iMarker] = 0.0; CEff_Inv[iMarker] = 0.0;
       
-      ErrorFunc[iMarker] = 0.0; //extend also to NUBC afterwards
-
       for (iDim = 0; iDim < nDim; iDim++) ForceInviscid[iDim] = 0.0;
       MomentInviscid[0] = 0.0; MomentInviscid[1] = 0.0; MomentInviscid[2] = 0.0;
       MomentX_Force[0] = 0.0; MomentX_Force[1] = 0.0; MomentX_Force[2] = 0.0;
@@ -5596,7 +5670,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
       MomentZ_Force[0] = 0.0; MomentZ_Force[1] = 0.0; MomentZ_Force[2] = 0.0;
 
       NFPressOF = 0.0;
-      PressureAtOnePoint = 0.0;
       
       /*--- Loop over the vertices to compute the forces ---*/
       
@@ -5615,29 +5688,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
 
           Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
           Coord = geometry->node[iPoint]->GetCoord();
-
-
-
-
-          Area = 0.0;
-          for (iDim = 0; iDim < geometry->GetnDim(); iDim++)
-            Area += Normal[iDim]*Normal[iDim];
-          Area = sqrt(Area);
-
-		  /*--- Debug code for pressure_at_one_point objective function ---*/
-
-		  unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-		  if (node[iPoint]->GetBoolErrorFunc() == true ){
-//			  cout << "GlobalIndex: " << GlobalIndex << endl;
-			  Target   = node[iPoint]->GetTargetQuantityErrorFunc();
-		      Computed = CPressure[iMarker][iVertex];
-		  	  Buffer_ErrorFunc += Area * (Target - Computed) * (Target - Computed);
-//			  Buffer_ErrorFunc += node[iPoint]->GetPressure();
-//			  cout << "GlobalIndex: " << GlobalIndex <<", CpTarget = " << Target <<", CpComputed = " << Computed << ", " << node[iPoint]->GetBoolErrorFunc() << endl;
-		  }
-
-
-
           
           /*--- Quadratic objective function for the near-field.
            This uses the infinity pressure regardless of Mach number. ---*/
@@ -5715,11 +5765,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
             CMerit_Inv[iMarker]  = CT_Inv[iMarker] / (CQ_Inv[iMarker] + EPS);
           }
           
-//          ErrorFunc[iMarker]	 = Buffer_ErrorFunc;
-//          AllBound_ErrorFunc	+= ErrorFunc[iMarker];
-          AllBound_ErrorFunc		  += Buffer_ErrorFunc;
-          AllBound_PressureAtOnePoint += PressureAtOnePoint;
-
           AllBound_CD_Inv           += CD_Inv[iMarker];
           AllBound_CL_Inv           += CL_Inv[iMarker];
           AllBound_CSF_Inv          += CSF_Inv[iMarker];
@@ -5795,9 +5840,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   AllBound_CMerit_Inv = 0.0;
   MyAllBound_CNearFieldOF_Inv = AllBound_CNearFieldOF_Inv; AllBound_CNearFieldOF_Inv = 0.0;
 
-  MyAllBound_ErrorFunc	= AllBound_ErrorFunc;	AllBound_ErrorFunc = 0.0;
-  MyAllBound_PressureAtOnePoint = AllBound_PressureAtOnePoint; AllBound_PressureAtOnePoint = 0.0;
-  
   SU2_MPI::Allreduce(&MyAllBound_CD_Inv, &AllBound_CD_Inv, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(&MyAllBound_CL_Inv, &AllBound_CL_Inv, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(&MyAllBound_CSF_Inv, &AllBound_CSF_Inv, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -5816,9 +5858,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   AllBound_CMerit_Inv = AllBound_CT_Inv / (AllBound_CQ_Inv + EPS);
   SU2_MPI::Allreduce(&MyAllBound_CNearFieldOF_Inv, &AllBound_CNearFieldOF_Inv, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-  SU2_MPI::Allreduce(&MyAllBound_ErrorFunc, &AllBound_ErrorFunc, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  SU2_MPI::Allreduce(&MyAllBound_PressureAtOnePoint, &AllBound_PressureAtOnePoint, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  
   /*--- Add the forces on the surfaces using all the nodes ---*/
   
   MySurface_CL_Inv      = new su2double[config->GetnMarker_Monitoring()];
@@ -5832,8 +5871,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   MySurface_CMy_Inv        = new su2double[config->GetnMarker_Monitoring()];
   MySurface_CMz_Inv        = new su2double[config->GetnMarker_Monitoring()];
 
-  MySurface_ErrorFunc	= new su2double[config->GetnMarker_Monitoring()];
-
   for (iMarker_Monitoring = 0; iMarker_Monitoring < config->GetnMarker_Monitoring(); iMarker_Monitoring++) {
     MySurface_CL_Inv[iMarker_Monitoring]      = Surface_CL_Inv[iMarker_Monitoring];
     MySurface_CD_Inv[iMarker_Monitoring]      = Surface_CD_Inv[iMarker_Monitoring];
@@ -5846,8 +5883,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
     MySurface_CMy_Inv[iMarker_Monitoring]        = Surface_CMy_Inv[iMarker_Monitoring];
     MySurface_CMz_Inv[iMarker_Monitoring]        = Surface_CMz_Inv[iMarker_Monitoring];
 
-    MySurface_ErrorFunc[iMarker_Monitoring]      = Surface_ErrorFunc[iMarker_Monitoring];
-
     Surface_CL_Inv[iMarker_Monitoring]         = 0.0;
     Surface_CD_Inv[iMarker_Monitoring]         = 0.0;
     Surface_CSF_Inv[iMarker_Monitoring]        = 0.0;
@@ -5859,7 +5894,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
     Surface_CMy_Inv[iMarker_Monitoring]        = 0.0;
     Surface_CMz_Inv[iMarker_Monitoring]        = 0.0;
 
-    Surface_ErrorFunc[iMarker_Monitoring]      = 0.0;
   }
   
   SU2_MPI::Allreduce(MySurface_CL_Inv, Surface_CL_Inv, config->GetnMarker_Monitoring(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -5874,15 +5908,11 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   SU2_MPI::Allreduce(MySurface_CMy_Inv, Surface_CMy_Inv, config->GetnMarker_Monitoring(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(MySurface_CMz_Inv, Surface_CMz_Inv, config->GetnMarker_Monitoring(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   
-  SU2_MPI::Allreduce(MySurface_ErrorFunc, Surface_ErrorFunc, config->GetnMarker_Monitoring(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
   delete [] MySurface_CL_Inv; delete [] MySurface_CD_Inv; delete [] MySurface_CSF_Inv;
   delete [] MySurface_CEff_Inv;  delete [] MySurface_CFx_Inv;   delete [] MySurface_CFy_Inv;
   delete [] MySurface_CFz_Inv;   delete [] MySurface_CMx_Inv;   delete [] MySurface_CMy_Inv;
   delete [] MySurface_CMz_Inv;
   
-  delete [] MySurface_ErrorFunc;
-
 #endif
   
   /*--- Update the total coefficients (note that all the nodes have the same value) ---*/
@@ -5905,9 +5935,9 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   Total_CMerit        = Total_CT / (Total_CQ + EPS);
   Total_CNearFieldOF  = AllBound_CNearFieldOF_Inv;
 
-  Total_ErrorFunc	  = AllBound_ErrorFunc;
-  Total_PressureAtOnePoint = AllBound_PressureAtOnePoint;
-  
+  /*--- Compute the ErrorFunction for Data Assimilation ---*/
+  SetErrorFuncOF(geometry, config);
+
   /*--- Update the total coefficients per surface (note that all the nodes have the same value)---*/
   
   for (iMarker_Monitoring = 0; iMarker_Monitoring < config->GetnMarker_Monitoring(); iMarker_Monitoring++) {
@@ -8933,9 +8963,8 @@ void CEulerSolver::Evaluate_ObjFunc(CConfig *config) {
       case CUSTOM_OBJFUNC:
         Total_ComboObj+=Weight_ObjFunc*Total_Custom_ObjFunc;
         break;
-      case PRESSURE_AT_ONE_POINT:
+      case ERROR_FUNC:
     	Total_ComboObj+=Weight_ObjFunc*Total_ErrorFunc;
-//    	Total_ComboObj+=Weight_ObjFunc*(Surface_ErrorFunc[iMarker_Monitoring]);
     	break;
       default:
         break;

@@ -610,7 +610,7 @@ def get_adjointSuffix(objective_function=None):
                  "TOTAL_EFFICIENCY"        : "teff"      ,
                  "TOTAL_STATIC_EFFICIENCY" : "tseff"     ,
                  "COMBO"                   : "combo"     ,
-                 "PRESSURE_AT_ONE_POINT"   : "pOnePoint"}
+                 "ERROR_FUNC"              : "errorfunc"}
     
     # if none or false, return map
     if not objective_function:

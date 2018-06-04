@@ -2298,7 +2298,6 @@ public:
    * \return Value of the custom objective function.
    */
   virtual su2double GetTotal_Custom_ObjFunc(void);
-  virtual su2double GetTotal_PressureAtOnePoint(void);
   virtual su2double GetTotal_ErrorFunc(void);
 
   /*!
@@ -4297,7 +4296,6 @@ protected:
   
   su2double
   Total_ErrorFunc,
-  Total_PressureAtOnePoint,
   Total_ComboObj, /*!< \brief Total 'combo' objective for all monitored boundaries */
   AoA_Prev, /*!< \brief Old value of the AoA for fixed lift mode. */
   Total_CD, /*!< \brief Total drag coefficient for all the boundaries. */
@@ -5091,6 +5089,8 @@ public:
   
 
   void ReadErrorFuncFile(CGeometry *geometry, CConfig *config);
+  void SetErrorFuncOF(CGeometry *geometry, CConfig *config);
+
   /*!
    * \brief Compute the pressure forces and all the adimensional coefficients.
    * \param[in] geometry - Geometrical definition of the problem.
@@ -5583,7 +5583,6 @@ public:
    * \return Value of the custom objective function.
    */
   su2double GetTotal_Custom_ObjFunc(void);
-  su2double GetTotal_PressureAtOnePoint(void);
   su2double GetTotal_ErrorFunc(void);
 
   /*!
