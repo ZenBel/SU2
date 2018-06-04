@@ -3818,6 +3818,7 @@ void CDiscAdjFluidDriver::SetRecording(unsigned short kind_recording){
       cout << "Compute residuals to check the convergence of the direct problem." << endl;
       cout << "-------------------------------------------------------------------------" << endl << endl;
     }
+
     for (iZone = 0; iZone < nZone; iZone++) {
       iteration_container[iZone]->RegisterInput(solver_container, geometry_container, config_container, iZone, kind_recording);
     }
@@ -3831,13 +3832,6 @@ void CDiscAdjFluidDriver::SetRecording(unsigned short kind_recording){
   /*--- Do one iteration of the direct flow solver ---*/
 
   DirectRun();
-
-  /*--- Set the value of Total_CpDiff using the Cp values at the last flow iteration
-   * (probably needed also for INVERSE_DESIGN_HEATFLUX )---*/
-  if (config_container[ZONE_0]->GetInvDesign_Cp() == YES){
-    output->SetCp_InverseDesign(solver_container[ZONE_0][MESH_0][FLOW_SOL],
-	  geometry_container[ZONE_0][MESH_0], config_container[ZONE_0], ExtIter);
-  }
 
   /*--- Print residuals in the first iteration ---*/
 
@@ -3857,7 +3851,6 @@ void CDiscAdjFluidDriver::SetRecording(unsigned short kind_recording){
   }
 
   /*--- Extract the objective function and store it --- */
-
   SetObjFunction();
 
   AD::StopRecording();
@@ -3919,8 +3912,15 @@ void CDiscAdjFluidDriver::SetObjFunction(){
     }
   }
 
-  /*--- Surface based obj. function ---*/
 
+  /*--- Set the value of Total_CpDiff using the Cp values at the last flow iteration
+   * (probably needed also for INVERSE_DESIGN_HEATFLUX )---*/
+  if (config_container[ZONE_0]->GetInvDesign_Cp() == YES){
+    output->SetCp_InverseDesign(solver_container[ZONE_0][MESH_0][FLOW_SOL],
+    geometry_container[ZONE_0][MESH_0], config_container[ZONE_0], ExtIter);
+  }
+
+  /*--- Surface based obj. function ---*/
   for (iZone = 0; iZone < nZone; iZone++){
     solver_container[iZone][MESH_0][FLOW_SOL]->Evaluate_ObjFunc(config_container[iZone]);
     ObjFunc += solver_container[iZone][MESH_0][FLOW_SOL]->GetTotal_ComboObj();
@@ -3938,7 +3938,7 @@ void CDiscAdjFluidDriver::DirectRun(){
   bool unsteady = config_container[ZONE_0]->GetUnsteady_Simulation() != STEADY;
 
   /*--- Run a single iteration of a multi-zone problem by looping over all
-   zones and executing the iterations. Note that data transers between zones
+   zones and executing the iterations. Note that data transfers between zones
    and other intermediate procedures may be required. ---*/
 
   unsteady = (config_container[MESH_0]->GetUnsteady_Simulation() == DT_STEPPING_1ST) || (config_container[MESH_0]->GetUnsteady_Simulation() == DT_STEPPING_2ND);

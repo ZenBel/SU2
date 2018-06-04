@@ -255,25 +255,16 @@ def aerodynamics( config, state=None ):
         for i in range(len(nubc_filenames)):
             pull.append( files['NUBC_FILE_%s'%(i+1)])
             
-    ### Update inlet.bc file (only works with a single nubc file)
-    #buf = numpy.loadtxt('inlet.bc', skiprows=1)
-    #nubc_new = config['DV_VALUE_NEW']
-    #nubc_new = numpy.array(nubc_new).reshape((buf.shape[0],6))
-    #buf[:,1:] = nubc_new #valid when DVs are specified at each cell node
-    #numpy.savetxt('inlet.bc', buf, fmt='%i\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f', comments='', header=str(buf.shape[0]))  
-    ###buf[:,3:] = nubc_new    #valid when DVs are specified as cubic-spline nodes  
-    ###numpy.savetxt('inlet.bc', buf, fmt='%.5f\t %.5f\t %.5f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f', comments='', header=str(buf.shape[0])) 
-    
     ### Update nubc file(s)
     i=0; x_0=[]
     for file in state['FILES']:
         if 'NUBC' in file:
             nubc_f = 'NUBC_FILE_%i'%(i+1)
             buf = numpy.loadtxt(state['FILES'][nubc_f], skiprows=1)
-            nubc_new = config['DV_VALUE_NEW'][i*6*len(buf):(i+1)*6*len(buf)]
-            nubc_new = numpy.array(nubc_new).reshape((buf.shape[0],6))
+            nubc_new = config['DV_VALUE_NEW'][i*5*len(buf):(i+1)*5*len(buf)]
+            nubc_new = numpy.array(nubc_new).reshape((buf.shape[0],5))
             buf[:,1:] = nubc_new #valid when DVs are specified at each cell node
-            numpy.savetxt(state['FILES'][nubc_f], buf, fmt='%i\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f', comments='', header=str(buf.shape[0]))  
+            numpy.savetxt(state['FILES'][nubc_f], buf, fmt='%i\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f\t', comments='', header=str(buf.shape[0]))  
             i+=1
             
     # output redirection

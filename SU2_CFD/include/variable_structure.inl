@@ -271,6 +271,11 @@ inline su2double CVariable::GetEnthalpy(void) { return 0; }
 
 inline su2double CVariable::GetPressure(void) { return 0; }
 
+inline su2double CVariable::GetTargetQuantityErrorFunc(void) { return 0; }
+inline void CVariable::SetTargetQuantityErrorFunc(su2double target_q_err_func) { }
+inline bool CVariable::GetBoolErrorFunc(void) { return 0; }
+inline void CVariable::SetBoolErrorFunc(bool value) { }
+
 inline su2double CVariable::GetProjVel(su2double *val_vector) { return 0; }
 
 inline su2double CVariable::GetProjVel(su2double *val_vector, unsigned short val_species) { return 0; }
@@ -744,6 +749,16 @@ inline su2double CEulerVariable::GetEnergy(void) { return Solution[nVar-1]/Solut
 inline su2double CEulerVariable::GetEnthalpy(void) { return Primitive[nDim+3]; }
 
 inline su2double CEulerVariable::GetPressure(void) { return Primitive[nDim+1]; }
+
+inline su2double CEulerVariable::GetTargetQuantityErrorFunc(void) { return TargetQuantityErrorFunc; }
+inline void CEulerVariable::SetTargetQuantityErrorFunc(su2double target_q_err_func) { 
+  TargetQuantityErrorFunc = target_q_err_func; 
+}
+
+inline bool CEulerVariable::GetBoolErrorFunc(void) { return BoolErrorFunc; }
+inline void CEulerVariable::SetBoolErrorFunc(bool value) { 
+  BoolErrorFunc = value;
+}
 
 inline su2double CEulerVariable::GetSoundSpeed(void) { return Primitive[nDim+4]; }
 

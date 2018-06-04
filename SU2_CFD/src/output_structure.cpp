@@ -1172,7 +1172,7 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 
   /*--- Print sensitivities values to file: SensNUBC_file.csv ---*/
   unsigned long iPoint, iVertex, Global_Index;
-  su2double SensNUBC_Q1, SensNUBC_Q2, SensNUBC_Pressure, SensNUBC_FlowDirX, SensNUBC_FlowDirY, SensNUBC_FlowDirZ, xCoord, yCoord, zCoord;
+  su2double SensNUBC_Q1, SensNUBC_Q2, SensNUBC_Pressure, SensNUBC_Flow_alpha, SensNUBC_Flow_beta, xCoord, yCoord, zCoord;
   unsigned short iMarker;
   char cstr[200], buffer[50];
   ofstream SensNUBC_file;
@@ -1202,14 +1202,12 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 			  SensNUBC_Q1 = AdjSolver->node[iPoint]->GetSensNUBC_Q1();
 			  SensNUBC_Q2 = AdjSolver->node[iPoint]->GetSensNUBC_Q2();
 			  SensNUBC_Pressure = AdjSolver->node[iPoint]->GetSensNUBC_Pressure();
-			  SensNUBC_FlowDirX = AdjSolver->node[iPoint]->GetSensNUBC_FlowDirX();
-			  SensNUBC_FlowDirY = AdjSolver->node[iPoint]->GetSensNUBC_FlowDirY();
-			  SensNUBC_FlowDirZ = 0.0;
-			  if (geometry->GetnDim() == 3) {SensNUBC_FlowDirZ = AdjSolver->node[iPoint]->GetSensNUBC_FlowDirZ();}
+			  SensNUBC_Flow_alpha = AdjSolver->node[iPoint]->GetSensNUBC_FlowDirX();
+			  SensNUBC_Flow_beta = 0.0;
+			  if (geometry->GetnDim() == 3) {SensNUBC_Flow_beta = AdjSolver->node[iPoint]->GetSensNUBC_FlowDirZ();}
 
 			  SensNUBC_file << scientific << Global_Index << ", " << SensNUBC_Q1 << ", " << SensNUBC_Q2 << ", " << SensNUBC_Pressure << ", "
-					        << SensNUBC_FlowDirX << ", " << SensNUBC_FlowDirY <<", " << SensNUBC_FlowDirZ << ", "
-							<< xCoord << ", " << yCoord << ", " << zCoord;
+					        << SensNUBC_Flow_alpha << ", " << SensNUBC_Flow_beta <<", "	<< xCoord << ", " << yCoord << ", " << zCoord;
 			  SensNUBC_file << "\n";
 		  }
 	  }
@@ -1254,11 +1252,8 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
   su2double *Buffer_Send_SensNUBC_Q1= new su2double[MaxLocalVertex_Surface];
   su2double *Buffer_Send_SensNUBC_Q2= new su2double[MaxLocalVertex_Surface];
   su2double *Buffer_Send_SensNUBC_Pressure= new su2double[MaxLocalVertex_Surface];
-  su2double *Buffer_Send_SensNUBC_FlowDirX= new su2double[MaxLocalVertex_Surface];
-  su2double *Buffer_Send_SensNUBC_FlowDirY= new su2double[MaxLocalVertex_Surface];
-  su2double *Buffer_Send_SensNUBC_FlowDirZ= new su2double[MaxLocalVertex_Surface];
-
-  su2double *Buffer_Send_Sens_x = NULL, *Buffer_Send_Sens_y = NULL, *Buffer_Send_Sens_z = NULL;
+  su2double *Buffer_Send_SensNUBC_Flow_alpha= new su2double[MaxLocalVertex_Surface];
+  su2double *Buffer_Send_SensNUBC_Flow_beta= new su2double[MaxLocalVertex_Surface];
 
   nVertex_Surface = 0;
   for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++)
@@ -1275,16 +1270,15 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
           Buffer_Send_SensNUBC_Q1[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_Q1();
           Buffer_Send_SensNUBC_Q2[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_Q2();
           Buffer_Send_SensNUBC_Pressure[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_Pressure();
-          Buffer_Send_SensNUBC_FlowDirX[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_FlowDirX();
-          Buffer_Send_SensNUBC_FlowDirY[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_FlowDirY();
-          Buffer_Send_SensNUBC_FlowDirZ[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_FlowDirZ();
+          Buffer_Send_SensNUBC_Flow_alpha[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_FlowDirX();
+          Buffer_Send_SensNUBC_Flow_beta[nVertex_Surface] =  AdjSolver->node[iPoint]->GetSensNUBC_FlowDirY();
           nVertex_Surface++;
         }
       }
 
   su2double *Buffer_Receive_Coord_x = NULL, *Buffer_Receive_Coord_y = NULL, *Buffer_Receive_Coord_z = NULL, *Buffer_Receive_SensNUBC_Q1 = NULL,
-  *Buffer_Receive_SensNUBC_Q2 = NULL, *Buffer_Receive_SensNUBC_Pressure = NULL, *Buffer_Receive_SensNUBC_FlowDirX = NULL,
-  *Buffer_Receive_SensNUBC_FlowDirY = NULL, *Buffer_Receive_SensNUBC_FlowDirZ = NULL;
+  *Buffer_Receive_SensNUBC_Q2 = NULL, *Buffer_Receive_SensNUBC_Pressure = NULL, *Buffer_Receive_SensNUBC_Flow_alpha = NULL,
+  *Buffer_Receive_SensNUBC_Flow_beta = NULL;
   unsigned long *Buffer_Receive_GlobalPoint = NULL;
 
   if (rank == MASTER_NODE) {
@@ -1295,9 +1289,8 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
     Buffer_Receive_SensNUBC_Q1 = new su2double [nProcessor*MaxLocalVertex_Surface];
     Buffer_Receive_SensNUBC_Q2 = new su2double [nProcessor*MaxLocalVertex_Surface];
 	Buffer_Receive_SensNUBC_Pressure = new su2double [nProcessor*MaxLocalVertex_Surface];
-	Buffer_Receive_SensNUBC_FlowDirX = new su2double [nProcessor*MaxLocalVertex_Surface];
-	Buffer_Receive_SensNUBC_FlowDirY = new su2double [nProcessor*MaxLocalVertex_Surface];
-	Buffer_Receive_SensNUBC_FlowDirZ = new su2double [nProcessor*MaxLocalVertex_Surface];
+	Buffer_Receive_SensNUBC_Flow_alpha = new su2double [nProcessor*MaxLocalVertex_Surface];
+	Buffer_Receive_SensNUBC_Flow_beta = new su2double [nProcessor*MaxLocalVertex_Surface];
   }
 
   nBuffer_Scalar = MaxLocalVertex_Surface;
@@ -1310,9 +1303,8 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
   SU2_MPI::Gather(Buffer_Send_SensNUBC_Q1, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_Q1, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
   SU2_MPI::Gather(Buffer_Send_SensNUBC_Q2, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_Q2, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
   SU2_MPI::Gather(Buffer_Send_SensNUBC_Pressure, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_Pressure, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-  SU2_MPI::Gather(Buffer_Send_SensNUBC_FlowDirX, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_FlowDirX, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-  SU2_MPI::Gather(Buffer_Send_SensNUBC_FlowDirY, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_FlowDirY, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-  SU2_MPI::Gather(Buffer_Send_SensNUBC_FlowDirZ, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_FlowDirZ, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+  SU2_MPI::Gather(Buffer_Send_SensNUBC_Flow_alpha, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_Flow_alpha, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+  SU2_MPI::Gather(Buffer_Send_SensNUBC_Flow_beta, nBuffer_Scalar, MPI_DOUBLE, Buffer_Receive_SensNUBC_Flow_beta, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
 
   /*--- The master node is the one who writes the surface files ---*/
   if (rank == MASTER_NODE) {
@@ -1330,7 +1322,7 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 
     /*--- Write the 2D surface flow coefficient file ---*/
     if (geometry->GetnDim() == 2) {
-      SensNUBC_file <<  "\"Point\",\"SensNUBC_Q1\",\"SensNUBC_Q2\",\"SensNUBC_Pressure\",\"SensNUBC_FlowDirX\",\"SensNUBC_FlowDirY\", \"SensNUBC_FlowDirZ\", \"x_coord\",\"y_coord\", \"z_coord\"";
+      SensNUBC_file <<  "\"Point\",\"SensNUBC_Q1\",\"SensNUBC_Q2\",\"SensNUBC_Pressure\",\"SensNUBC_Flow_alpha\", \"SensNUBC_Flow_beta\", \"x_coord\",\"y_coord\", \"z_coord\"";
       SensNUBC_file << "\n";
 
       for (iProcessor = 0; iProcessor < nProcessor; iProcessor++)
@@ -1341,7 +1333,7 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 
           SensNUBC_file << scientific << GlobalPoint << ", " << Buffer_Receive_SensNUBC_Q1[position] << ", "
         		       << Buffer_Receive_SensNUBC_Q2[position] << ", " << Buffer_Receive_SensNUBC_Pressure[position] << ", "
-					   << Buffer_Receive_SensNUBC_FlowDirX[position] << ", " << Buffer_Receive_SensNUBC_FlowDirY[position] << ", " << Buffer_Receive_SensNUBC_FlowDirZ[position] << ", "
+					   << Buffer_Receive_SensNUBC_Flow_alpha[position] << ", " << Buffer_Receive_SensNUBC_Flow_beta[position] << ", "
 					   << Buffer_Receive_Coord_x[position] << ", " << Buffer_Receive_Coord_y[position] << ", " << Buffer_Receive_Coord_z[position];
           SensNUBC_file << "\n";
         }
@@ -1356,9 +1348,8 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
     delete [] Buffer_Receive_SensNUBC_Q1;
     delete [] Buffer_Receive_SensNUBC_Q2;
     delete [] Buffer_Receive_SensNUBC_Pressure;
-    delete [] Buffer_Receive_SensNUBC_FlowDirX;
-    delete [] Buffer_Receive_SensNUBC_FlowDirY;
-    delete [] Buffer_Receive_SensNUBC_FlowDirZ;
+    delete [] Buffer_Receive_SensNUBC_Flow_alpha;
+    delete [] Buffer_Receive_SensNUBC_Flow_beta;
     delete [] Buffer_Receive_GlobalPoint;
   }
 
@@ -1369,9 +1360,8 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
   delete [] Buffer_Send_SensNUBC_Q1;
   delete [] Buffer_Send_SensNUBC_Q2;
   delete [] Buffer_Send_SensNUBC_Pressure;
-  delete [] Buffer_Send_SensNUBC_FlowDirX;
-  delete [] Buffer_Send_SensNUBC_FlowDirY;
-  delete [] Buffer_Send_SensNUBC_FlowDirZ;
+  delete [] Buffer_Send_SensNUBC_Flow_alpha;
+  delete [] Buffer_Send_SensNUBC_Flow_beta;
 
   SensNUBC_file.close();
 
@@ -4988,7 +4978,10 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
         Total_CFz      = solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_CFz();
         Total_ComboObj = solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_ComboObj();
         Total_AoA      = config[val_iZone]->GetAoA() - config[val_iZone]->GetAoA_Offset();
-        Total_Custom_ObjFunc = solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_Custom_ObjFunc();
+//        Total_Custom_ObjFunc = solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_Custom_ObjFunc();
+//        Total_Custom_ObjFunc = solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_PressureAtOnePoint();
+        Total_Custom_ObjFunc = solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_ErrorFunc();
+
 
         if (direct_diff != NO_DERIVATIVE) {
           D_Total_CL             = SU2_TYPE::GetDerivative(Total_CL);

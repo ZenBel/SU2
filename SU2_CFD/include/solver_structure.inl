@@ -355,6 +355,8 @@ inline su2double CSolver::GetTotal_IDC_Mach() { return 0; }
 inline su2double CSolver::GetTotal_DC60() { return 0; }
 
 inline su2double CSolver::GetTotal_Custom_ObjFunc() { return 0; }
+inline su2double CSolver::GetTotal_PressureAtOnePoint() { return 0; }
+inline su2double CSolver::GetTotal_ErrorFunc() { return 0; }
 
 inline su2double CSolver::GetTotal_CMx() { return 0; }
 
@@ -1297,6 +1299,8 @@ inline su2double CEulerSolver::GetTotal_IDC_Mach() { return Total_IDC_Mach; }
 inline su2double CEulerSolver::GetTotal_DC60() { return Total_DC60; }
 
 inline su2double CEulerSolver::GetTotal_Custom_ObjFunc() { return Total_Custom_ObjFunc; }
+inline su2double CEulerSolver::GetTotal_PressureAtOnePoint() { return Total_PressureAtOnePoint; }
+inline su2double CEulerSolver::GetTotal_ErrorFunc() { return Total_ErrorFunc; }
 
 inline su2double CEulerSolver::GetTotal_CMx() { return Total_CMx; }
 

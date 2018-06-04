@@ -88,7 +88,7 @@ CVariable::CVariable(unsigned short val_nvar, CConfig *config) {
   Solution = new su2double [nVar];
   for (unsigned short iVar = 0; iVar < nVar; iVar++)
     Solution[iVar] = 0.0;
-  
+
 }
 
 CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *config) {

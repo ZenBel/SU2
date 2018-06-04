@@ -109,6 +109,9 @@ protected:
 
   su2double Ptot_nubc;
 
+  su2double TargetQuantityErrorFunc;
+  bool BoolErrorFunc;
+
   
 public:
   
@@ -933,6 +936,11 @@ public:
    */
   virtual su2double GetPressure(void);
   
+  virtual su2double GetTargetQuantityErrorFunc(void);
+  virtual void SetTargetQuantityErrorFunc(su2double target_q_err_func);
+  virtual bool GetBoolErrorFunc(void);
+  virtual void SetBoolErrorFunc(bool value);
+
   /*!
    * \brief A virtual member.
    * \param[in] val_vector - Direction of projection.
@@ -3596,6 +3604,11 @@ public:
    */
   su2double GetPressure(void);
   
+  su2double GetTargetQuantityErrorFunc(void);
+  void SetTargetQuantityErrorFunc(su2double target_q_err_func);
+  bool GetBoolErrorFunc(void);
+  void SetBoolErrorFunc(bool value);
+
   /*!
    * \brief Get the speed of the sound.
    * \return Value of speed of the sound.

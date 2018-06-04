@@ -6393,6 +6393,7 @@ string CConfig::GetObjFunc_Extension(string val_filename) {
       case ENTROPY_GENERATION:      AdjExt = "_entg";      break;
       case REFERENCE_GEOMETRY:      AdjExt = "_refgeom";       break;
       case REFERENCE_NODE:          AdjExt = "_refnode";       break;
+      case PRESSURE_AT_ONE_POINT:	AdjExt = "_pOnePoint";       break;
       }
     }
     else{

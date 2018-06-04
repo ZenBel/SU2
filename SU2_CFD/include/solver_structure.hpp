@@ -2298,6 +2298,8 @@ public:
    * \return Value of the custom objective function.
    */
   virtual su2double GetTotal_Custom_ObjFunc(void);
+  virtual su2double GetTotal_PressureAtOnePoint(void);
+  virtual su2double GetTotal_ErrorFunc(void);
 
   /*!
    * \brief A virtual member.
@@ -4164,6 +4166,8 @@ protected:
   *Velocity_Inf;    /*!< \brief Flow Velocity vector at the infinity. */
   
   su2double
+  *ErrorFunc,
+  *Surface_ErrorFunc,
   *CD_Inv,  /*!< \brief Drag coefficient (inviscid contribution) for each boundary. */
   *CL_Inv,      /*!< \brief Lift coefficient (inviscid contribution) for each boundary. */
   *CSF_Inv,    /*!< \brief Sideforce coefficient (inviscid contribution) for each boundary. */
@@ -4229,7 +4233,8 @@ protected:
   *ForceInviscid,    /*!< \brief Inviscid force for each boundary. */
   *MomentInviscid,  /*!< \brief Inviscid moment for each boundary. */
   *ForceMomentum,    /*!< \brief Inviscid force for each boundary. */
-  *MomentMomentum;  /*!< \brief Inviscid moment for each boundary. */
+  *MomentMomentum,  /*!< \brief Inviscid moment for each boundary. */
+  *Surface_PressureAtOnePoint;
   su2double *Inflow_MassFlow,  /*!< \brief Mass flow rate for each boundary. */
   *Exhaust_MassFlow,  /*!< \brief Mass flow rate for each boundary. */
   *Inflow_Pressure,  /*!< \brief Fan face pressure for each boundary. */
@@ -4251,6 +4256,8 @@ protected:
   ***Inlet_FlowDir;    /*!< \brief Value of the Flow Direction. */
   
   su2double
+  AllBound_PressureAtOnePoint,
+  AllBound_ErrorFunc,
   AllBound_CD_Inv,  /*!< \brief Total drag coefficient (inviscid contribution) for all the boundaries. */
   AllBound_CL_Inv,      /*!< \brief Total lift coefficient (inviscid contribution) for all the boundaries. */
   AllBound_CSF_Inv,      /*!< \brief Total sideforce coefficient (inviscid contribution) for all the boundaries. */
@@ -4289,6 +4296,8 @@ protected:
    AllBound_CQ_Mnt;      /*!< \brief Total torque coefficient (inviscid contribution) for all the boundaries. */
   
   su2double
+  Total_ErrorFunc,
+  Total_PressureAtOnePoint,
   Total_ComboObj, /*!< \brief Total 'combo' objective for all monitored boundaries */
   AoA_Prev, /*!< \brief Old value of the AoA for fixed lift mode. */
   Total_CD, /*!< \brief Total drag coefficient for all the boundaries. */
@@ -5080,6 +5089,8 @@ public:
    */
   void ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solver_container, CConfig *config);
   
+
+  void ReadErrorFuncFile(CGeometry *geometry, CConfig *config);
   /*!
    * \brief Compute the pressure forces and all the adimensional coefficients.
    * \param[in] geometry - Geometrical definition of the problem.
@@ -5572,6 +5583,8 @@ public:
    * \return Value of the custom objective function.
    */
   su2double GetTotal_Custom_ObjFunc(void);
+  su2double GetTotal_PressureAtOnePoint(void);
+  su2double GetTotal_ErrorFunc(void);
 
   /*!
    * \brief Provide the total (inviscid + viscous) non dimensional x moment coefficient.
@@ -12168,7 +12181,7 @@ private:
   su2double Mach, Alpha, Beta, Pressure, Temperature, BPressure;
   unsigned long nMarker;        /*!< \brief Total number of markers using the grid information. */
   
-  su2double *P_tot, *T_tot, *Density, *Vel_mag, *Flow_x, *Flow_y, *Flow_z, *P_static;
+  su2double *P_tot, *T_tot, *Density, *Vel_mag, *Flow_x, *Flow_y, *Flow_z, *P_static, *Flow_alpha, *Flow_beta;
   su2double *Total_Sens_Ptot, *Total_Sens_Ttot, *Total_Sens_FlowX, *Total_Sens_FlowY, *Total_Sens_FlowZ, *Total_Sens_Pstatic;
 
   su2double *Solution_Geometry; /*!< \brief Auxiliary vector for the geometry solution (dimension nDim instead of nVar). */

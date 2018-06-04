@@ -347,10 +347,9 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 
 	  P_tot = new su2double[geometry->GetGlobal_nPointDomain()]; // Thes quantities could be initialized somewhere else
 	  T_tot = new su2double[geometry->GetGlobal_nPointDomain()];
-	  Flow_x = new su2double[geometry->GetGlobal_nPointDomain()];
-	  Flow_y = new su2double[geometry->GetGlobal_nPointDomain()];
-	  Flow_z = new su2double[geometry->GetGlobal_nPointDomain()];
 	  P_static = new su2double[geometry->GetGlobal_nPointDomain()];
+	  Flow_alpha   = new su2double[geometry->GetGlobal_nPointDomain()];
+	  Flow_beta   = new su2double[geometry->GetGlobal_nPointDomain()];
 
 	  unsigned long iVertex, iPoint, GlobalIndex;
 	  unsigned short iMarker;
@@ -364,52 +363,48 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 			      if (geometry->node[iPoint]->GetDomain()) {
 
 					  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+
 						  P_tot[GlobalIndex] = config->GetNUBC_Var1(GlobalIndex);
 						  T_tot[GlobalIndex] = config->GetNUBC_Var2(GlobalIndex);
-						  Flow_x[GlobalIndex] = config->GetNUBC_Var4(GlobalIndex);
-						  Flow_y[GlobalIndex] = config->GetNUBC_Var5(GlobalIndex);
-						  if (nDim == 3 ) {Flow_z[GlobalIndex] = config->GetNUBC_Var6(GlobalIndex);}
 						  P_static[GlobalIndex] = config->GetNUBC_Var3(GlobalIndex);
+						  Flow_alpha[GlobalIndex] = config->GetNUBC_Var4(GlobalIndex);
+						  if (nDim == 3 ) { Flow_beta[GlobalIndex] = config->GetNUBC_Var4(GlobalIndex);}
 
 						  if (!reset){
 							  AD::RegisterInput(P_tot[GlobalIndex]);
 							  AD::RegisterInput(T_tot[GlobalIndex]);
-							  AD::RegisterInput(Flow_x[GlobalIndex]);
-							  AD::RegisterInput(Flow_y[GlobalIndex]);
-							  if (nDim == 3 ) {AD::RegisterInput(Flow_z[GlobalIndex]);}
 							  AD::RegisterInput(P_static[GlobalIndex]);
+							  AD::RegisterInput(Flow_alpha[GlobalIndex]);
+							  if (nDim == 3 ) {AD::RegisterInput(Flow_beta[GlobalIndex]);}
 						  }
 
 						  config->SetNUBC_Var1(P_tot[GlobalIndex], GlobalIndex);
 						  config->SetNUBC_Var2(T_tot[GlobalIndex], GlobalIndex);
-						  config->SetNUBC_Var4(Flow_x[GlobalIndex], GlobalIndex);
-						  config->SetNUBC_Var5(Flow_y[GlobalIndex], GlobalIndex);
-						  if (nDim == 3 ) {config->SetNUBC_Var6(Flow_z[GlobalIndex], GlobalIndex);}
 						  config->SetNUBC_Var3(P_static[GlobalIndex], GlobalIndex);
+						  config->SetNUBC_Var4(Flow_alpha[GlobalIndex], GlobalIndex);
+						  if (nDim == 3 ) {config->SetNUBC_Var5(Flow_beta[GlobalIndex], GlobalIndex);}
 					  }
+
 					  else if (config->GetKind_Data_NonUniform(Marker_Tag) == MASS_FLOW){
 						  Density[GlobalIndex] = config->GetNUBC_Var1(GlobalIndex);
 						  Vel_mag[GlobalIndex] = config->GetNUBC_Var2(GlobalIndex);
-						  Flow_x[GlobalIndex] = config->GetNUBC_Var4(GlobalIndex);
-						  Flow_y[GlobalIndex] = config->GetNUBC_Var5(GlobalIndex);
-						  if (nDim == 3 ) {Flow_z[GlobalIndex] = config->GetNUBC_Var6(GlobalIndex);}
 						  P_static[GlobalIndex] = config->GetNUBC_Var3(GlobalIndex);
+						  Flow_alpha[GlobalIndex] = config->GetNUBC_Var4(GlobalIndex);
+						  if (nDim == 3 ) { Flow_beta[GlobalIndex] = config->GetNUBC_Var4(GlobalIndex);}
 
 						  if (!reset){
 							  AD::RegisterInput(Density[GlobalIndex]);
 							  AD::RegisterInput(Vel_mag[GlobalIndex]);
-							  AD::RegisterInput(Flow_x[GlobalIndex]);
-							  AD::RegisterInput(Flow_y[GlobalIndex]);
-							  if (nDim == 3 ) {AD::RegisterInput(Flow_z[GlobalIndex]);}
 							  AD::RegisterInput(P_static[GlobalIndex]);
+							  AD::RegisterInput(Flow_alpha[GlobalIndex]);
+							  if (nDim == 3 ) {AD::RegisterInput(Flow_beta[GlobalIndex]);}
 						  }
 
 						  config->SetNUBC_Var1(Density[GlobalIndex], GlobalIndex);
 						  config->SetNUBC_Var2(Vel_mag[GlobalIndex], GlobalIndex);
-						  config->SetNUBC_Var4(Flow_x[GlobalIndex], GlobalIndex);
-						  config->SetNUBC_Var5(Flow_y[GlobalIndex], GlobalIndex);
-						  if (nDim == 3 ) {config->SetNUBC_Var6(Flow_z[GlobalIndex], GlobalIndex);}
 						  config->SetNUBC_Var3(P_static[GlobalIndex], GlobalIndex);
+						  config->SetNUBC_Var4(Flow_alpha[GlobalIndex], GlobalIndex);
+						  if (nDim == 3 ) {config->SetNUBC_Var5(Flow_beta[GlobalIndex], GlobalIndex);}
 					  }
 			      }
 			  }
@@ -644,22 +639,18 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
 
 			  node[iPoint]->SetSensNUBC_Q1(SU2_TYPE::GetDerivative(P_tot[GlobalIndex]));
 			  node[iPoint]->SetSensNUBC_Q2(SU2_TYPE::GetDerivative(T_tot[GlobalIndex]));
-			  node[iPoint]->SetSensNUBC_FlowDirX(SU2_TYPE::GetDerivative(Flow_x[GlobalIndex]));
-			  node[iPoint]->SetSensNUBC_FlowDirY(SU2_TYPE::GetDerivative(Flow_y[GlobalIndex]));
-			  node[iPoint]->SetSensNUBC_FlowDirZ(0.0);
-			  if (nDim == 3) node[iPoint]->SetSensNUBC_FlowDirZ(SU2_TYPE::GetDerivative(P_tot[GlobalIndex]));
 			  node[iPoint]->SetSensNUBC_Pressure(SU2_TYPE::GetDerivative(P_static[GlobalIndex]));
+			  node[iPoint]->SetSensNUBC_FlowDirX(SU2_TYPE::GetDerivative(Flow_alpha[GlobalIndex]));
+			  if (nDim == 3) node[iPoint]->SetSensNUBC_FlowDirY(SU2_TYPE::GetDerivative(Flow_beta[GlobalIndex]));
 
 			}
 			else if (config->GetKind_Data_NonUniform(Marker_Tag) == MASS_FLOW){
 
 			  node[iPoint]->SetSensNUBC_Q1(SU2_TYPE::GetDerivative(Density[GlobalIndex]));
 			  node[iPoint]->SetSensNUBC_Q2(SU2_TYPE::GetDerivative(Vel_mag[GlobalIndex]));
-			  node[iPoint]->SetSensNUBC_FlowDirX(SU2_TYPE::GetDerivative(Flow_x[GlobalIndex]));
-			  node[iPoint]->SetSensNUBC_FlowDirY(SU2_TYPE::GetDerivative(Flow_y[GlobalIndex]));
-			  node[iPoint]->SetSensNUBC_FlowDirZ(0.0);
-			  if (nDim == 3) node[iPoint]->SetSensNUBC_FlowDirZ(SU2_TYPE::GetDerivative(P_tot[GlobalIndex]));
 			  node[iPoint]->SetSensNUBC_Pressure(SU2_TYPE::GetDerivative(P_static[GlobalIndex]));
+			  node[iPoint]->SetSensNUBC_FlowDirX(SU2_TYPE::GetDerivative(Flow_alpha[GlobalIndex]));
+			  if (nDim == 3) node[iPoint]->SetSensNUBC_FlowDirY(SU2_TYPE::GetDerivative(Flow_beta[GlobalIndex]));
 
 			}
 		  }
