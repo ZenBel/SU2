@@ -1148,6 +1148,7 @@ inline bool CConfig::GetRestart_Flow(void) { return Restart_Flow; }
 inline bool CConfig::GetEquivArea(void) { return EquivArea; }
 
 inline bool CConfig::GetInvDesign_Cp(void) { return InvDesign_Cp; }
+inline bool CConfig::GetDataAssimilation(void) { return DataAssimilation; }
 
 inline bool CConfig::GetInvDesign_HeatFlux(void) { return InvDesign_HeatFlux; }
 

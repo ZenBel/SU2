@@ -203,6 +203,7 @@ def get_headerMap(nZones = 1):
                  "CL/CD"           : "EFFICIENCY"              ,
                  "AoA"             : "AOA"                     ,
                  "Custom_ObjFunc"  : "CUSTOM_OBJFUNC"          ,
+                 "ErrorFunc"       : "ERROR_FUNC"              , 
                  "CMerit"          : "FIGURE_OF_MERIT"         ,
                  "CQ"              : "TORQUE"                  ,
                  "CT"              : "THRUST"                  ,
@@ -291,8 +292,9 @@ optnames_aero = [ "LIFT"                    ,
                   "INVERSE_DESIGN_HEATFLUX" ,
                   "TOTAL_HEATFLUX"          ,
                   "MAXIMUM_HEATFLUX"        ,
-                  "CUSTOM_OBJFUNC"             ,
-                  "COMBO"]
+                  "CUSTOM_OBJFUNC"          ,
+                  "COMBO"                   ,
+                  "ERROR_FUNC"]
 
 # Turbo performance optimizer Function Names
 optnames_turbo = ["TOTAL_PRESSURE_LOSS"     ,
@@ -884,6 +886,9 @@ def get_optFileFormat(plot_format,special_cases=None, nZones = 1):
         if key == "INV_DESIGN_HEATFLUX"     :
             header_list.extend(["HeatFlux_Diff"])
             write_format.append(r', %.10f')
+        if key == "DATA_ASSIMILATION"     :
+            header_list.extend(["ErrorFunc"])
+            write_format.append(r', %.16f')
 
     # finish formats
     header_format = (header_format) + ('"') + ('","').join(header_list) + ('"') + (' \n')
@@ -935,7 +940,8 @@ def get_specialCases(config):
                           'EQUIV_AREA'                       ,
                           '1D_OUTPUT'                        ,
                           'INV_DESIGN_CP'                    ,
-                          'INV_DESIGN_HEATFLUX'              ]
+                          'INV_DESIGN_HEATFLUX'              ,
+                          'DATA_ASSIMILATION']
     
     special_cases = []
     for key in all_special_cases:

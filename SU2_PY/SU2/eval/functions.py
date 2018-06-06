@@ -115,6 +115,7 @@ def function( func_name, config, state=None ):
         
     #: if not redundant
 
+  
     # prepare output
     if func_name == 'ALL':
         func_out = state['FUNCTIONS']
@@ -245,6 +246,10 @@ def aerodynamics( config, state=None ):
     if ( 'INV_DESIGN_HEATFLUX' in special_cases and
          'TARGET_HEATFLUX' in files ) :
         pull.append( files['TARGET_HEATFLUX'] )
+    
+    if ( 'DATA_ASSIMILATION' in special_cases and 
+       'TARGET_CP' in files ):
+        pull.append(files['TARGET_CP'])
         
     if (config.has_key('MARKER_NONUNIFORM')):
         path_nubc  = os.getcwd()
@@ -384,6 +389,10 @@ def stability( config, state=None, step=1e-2 ):
     if ( 'INV_DESIGN_HEATFLUX' in special_cases and
          'TARGET_HEATFLUX' in files ) :
         pull.append( files['TARGET_HEATFLUX'] )
+    
+    if ( 'DATA_ASSIMILATION' in special_cases and 
+       'TARGET_CP' in files ):
+        pull.append(files['TARGET_CP'])
 
     # pull needed files, start folder
     with redirect_folder( folder, pull, link ) as push:
@@ -529,6 +538,10 @@ def multipoint( config, state=None, step=1e-2 ):
     if ( 'INV_DESIGN_HEATFLUX' in special_cases and
         'TARGET_HEATFLUX' in files ) :
       pull.append( files['TARGET_HEATFLUX'] )
+      
+    if ( 'DATA_ASSIMILATION' in special_cases and 
+       'TARGET_CP' in files ):
+        pull.append(files['TARGET_CP'])
 
     # pull needed files, start folder_0
     with redirect_folder( folder[0], pull, link ) as push:

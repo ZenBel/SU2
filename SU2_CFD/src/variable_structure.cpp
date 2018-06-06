@@ -141,7 +141,9 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
 	if (config->GetFSI_Simulation() && config->GetDiscrete_Adjoint()){
 	  Solution_Adj_Old = new su2double [nVar];
 	}
-  
+
+	BoolErrorFunc = false;
+
 }
 
 CVariable::~CVariable(void) {

@@ -5408,13 +5408,6 @@ void CEulerSolver::ReadErrorFuncFile(CGeometry *geometry, CConfig *config){
 	char buffer[50], cstr[200];
 	ifstream Surface_file;
 
-    for (iMarker = 0; iMarker < nMarker; iMarker++){
-	  for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++){
-		  iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-		  node[iPoint]->SetBoolErrorFunc(false);
-	  }
-    }
-
 	/*--- Prepare to read the surface pressure files (CSV) ---*/
 	surfCp_filename = "TargetCp";
 	strcpy (cstr, surfCp_filename.c_str());
@@ -5496,17 +5489,15 @@ void CEulerSolver::SetErrorFuncOF(CGeometry *geometry, CConfig *config){
     Boundary   = config->GetMarker_All_KindBC(iMarker);
 	Monitoring = config->GetMarker_All_Monitoring(iMarker);
 
-	if ((Boundary == EULER_WALL) || (Boundary == HEAT_FLUX)          ||
-	    (Boundary == ISOTHERMAL) || (Boundary == NEARFIELD_BOUNDARY) ||
-	    (Boundary == INLET_FLOW) || (Boundary == OUTLET_FLOW)        ||
-	    (Boundary == ACTDISK_INLET) || (Boundary == ACTDISK_OUTLET)  ||
-	    (Boundary == ENGINE_INFLOW) || (Boundary == ENGINE_EXHAUST)) {
+    if ((Boundary == EULER_WALL             ) ||
+        (Boundary == HEAT_FLUX              ) ||
+        (Boundary == ISOTHERMAL             ) ||
+        (Boundary == NEARFIELD_BOUNDARY     ) ||
+		(Boundary == NONUNIFORM_BOUNDARY    )) {
 
 	  for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
 
 	    iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-	    Pressure = node[iPoint]->GetPressure();
-	    CPressure[iMarker][iVertex] = (Pressure - RefPressure)*factor*RefArea;
 
 	    /*--- Note that the pressure coefficient is computed at the
 	    halo cells (for visualization purposes), but not the forces ---*/
@@ -5535,12 +5526,11 @@ void CEulerSolver::SetErrorFuncOF(CGeometry *geometry, CConfig *config){
 	}
   }
 
-#ifdef HAVE_MPI
 
+#ifdef HAVE_MPI
   /*--- Add AllBound information using all the nodes ---*/
   MyAllBound_ErrorFunc	= AllBound_ErrorFunc;	AllBound_ErrorFunc = 0.0;
   SU2_MPI::Allreduce(&MyAllBound_ErrorFunc, &AllBound_ErrorFunc, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
 #endif
 
   Total_ErrorFunc	  = AllBound_ErrorFunc;
@@ -5648,11 +5638,12 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
       }
     }
     
-    if ((Boundary == EULER_WALL) || (Boundary == HEAT_FLUX) ||
-        (Boundary == ISOTHERMAL) || (Boundary == NEARFIELD_BOUNDARY) ||
-        (Boundary == INLET_FLOW) || (Boundary == OUTLET_FLOW) ||
-        (Boundary == ACTDISK_INLET) || (Boundary == ACTDISK_OUTLET)||
-        (Boundary == ENGINE_INFLOW) || (Boundary == ENGINE_EXHAUST)) {
+    if ((Boundary == EULER_WALL)    || (Boundary == HEAT_FLUX)          ||
+        (Boundary == ISOTHERMAL)    || (Boundary == NEARFIELD_BOUNDARY) ||
+        (Boundary == INLET_FLOW)    || (Boundary == OUTLET_FLOW)        ||
+        (Boundary == ACTDISK_INLET) || (Boundary == ACTDISK_OUTLET)     ||
+        (Boundary == ENGINE_INFLOW) || (Boundary == ENGINE_EXHAUST)     ||
+		(Boundary == NONUNIFORM_BOUNDARY)){
       
       /*--- Forces initialization at each Marker ---*/
       
@@ -6047,7 +6038,8 @@ void CEulerSolver::Momentum_Forces(CGeometry *geometry, CConfig *config) {
     
     if ((Boundary == INLET_FLOW) || (Boundary == OUTLET_FLOW) ||
         (Boundary == ACTDISK_INLET) || (Boundary == ACTDISK_OUTLET)||
-        (Boundary == ENGINE_INFLOW) || (Boundary == ENGINE_EXHAUST)) {
+        (Boundary == ENGINE_INFLOW) || (Boundary == ENGINE_EXHAUST)||
+		(Boundary == NONUNIFORM_BOUNDARY)) {
       
       /*--- Forces initialization at each Marker ---*/
       

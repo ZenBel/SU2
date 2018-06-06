@@ -282,6 +282,9 @@ def adjoint( func_name, config, state=None ):
     if 'INV_DESIGN_HEATFLUX' in special_cases:
         pull.append(files['TARGET_HEATFLUX'])
         
+    if 'DATA_ASSIMILATION' in special_cases :
+        pull.append(files['TARGET_CP'])
+        
     if (config.has_key('MARKER_NONUNIFORM')):
         path_nubc  = os.getcwd()
         nubc_filenames = []
@@ -728,6 +731,9 @@ def findiff( config, state=None ):
     # files: target heat flux distribution
     if 'INV_DESIGN_HEATFLUX' in special_cases and 'TARGET_HEATFLUX' in files:
         pull.append(files['TARGET_HEATFLUX'])
+        
+    if 'DATA_ASSIMILATION' in special_cases and 'TARGET_CP' in files:
+        pull.append(files['TARGET_CP'])
                
     # files: Non-Uniform boundary input (.bc) files           
     if (config.has_key('MARKER_NONUNIFORM')):
@@ -1013,6 +1019,9 @@ def directdiff( config, state=None ):
     # files: target heat flux distribution
     if 'INV_DESIGN_HEATFLUX' in special_cases and 'TARGET_HEATFLUX' in files:
         pull.append(files['TARGET_HEATFLUX'])
+        
+    if 'DATA_ASSIMILATION' in special_cases and 'TARGET_CP' in files:
+        pull.append(files['TARGET_CP'])
 
     # output redirection
     with redirect_folder('DIRECTDIFF',pull,link) as push:

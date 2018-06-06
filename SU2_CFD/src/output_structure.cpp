@@ -4483,6 +4483,7 @@ void COutput::SetConvHistory_Header(ofstream *ConvHist_file, CConfig *config, un
   bool disc_adj = config->GetDiscrete_Adjoint();
   bool frozen_visc = (cont_adj && config->GetFrozen_Visc_Cont()) ||( disc_adj && config->GetFrozen_Visc_Disc());
   bool inv_design = (config->GetInvDesign_Cp() || config->GetInvDesign_HeatFlux());
+  bool data_assimilation = config->GetDataAssimilation();
   
   bool output_surface = (config->GetnMarker_Analyze() != 0);
   bool output_comboObj = (config->GetnObj() > 1);
@@ -4540,6 +4541,7 @@ void COutput::SetConvHistory_Header(ofstream *ConvHist_file, CConfig *config, un
   char adj_turbo_coeff[]=",\"Sens_Geo\",\"Sens_PressOut\",\"Sens_TotTempIn\"";
   char surface_outputs[]= ",\"Avg_MassFlow\",\"Avg_Mach\",\"Avg_Temp\",\"Avg_Press\",\"Avg_Density\",\"Avg_Enthalpy\",\"Avg_NormalVel\",\"Avg_TotalTemp\",\"Avg_TotalPress\"";
   char Cp_inverse_design[]= ",\"Cp_Diff\"";
+  char ErrorFunc[] = ",\"ErrorFunc\"";
   char Heat_inverse_design[]= ",\"HeatFlux_Diff\"";
   char d_flow_coeff[] = ",\"D(CL)\",\"D(CD)\",\"D(CSF)\",\"D(CMx)\",\"D(CMy)\",\"D(CMz)\",\"D(CFx)\",\"D(CFy)\",\"D(CFz)\",\"D(CL/CD)\",\"D(Custom_ObjFunc)\"";
   char d_engine[] = ",\"D(AeroCDrag)\",\"D(SolidCDrag)\",\"D(Radial_Distortion)\",\"D(Circumferential_Distortion)\"";
@@ -4633,6 +4635,7 @@ void COutput::SetConvHistory_Header(ofstream *ConvHist_file, CConfig *config, un
       ConvHist_file[0] << Cp_inverse_design;
     if (thermal && !turbo) ConvHist_file[0] << Heat_inverse_design;
     }
+    if (data_assimilation) ConvHist_file[0] << ErrorFunc;
     if (rotating_frame && !turbo) ConvHist_file[0] << rotating_frame_coeff;
     ConvHist_file[0] << flow_resid;
     if (turbulent) ConvHist_file[0] << turb_resid;
@@ -4799,7 +4802,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
     adjoint_coeff[1000], flow_resid[1000], adj_flow_resid[1000], turb_resid[1000], trans_resid[1000],
     adj_turb_resid[1000], wave_coeff[1000],
     fem_coeff[1000], wave_resid[1000], heat_resid[1000], combo_obj[1000],
-    fem_resid[1000], end[1000], surface_outputs[1000], d_direct_coeff[1000], turbo_coeff[10000];
+    fem_resid[1000], end[1000], surface_outputs[1000], d_direct_coeff[1000], turbo_coeff[10000], ErrorFunc[1000];
 
     su2double dummy = 0.0, *Coord;
     unsigned short iVar, iMarker_Monitoring;
@@ -4818,6 +4821,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
     bool engine        = ((config[val_iZone]->GetnMarker_EngineInflow() != 0) || (config[val_iZone]->GetnMarker_EngineExhaust() != 0));
     bool actuator_disk = ((config[val_iZone]->GetnMarker_ActDiskInlet() != 0) || (config[val_iZone]->GetnMarker_ActDiskOutlet() != 0));
     bool inv_design = (config[val_iZone]->GetInvDesign_Cp() || config[val_iZone]->GetInvDesign_HeatFlux());
+    bool data_assimilation = config[val_iZone]->GetDataAssimilation();
     bool transition = (config[val_iZone]->GetKind_Trans_Model() == LM);
     bool thermal = (config[val_iZone]->GetKind_Solver() == RANS || config[val_iZone]->GetKind_Solver()  == NAVIER_STOKES);
     bool turbulent = ((config[val_iZone]->GetKind_Solver() == RANS) || (config[val_iZone]->GetKind_Solver() == ADJ_RANS) ||
@@ -4852,7 +4856,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
     su2double Total_CL = 0.0, Total_CD = 0.0, Total_CSF = 0.0, Total_CMx = 0.0, Total_CMy = 0.0, Total_CMz = 0.0, Total_CEff = 0.0,
     Total_CEquivArea = 0.0, Total_CNearFieldOF = 0.0, Total_CFx = 0.0, Total_CFy = 0.0, Total_CFz = 0.0, Total_CMerit = 0.0,
     Total_CT = 0.0, Total_CQ = 0.0, Total_CWave = 0.0, Total_CHeat = 0.0,
-    Total_Heat = 0.0, Total_MaxHeat = 0.0, Total_CFEM = 0.0, Total_Custom_ObjFunc = 0.0,
+    Total_Heat = 0.0, Total_MaxHeat = 0.0, Total_CFEM = 0.0, Total_Custom_ObjFunc = 0.0, Total_ErrorFunc = 0.0,
     Total_ComboObj = 0.0, Total_AeroCD = 0.0, Total_SolidCD = 0.0, Total_IDR = 0.0, Total_IDC = 0.0,
     Total_AoA = 0.0;
     su2double Surface_MassFlow = 0.0, Surface_Mach = 0.0, Surface_Temperature = 0.0, Surface_Pressure = 0.0, Surface_Density = 0.0, Surface_Enthalpy = 0.0, Surface_NormalVelocity = 0.0, Surface_TotalTemperature = 0.0, Surface_TotalPressure = 0.0;
@@ -4978,8 +4982,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
         Total_CFz      = solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_CFz();
         Total_ComboObj = solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_ComboObj();
         Total_AoA      = config[val_iZone]->GetAoA() - config[val_iZone]->GetAoA_Offset();
-//        Total_Custom_ObjFunc = solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_Custom_ObjFunc();
-        Total_Custom_ObjFunc = solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_ErrorFunc();
+        Total_Custom_ObjFunc = solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_Custom_ObjFunc();
 
 
         if (direct_diff != NO_DERIVATIVE) {
@@ -5288,6 +5291,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
               SPRINTF (Cp_inverse_design, ", %14.8e", solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_CpDiff());
               if (thermal && !turbo) SPRINTF (Heat_inverse_design, ", %14.8e", solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_HeatFluxDiff());
             }
+            if (data_assimilation) SPRINTF (ErrorFunc, ", %14.8e", solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_ErrorFunc());
             
             if (direct_diff != NO_DERIVATIVE) {
               if (!turbo)
@@ -5645,6 +5649,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
             else if (aeroelastic) cout << "     Res[Rho]" << "     Res[RhoE]" << "   CLift(Total)" << "   CDrag(Total)" << "         plunge" << "          pitch" << endl;
             else if (equiv_area) cout << "     Res[Rho]" << "   CLift(Total)" << "   CDrag(Total)" << "    CPress(N-F)" << endl;
             else if (inv_design) cout << "     Res[Rho]" << "     Res[RhoE]" <<  "   CLift(Total)" << "    CDrag(Total)" << "     CpDiff" << endl;
+            else if (data_assimilation) cout << "     Res[Rho]" << "     Res[RhoE]" <<  "   CLift(Total)" << "    CDrag(Total)" << "     ErrorFunc" << endl;
 
             else if (turbo){
 
@@ -5888,6 +5893,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
                 ConvHist_file[0] << Cp_inverse_design;
                 if (thermal) ConvHist_file[0] << Heat_inverse_design;
               }
+              if (data_assimilation) ConvHist_file[0] << ErrorFunc;
               if (rotating_frame && !turbo) ConvHist_file[0] << rotating_frame_coeff;
               ConvHist_file[0] << flow_resid;
             }
@@ -5944,6 +5950,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
                 
               }
               else if (inv_design){ cout.width(15); cout << min(10000.0, max(-10000.0, Total_CL)); cout.width(15); cout << min(10000.0, max(-10000.0, Total_CD)); cout.width(10); cout << fixed; cout <<  Cp_inverse_design; }
+              else if (data_assimilation){ cout.width(15); cout << min(10000.0, max(-10000.0, Total_CL)); cout.width(15); cout << min(10000.0, max(-10000.0, Total_CD)); cout.width(10); cout << fixed; cout <<  ErrorFunc; }
               else { cout.width(15); cout << min(10000.0, max(-10000.0, Total_CL)); cout.width(15); cout << min(10000.0, max(-10000.0, Total_CD)); }
               if (aeroelastic) {
                 cout.setf(ios::scientific, ios::floatfield);
@@ -5971,6 +5978,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
                 ConvHist_file[0] << Cp_inverse_design;
                 if (thermal) ConvHist_file[0] << Heat_inverse_design;
               }
+              if (data_assimilation) ConvHist_file[0] << ErrorFunc;
               if (rotating_frame && !turbo) ConvHist_file[0] << rotating_frame_coeff;
               ConvHist_file[0] << flow_resid << turb_resid;
             }
@@ -8936,7 +8944,7 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
 
           PressDiff += Area * (CpTarget - Cp) * (CpTarget - Cp);
 
-//          cout << "Globalindex: "<< GlobalIndex << ", CpTarget = " << CpTarget << ", Cp = " << Cp << endl;
+//          cout << "Globalindex: "<< GlobalIndex << ", CpTarget = " << CpTarget << ", CpComputed = " << Cp << endl;
         }
       }
     }

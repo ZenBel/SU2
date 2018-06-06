@@ -300,6 +300,9 @@ class State(ordered_bunch):
         # heat flux inverse design
         if 'INV_DESIGN_HEATFLUX' in special_cases:
           register_file('TARGET_HEATFLUX',targetheatflux_name)
+          
+        if 'DATA_ASSIMILATION' in special_cases:
+          register_file('TARGET_CP',targetcp_name)
         
         if (config.has_key('MARKER_NONUNIFORM')): 
             for i in range(len(nubc_filenames)):

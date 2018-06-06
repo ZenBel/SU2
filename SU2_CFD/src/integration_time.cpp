@@ -721,7 +721,7 @@ void CMultiGridIntegration::NonDimensional_Parameters(CGeometry **geometry, CSol
         if (config->GetCauchy_Func_Flow() == DRAG_COEFFICIENT) (*monitor) = solver_container[FinestMesh][FLOW_SOL]->GetTotal_CD();
         if (config->GetCauchy_Func_Flow() == LIFT_COEFFICIENT) (*monitor) = solver_container[FinestMesh][FLOW_SOL]->GetTotal_CL();
         if (config->GetCauchy_Func_Flow() == NEARFIELD_PRESSURE) (*monitor) = solver_container[FinestMesh][FLOW_SOL]->GetTotal_CNearFieldOF();
-        if (config->GetCauchy_Func_Flow() == INVERSE_DESIGN_PRESSURE) (*monitor) = solver_container[FinestMesh][FLOW_SOL]->GetTotal_CpDiff();
+        if (config->GetCauchy_Func_Flow() == ERROR_FUNC) (*monitor) = solver_container[FinestMesh][FLOW_SOL]->GetTotal_CpDiff();
       }
       
       if (config->GetConvCriteria() == RESIDUAL) {

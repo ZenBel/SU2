@@ -1847,6 +1847,7 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
 
   /* DESCRIPTION: Evaluate inverse design on the surface  */
   addBoolOption("INV_DESIGN_CP", InvDesign_Cp, false);
+  addBoolOption("DATA_ASSIMILATION", DataAssimilation, false);
 
   /* DESCRIPTION: Evaluate inverse design on the surface  */
   addBoolOption("INV_DESIGN_HEATFLUX", InvDesign_HeatFlux, false);
@@ -4605,6 +4606,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
           else {                         cout << "." << endl; }
           break;
         case INVERSE_DESIGN_PRESSURE:    cout << "Inverse design (Cp) objective function." << endl; break;
+        case ERROR_FUNC				:    cout << "Error function objective function." << endl; break;
         case INVERSE_DESIGN_HEATFLUX:    cout << "Inverse design (Heat Flux) objective function." << endl; break;
         case SIDEFORCE_COEFFICIENT:      cout << "Side force objective function." << endl; break;
         case EFFICIENCY:                 cout << "CL/CD objective function." << endl; break;
@@ -5089,7 +5091,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
             << Cauchy_Elems << " elements and epsilon " <<Cauchy_Eps<< "."<< endl; break;
           case DRAG_COEFFICIENT: cout << "Cauchy criteria for Drag using "
             << Cauchy_Elems << " elements and epsilon " <<Cauchy_Eps<< "."<< endl; break;
-          case INVERSE_DESIGN_PRESSURE: cout << "Cauchy criteria for Inverse Design (Pressure) using "
+          case ERROR_FUNC: cout << "Cauchy criteria for Error Function using "
                   << Cauchy_Elems << " elements and epsilon " <<Cauchy_Eps<< "."<< endl; break;
         }
 
@@ -6380,7 +6382,7 @@ string CConfig::GetObjFunc_Extension(string val_filename) {
       case SURFACE_STATIC_PRESSURE: AdjExt = "_pe";       break;
       case SURFACE_MASSFLOW:        AdjExt = "_mfr";      break;
       case SURFACE_MACH:            AdjExt = "_mach";     break;
-      case CUSTOM_OBJFUNC:        		AdjExt = "_custom";   break;
+      case CUSTOM_OBJFUNC:        	AdjExt = "_custom";   break;
       case KINETIC_ENERGY_LOSS:     AdjExt = "_ke";        break;
       case TOTAL_PRESSURE_LOSS:     AdjExt = "_pl";        break;
       case FLOW_ANGLE_OUT:          AdjExt = "_fao";       break;
