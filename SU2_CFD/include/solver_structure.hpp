@@ -4358,6 +4358,12 @@ protected:
   
   su2double **BoundaryData;    /*!< \brief pointer to array storing the pointID and values of Non-Uniform boundary. */
 
+  unsigned long NonUniformBC_InputPoints;
+  vector<su2double> NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_Var2, NonUniformBC_Var3,
+                    NonUniformBC_Alpha, NonUniformBC_Beta,
+					NonUniformBC_d2Var1, NonUniformBC_d2Var2, NonUniformBC_d2Var3, NonUniformBC_d2Alpha,
+					NonUniformBC_d2Beta;
+
   su2double *iPoint_UndLapl,  /*!< \brief Auxiliary variable for the undivided Laplacians. */
   *jPoint_UndLapl;      /*!< \brief Auxiliary variable for the undivided Laplacians. */
   su2double *SecondaryVar_i,  /*!< \brief Auxiliary vector for storing the solution at point i. */
@@ -6575,7 +6581,7 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-//  void SetBC_NonUniform(CGeometry *geometry, CConfig *config, unsigned short val_marker, string val_marker1);
+  void SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config, unsigned short val_marker, string name_marker);
 //  void SetBC_NonUniform_RBF(CGeometry *geometry, CConfig *config, unsigned short val_marker, string name_marker);
   void SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config, string name_marker);
 

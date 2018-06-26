@@ -6911,75 +6911,208 @@ void CConfig::Initialize_ErrorFunc_Variables(unsigned long val_points) {
 }
 
 
-void CConfig::SetNUBC_Var1(su2double newVar, unsigned long val_pos) {
-  NonUniform_Var1[val_pos] = newVar;
+void CConfig::SetNUBC_Coord(su2double newVar, unsigned long val_pos, unsigned short val_marker) {
+  NonUniform_Coord[val_marker][val_pos] = newVar;
 }
 
-void CConfig::SetNUBC_Var2(su2double newVar, unsigned long val_pos) {
-  NonUniform_Var2[val_pos] = newVar;
+su2double CConfig::GetNUBC_Coord(unsigned long val_pos, unsigned short val_marker) {
+  return NonUniform_Coord[val_marker][val_pos];
 }
 
-void CConfig::SetNUBC_Var3(su2double newVar, unsigned long val_pos) {
-  NonUniform_Var3[val_pos] = newVar;
+
+void CConfig::SetNUBC_Var1(su2double newVar, unsigned long val_pos, unsigned short val_marker) {
+  NonUniform_Var1[val_marker][val_pos] = newVar;
+}
+//void CConfig::SetNUBC_Var1(su2double newVar, unsigned long val_pos) {
+//  NonUniform_Var1[val_pos] = newVar;
+//}
+
+void CConfig::SetNUBC_Var2(su2double newVar, unsigned long val_pos, unsigned short val_marker) {
+  NonUniform_Var2[val_marker][val_pos] = newVar;
+}
+//void CConfig::SetNUBC_Var2(su2double newVar, unsigned long val_pos) {
+//  NonUniform_Var2[val_pos] = newVar;
+//}
+
+void CConfig::SetNUBC_Var3(su2double newVar, unsigned long val_pos, unsigned short val_marker) {
+  NonUniform_Var3[val_marker][val_pos] = newVar;
+}
+//void CConfig::SetNUBC_Var3(su2double newVar, unsigned long val_pos) {
+//  NonUniform_Var3[val_pos] = newVar;
+//}
+
+void CConfig::SetNUBC_Var4(su2double newVar, unsigned long val_pos, unsigned short val_marker) {
+  NonUniform_Var4[val_marker][val_pos] = newVar;
+}
+//void CConfig::SetNUBC_Var4(su2double newVar, unsigned long val_pos) {
+//  NonUniform_Var4[val_pos] = newVar;
+//}
+
+void CConfig::SetNUBC_Var5(su2double newVar, unsigned long val_pos, unsigned short val_marker) {
+  NonUniform_Var5[val_marker][val_pos] = newVar;
+}
+//void CConfig::SetNUBC_Var5(su2double newVar, unsigned long val_pos) {
+//  NonUniform_Var5[val_pos] = newVar;
+//}
+
+void CConfig::SetNUBC_Var6(su2double newVar, unsigned long val_pos, unsigned short val_marker) {
+  NonUniform_Var6[val_marker][val_pos] = newVar;
+}
+//void CConfig::SetNUBC_Var6(su2double newVar, unsigned long val_pos) {
+//  NonUniform_Var6[val_pos] = newVar;
+//}
+
+void CConfig::SetNUBC_d2Var1(vector<su2double> InputCoord, vector<su2double> InputVar,unsigned long InputPoints,
+		                     su2double dVar_1, su2double dVar_N, unsigned short val_marker) {
+  SetSpline(InputCoord, InputVar, InputPoints, dVar_1, dVar_N, NonUniform_d2Var1[val_marker]);
 }
 
-void CConfig::SetNUBC_Var4(su2double newVar, unsigned long val_pos) {
-  NonUniform_Var4[val_pos] = newVar;
+void CConfig::SetNUBC_d2Var2(vector<su2double> InputCoord, vector<su2double> InputVar,unsigned long InputPoints,
+                             su2double dVar_1, su2double dVar_N, unsigned short val_marker) {
+  SetSpline(InputCoord, InputVar, InputPoints, dVar_1, dVar_N, NonUniform_d2Var2[val_marker]);
 }
 
-void CConfig::SetNUBC_Var5(su2double newVar, unsigned long val_pos) {
-  NonUniform_Var5[val_pos] = newVar;
+void CConfig::SetNUBC_d2Var3(vector<su2double> InputCoord, vector<su2double> InputVar,unsigned long InputPoints,
+                             su2double dVar_1, su2double dVar_N, unsigned short val_marker) {
+  SetSpline(InputCoord, InputVar, InputPoints, dVar_1, dVar_N, NonUniform_d2Var3[val_marker]);
 }
 
-void CConfig::SetNUBC_Var6(su2double newVar, unsigned long val_pos) {
-  NonUniform_Var6[val_pos] = newVar;
+void CConfig::SetNUBC_d2Var4(vector<su2double> InputCoord, vector<su2double> InputVar,unsigned long InputPoints,
+                             su2double dVar_1, su2double dVar_N, unsigned short val_marker) {
+  SetSpline(InputCoord, InputVar, InputPoints, dVar_1, dVar_N, NonUniform_d2Var4[val_marker]);
 }
 
-su2double CConfig::GetNUBC_Var1(unsigned long val_pos) {
-  return NonUniform_Var1[val_pos];
+void CConfig::SetNUBC_d2Var5(vector<su2double> InputCoord, vector<su2double> InputVar,unsigned long InputPoints,
+                             su2double dVar_1, su2double dVar_N, unsigned short val_marker) {
+  SetSpline(InputCoord, InputVar, InputPoints, dVar_1, dVar_N, NonUniform_d2Var5[val_marker]);
 }
 
-su2double CConfig::GetNUBC_Var2(unsigned long val_pos) {
-  return NonUniform_Var2[val_pos];
+void CConfig::SetNUBC_d2Var6(vector<su2double> InputCoord, vector<su2double> InputVar,unsigned long InputPoints,
+                             su2double dVar_1, su2double dVar_N, unsigned short val_marker) {
+  SetSpline(InputCoord, InputVar, InputPoints, dVar_1, dVar_N, NonUniform_d2Var6[val_marker]);
 }
 
-su2double CConfig::GetNUBC_Var3(unsigned long val_pos) {
-  return NonUniform_Var3[val_pos];
+
+su2double CConfig::GetNUBC_Var1(unsigned long val_pos, unsigned short val_marker) {
+  return NonUniform_Var1[val_marker][val_pos];
 }
 
-su2double CConfig::GetNUBC_Var4(unsigned long val_pos) {
-  return NonUniform_Var4[val_pos];
+su2double CConfig::GetNUBC_Var2(unsigned long val_pos, unsigned short val_marker) {
+  return NonUniform_Var2[val_marker][val_pos];
 }
 
-su2double CConfig::GetNUBC_Var5(unsigned long val_pos) {
-  return NonUniform_Var5[val_pos];
+su2double CConfig::GetNUBC_Var3(unsigned long val_pos, unsigned short val_marker) {
+  return NonUniform_Var3[val_marker][val_pos];
 }
 
-su2double CConfig::GetNUBC_Var6(unsigned long val_pos) {
-  return NonUniform_Var6[val_pos];
+su2double CConfig::GetNUBC_Var4(unsigned long val_pos, unsigned short val_marker) {
+  return NonUniform_Var4[val_marker][val_pos];
 }
 
-unsigned long CConfig::GetNUBC_InputPoints(string val_marker) {
-  unsigned short iMarker_NonUniform;
-  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
-    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
-  return NonUniform_InputPoints[iMarker_NonUniform];
+su2double CConfig::GetNUBC_Var5(unsigned long val_pos, unsigned short val_marker) {
+  return NonUniform_Var5[val_marker][val_pos];
 }
 
-void CConfig::SetNUBC_InputPoints(unsigned long val_npoints, string val_marker) {
-  unsigned short iMarker_NonUniform;
-  for (iMarker_NonUniform = 0; iMarker_NonUniform < nMarker_NonUniform; iMarker_NonUniform++)
-    if (Marker_NonUniform[iMarker_NonUniform] == val_marker) break;
-  NonUniform_InputPoints[iMarker_NonUniform] = val_npoints;
+su2double CConfig::GetNUBC_Var6(unsigned long val_pos, unsigned short val_marker) {
+  return NonUniform_Var6[val_marker][val_pos];
 }
 
-void CConfig::Initialize_NonUniform_Variables(unsigned long val_points) {
-  NonUniform_Var1 = new su2double[val_points];
-  NonUniform_Var2 = new su2double[val_points];
-  NonUniform_Var3 = new su2double[val_points];
-  NonUniform_Var4 = new su2double[val_points];
-  NonUniform_Var5 = new su2double[val_points];
-  NonUniform_Var6 = new su2double[val_points];
+su2double CConfig::GetNUBC_d2Var1(unsigned long val_pos, unsigned short val_marker) {
+  return NonUniform_d2Var1[val_marker][val_pos];
+}
+
+su2double CConfig::GetNUBC_d2Var2(unsigned long val_pos, unsigned short val_marker) {
+  return NonUniform_d2Var2[val_marker][val_pos];
+}
+
+su2double CConfig::GetNUBC_d2Var3(unsigned long val_pos, unsigned short val_marker) {
+  return NonUniform_d2Var3[val_marker][val_pos];
+}
+
+su2double CConfig::GetNUBC_d2Var4(unsigned long val_pos, unsigned short val_marker) {
+  return NonUniform_d2Var4[val_marker][val_pos];
+}
+
+su2double CConfig::GetNUBC_d2Var5(unsigned long val_pos, unsigned short val_marker) {
+  return NonUniform_d2Var5[val_marker][val_pos];
+}
+
+su2double CConfig::GetNUBC_d2Var6(unsigned long val_pos, unsigned short val_marker) {
+  return NonUniform_d2Var6[val_marker][val_pos];
+}
+
+unsigned long CConfig::GetNUBC_InputPoints(unsigned short val_marker) {
+  return NonUniform_InputPoints[val_marker];
+}
+
+void CConfig::SetNUBC_InputPoints(unsigned long val_npoints, unsigned short val_marker) {
+  NonUniform_InputPoints[val_marker] = val_npoints;
+}
+
+//void CConfig::Initialize_NonUniform_Variables(unsigned long val_points) {
+//  NonUniform_Var1 = new su2double[val_points];
+//  NonUniform_Var2 = new su2double[val_points];
+//  NonUniform_Var3 = new su2double[val_points];
+//  NonUniform_Var4 = new su2double[val_points];
+//  NonUniform_Var5 = new su2double[val_points];
+//  NonUniform_Var6 = new su2double[val_points];
+//}
+
+void CConfig::Initialize_NonUniform_Variables(unsigned short nMarkers, unsigned long val_points) {
+  NonUniform_InputPoints = new unsigned long[nMarkers];
+
+  NonUniform_Coord = new su2double*[nMarkers];
+  NonUniform_Var1 = new su2double*[nMarkers];
+  NonUniform_Var2 = new su2double*[nMarkers];
+  NonUniform_Var3 = new su2double*[nMarkers];
+  NonUniform_Var4 = new su2double*[nMarkers];
+  NonUniform_Var5 = new su2double*[nMarkers];
+  NonUniform_Var6 = new su2double*[nMarkers];
+
+  NonUniform_d2Var1 = new su2double*[nMarkers];
+  NonUniform_d2Var2 = new su2double*[nMarkers];
+  NonUniform_d2Var3 = new su2double*[nMarkers];
+  NonUniform_d2Var4 = new su2double*[nMarkers];
+  NonUniform_d2Var5 = new su2double*[nMarkers];
+  NonUniform_d2Var6 = new su2double*[nMarkers];
+
+  for (unsigned short iMarker = 0; iMarker < nMarkers; iMarker++){
+	  NonUniform_Coord[iMarker] = new su2double[val_points];
+	  NonUniform_Var1[iMarker] = new su2double[val_points];
+	  NonUniform_Var2[iMarker] = new su2double[val_points];
+	  NonUniform_Var3[iMarker] = new su2double[val_points];
+	  NonUniform_Var4[iMarker] = new su2double[val_points];
+	  NonUniform_Var5[iMarker] = new su2double[val_points];
+	  NonUniform_Var6[iMarker] = new su2double[val_points];
+
+	  NonUniform_d2Var1[iMarker] = new su2double[val_points];
+	  NonUniform_d2Var2[iMarker] = new su2double[val_points];
+	  NonUniform_d2Var3[iMarker] = new su2double[val_points];
+	  NonUniform_d2Var4[iMarker] = new su2double[val_points];
+	  NonUniform_d2Var5[iMarker] = new su2double[val_points];
+	  NonUniform_d2Var6[iMarker] = new su2double[val_points];
+  }
+
+  for (unsigned short iMarker = 0; iMarker < nMarkers; iMarker++){
+	  NonUniform_InputPoints[iMarker] = 0.0;
+	  for (unsigned short iPos = 0; iPos < val_points; iPos++){
+
+		  NonUniform_Coord[iMarker][iPos] = 0.0;
+		  NonUniform_Var1[iMarker][iPos] = 0.0;
+		  NonUniform_Var2[iMarker][iPos] = 0.0;
+		  NonUniform_Var3[iMarker][iPos] = 0.0;
+		  NonUniform_Var4[iMarker][iPos] = 0.0;
+		  NonUniform_Var5[iMarker][iPos] = 0.0;
+		  NonUniform_Var6[iMarker][iPos] = 0.0;
+
+		  NonUniform_d2Var1[iMarker][iPos] = 0.0;
+		  NonUniform_d2Var2[iMarker][iPos] = 0.0;
+		  NonUniform_d2Var3[iMarker][iPos] = 0.0;
+		  NonUniform_d2Var4[iMarker][iPos] = 0.0;
+		  NonUniform_d2Var5[iMarker][iPos] = 0.0;
+		  NonUniform_d2Var6[iMarker][iPos] = 0.0;
+	  }
+  }
 }
 
 su2double* CConfig::GetRiemann_FlowDir(string val_marker) {
@@ -7584,6 +7717,42 @@ void CConfig::SetSpline(vector<su2double> &x, vector<su2double> &y, unsigned lon
   y2[n-1]=(un-qn*u[n-2])/(qn*y2[n-2]+1.0);
   for (k=n-1; k>=1; k--)					// This is the backsubstitution loop of the tridiagonal
     y2[k-1]=y2[k-1]*y2[k]+u[k-1];	  // algorithm.
+
+  delete[] u;
+
+}
+
+void CConfig::SetSpline(vector<su2double> &x, vector<su2double> &y, unsigned long n, su2double yp1, su2double ypn, su2double *y2) {
+
+  unsigned long i, k;
+  su2double p, qn, sig, un, *u;
+
+  u = new su2double[n];
+
+  if (yp1 > 0.99e30)			// The lower boundary condition is set either to be "natural"
+    y2[0]=u[0]=0.0;
+  else {						// or else to have a specified first derivative.
+    y2[0] = -0.5;
+    u[0]=(3.0/(x[1]-x[0]))*((y[1]-y[0])/(x[1]-x[0])-yp1);
+  }
+
+  for (i=2; i<=n-1; i++) {									//  This is the decomposition loop of the tridiagonal algorithm.
+    sig=(x[i-1]-x[i-2])/(x[i]-x[i-2]);						//  y2 and u are used for temporary storage of the decomposed
+    p=sig*y2[i-2]+2.0;										//	factors.
+    y2[i-1]=(sig-1.0)/p;
+    u[i-1]=(y[i]-y[i-1])/(x[i]-x[i-1]) - (y[i-1]-y[i-2])/(x[i-1]-x[i-2]);
+    u[i-1]=(6.0*u[i-1]/(x[i]-x[i-2])-sig*u[i-2])/p;
+  }
+
+  if (ypn > 0.99e30)						// The upper boundary condition is set either to be "natural"
+    qn=un=0.0;
+  else {									// or else to have a specified first derivative.
+    qn=0.5;
+    un=(3.0/(x[n-1]-x[n-2]))*(ypn-(y[n-1]-y[n-2])/(x[n-1]-x[n-2]));
+  }
+  y2[n-1]=(un-qn*u[n-2])/(qn*y2[n-2]+1.0);
+  for (k=n-1; k>=1; k--)					// This is the backsubstitution loop of the tridiagonal  algorithm.
+    y2[k-1]=y2[k-1]*y2[k]+u[k-1];
 
   delete[] u;
 
