@@ -279,6 +279,8 @@ private:
   su2double **Riemann_FlowDir;  /*!< \brief Specified flow direction vector (unit vector) for Riemann boundaries. */
   su2double *NonUniform_Var1, *NonUniform_Var2, *NonUniform_Var3, *NonUniform_Var4, *NonUniform_Var5, *NonUniform_Var6;
   unsigned long *NonUniform_InputPoints;
+  su2double *TargetQuantity;
+  bool *TargetPointID;
   su2double *Giles_Var1, *Giles_Var2, *RelaxFactorAverage, *RelaxFactorFourier;    /*!< \brief Specified values for Giles BC. */
   su2double **Giles_FlowDir;  /*!< \brief Specified flow direction vector (unit vector) for Giles BC. */
   su2double *Inlet_Ptotal;    /*!< \brief Specified total pressures for inlet boundaries. */
@@ -5963,6 +5965,12 @@ public:
   su2double GetRiemann_Var2(string val_marker);
   void SetRiemann_Var2(su2double newVar2, string val_marker) ;
   
+  void SetTargetQuantity(su2double target_quantity, unsigned long val_pos);
+  void SetTargetPointID(unsigned long global_index);
+  su2double GetTargetQuantity(unsigned long val_pos);
+  unsigned long GetTargetPointID(unsigned long val_pos);
+  void Initialize_ErrorFunc_Variables(unsigned long val_points);
+
   void SetNUBC_Var1(su2double newVar, unsigned long val_pos);
   void SetNUBC_Var2(su2double newVar, unsigned long val_pos);
   void SetNUBC_Var3(su2double newVar, unsigned long val_pos);

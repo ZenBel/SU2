@@ -290,7 +290,7 @@ def adjoint( func_name, config, state=None ):
         nubc_filenames = []
         for elem in (config.MARKER_NONUNIFORM).split():
             if '.bc' in elem:
-                nubc_filenames.append(elem)
+                nubc_filenames.append(elem.strip(','))
         for i in range(len(nubc_filenames)):
             pull.append( files['NUBC_FILE_%s'%(i+1)])
             
@@ -741,7 +741,7 @@ def findiff( config, state=None ):
         nubc_filenames = []
         for elem in (config.MARKER_NONUNIFORM).split():
             if '.bc' in elem:
-                nubc_filenames.append(elem)
+                nubc_filenames.append(elem.strip(','))
         for i in range(len(nubc_filenames)):
             pull.append( files['NUBC_FILE_%s'%(i+1)])
 

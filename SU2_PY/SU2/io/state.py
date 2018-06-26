@@ -241,7 +241,7 @@ class State(ordered_bunch):
             nubc_filenames = []
             for elem in (config.MARKER_NONUNIFORM).split():
                 if '.bc' in elem:
-                    nubc_filenames.append(elem)
+                    nubc_filenames.append(elem.strip(','))
 
         adj_map = get_adjointSuffix()
         restart = config.RESTART_SOL == 'YES'
@@ -304,7 +304,7 @@ class State(ordered_bunch):
         if 'DATA_ASSIMILATION' in special_cases:
           register_file('TARGET_CP',targetcp_name)
         
-        if (config.has_key('MARKER_NONUNIFORM')): 
+        if (config.has_key('MARKER_NONUNIFORM')):
             for i in range(len(nubc_filenames)):
                 register_file('NUBC_FILE_%s'%(i+1), nubc_filenames[i])  
         

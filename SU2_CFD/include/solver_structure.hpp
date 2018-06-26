@@ -5087,8 +5087,11 @@ public:
    */
   void ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solver_container, CConfig *config);
   
-
-  void ReadErrorFuncFile(CGeometry *geometry, CConfig *config);
+  /*!
+   * \brief Compute the Error Function for Data assimilation.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
   void SetErrorFuncOF(CGeometry *geometry, CConfig *config);
 
   /*!

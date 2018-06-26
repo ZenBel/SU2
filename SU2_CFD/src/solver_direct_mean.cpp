@@ -682,9 +682,6 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   Surface_CMy_Inv        = new su2double[config->GetnMarker_Monitoring()];
   Surface_CMz_Inv        = new su2double[config->GetnMarker_Monitoring()];
 
-  Surface_ErrorFunc      = new su2double[config->GetnMarker_Monitoring()];
-  ErrorFunc              = new su2double[nMarker];
-
   Surface_CL_Mnt     = new su2double[config->GetnMarker_Monitoring()];
   Surface_CD_Mnt     = new su2double[config->GetnMarker_Monitoring()];
   Surface_CSF_Mnt= new su2double[config->GetnMarker_Monitoring()];
@@ -750,8 +747,6 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   Total_CMx_Prev      = 0.0; Total_CMy_Prev      = 0.0; Total_CMz_Prev      = 0.0;
   Total_AeroCD = 0.0;  Total_SolidCD = 0.0;   Total_IDR   = 0.0;    Total_IDC   = 0.0;
 
-  Total_ErrorFunc		   = 0.0;
-
   /*--- Read farfield conditions ---*/
   
   Density_Inf     = config->GetDensity_FreeStreamND();
@@ -761,6 +756,12 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   Temperature_Inf = config->GetTemperature_FreeStreamND();
   Mach_Inf        = config->GetMach();
   
+  /*--- Initialize the quantities for Error Function OF ---*/
+
+  Surface_ErrorFunc      = new su2double[config->GetnMarker_Monitoring()];
+  ErrorFunc              = new su2double[nMarker];
+  Total_ErrorFunc		   = 0.0;
+
   /*--- Initialize the secondary values for direct derivative approxiations ---*/
   
   switch(direct_diff) {
@@ -893,7 +894,7 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
 
 CEulerSolver::~CEulerSolver(void) {
 
-  unsigned short iVar, iMarker, iSpan;
+  unsigned short iVar, iMarker, iSpan, iPoint;
 
   unsigned long iVertex;
 
@@ -1012,7 +1013,7 @@ CEulerSolver::~CEulerSolver(void) {
       delete [] CPressureTarget[iMarker];
     delete [] CPressureTarget;
   }
-  
+
   if (CharacPrimVar != NULL) {
     for (iMarker = 0; iMarker < nMarker; iMarker++) {
       for (iVertex = 0; iVertex < nVertex[iMarker]; iVertex++)
@@ -5399,141 +5400,204 @@ void CEulerSolver::SetUpwind_Ducros_Sensor(CGeometry *geometry, CConfig *config)
   
 }
 
-void CEulerSolver::ReadErrorFuncFile(CGeometry *geometry, CConfig *config){
+void CEulerSolver::SetErrorFuncOF(CGeometry *geometry, CConfig *config){
 
-	unsigned short icommas, iMarker;// Boundary, iDim;
-	unsigned long iVertex, iPoint, PointID, GlobalIndex;
-	su2double XCoord, YCoord, ZCoord, Pressure, PressureCoeff;
+	unsigned short icommas, iMarker, iDim;// Boundary, iDim;
+	unsigned long iVertex, iPoint, PointID, GlobalIndex, iPos, nPointLocal=0.0, nPointGlobal=0.0;
+	su2double x_coord, y_coord, z_coord, pressure, pressure_coeff;
 	string text_line, surfCp_filename;
 	char buffer[50], cstr[200];
 	ifstream Surface_file;
 
-	/*--- Prepare to read the surface pressure files (CSV) ---*/
-	surfCp_filename = "TargetCp";
-	strcpy (cstr, surfCp_filename.c_str());
-	SPRINTF (buffer, ".dat");
-	strcat (cstr, buffer);
+	su2double RefVel2, RefTemp, RefDensity, RefPressure, factor, weight;
+	su2double dist, *Coord, Target, Computed, Buffer_ErrorFunc, Volume, Buffer_VolumeTot;
 
-	/*--- Read the surface pressure file ---*/
-	string::size_type position;
+    nPointLocal = geometry->GetnPoint(); // Total number of mesh points on the decomposed geometry managed by a single processor
 
-	Surface_file.open(cstr, ios::in);
+#ifdef HAVE_MPI
+  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+#else
+  nPointGlobal = nPointLocal;
+#endif
 
-	if (!(Surface_file.fail())) {
+	Buffer_VolumeTot   = 0.0;
+	Buffer_ErrorFunc   = 0.0;
+	Total_ErrorFunc	   = 0.0;
+	AllBound_ErrorFunc = 0.0;
+
+#ifdef HAVE_MPI
+  su2double MyAllBound_ErrorFunc, MyAllBound_VolumeTot;
+#endif
+
+    RefTemp     = Temperature_Inf;
+    RefDensity  = Density_Inf;
+    RefPressure = Pressure_Inf;
+    RefVel2 = 0.0;
+    for (iDim = 0; iDim < nDim; iDim++)
+	  RefVel2  += Velocity_Inf[iDim]*Velocity_Inf[iDim];
+
+    factor = 1.0 / (0.5*RefDensity*RefVel2);
+
+    if ( config->GetExtIter() == 0){
+
+      config->Initialize_ErrorFunc_Variables(nPointGlobal);
+
+	  /*--- Prepare to read the surface pressure files (CSV) ---*/
+	  surfCp_filename = "TargetCp";
+	  strcpy (cstr, surfCp_filename.c_str());
+	  SPRINTF (buffer, ".dat");
+	  strcat (cstr, buffer);
+
+	  /*--- Read the surface pressure file ---*/
+	  string::size_type position;
+
+	  Surface_file.open(cstr, ios::in);
+	  if (Surface_file.fail()) {
+	  cout << "There is no Target file for ERROR_FUNC!! " << surfCp_filename.data() << "."<< endl;
+	  exit(EXIT_FAILURE);
+	  }
+
 	  getline(Surface_file, text_line);
+	  istringstream point_line(text_line);
 
 	  while (getline(Surface_file, text_line)) {
 	    for (icommas = 0; icommas < 50; icommas++) {
-		  position = text_line.find( ",", 0 );
-		  if (position!=string::npos) text_line.erase (position,1);
+	      position = text_line.find( ",", 0 );
+	      if (position!=string::npos) text_line.erase (position,1);
 	    }
+
 	    stringstream  point_line(text_line);
 
-	    if (geometry->GetnDim() == 2) point_line >> PointID >> XCoord >> YCoord >> Pressure >> PressureCoeff;
-	    if (geometry->GetnDim() == 3) point_line >> PointID >> XCoord >> YCoord >> ZCoord >> Pressure >> PressureCoeff;
+	    if (geometry->GetnDim() == 2) point_line >> PointID >> x_coord >> y_coord >> pressure >> pressure_coeff;
+	    if (geometry->GetnDim() == 3) point_line >> PointID >> x_coord >> y_coord >> z_coord >> pressure >> pressure_coeff;
 
-	    for (iMarker = 0; iMarker < nMarker; iMarker++) {
-		  for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
-		    iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-			GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+	    /*--- Loop over all points of a (partitioned) domain ---*/
+	    for (iPoint = 0; iPoint < nPointLocal; iPoint++) {
 
+	      /*--- Filter out the Halo nodes ---*/
+	      if (geometry->node[iPoint]->GetDomain()){
 
-			if (GlobalIndex == PointID){
-			  node[iPoint]->SetTargetQuantityErrorFunc(PressureCoeff);
-			  node[iPoint]->SetBoolErrorFunc(true);
-			}
+	        /*--- Obtain coordinates of given point ---*/
+	  	    Coord = geometry->node[iPoint]->GetCoord();
 
-		  }
+	  	    /*--- Compute distace from current point from Target file ---*/
+	  	    if (geometry->GetnDim() == 2) dist = sqrt( (Coord[0]-x_coord)*(Coord[0]-x_coord) + (Coord[1]-y_coord)* (Coord[1]-y_coord) );
+	  	    if (geometry->GetnDim() == 3) dist = sqrt( (Coord[0]-x_coord)*(Coord[0]-x_coord) + (Coord[1]-y_coord)*(Coord[1]-y_coord) + (Coord[2]-z_coord)*(Coord[2]-z_coord) );
+
+	  	    GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+	  	    su2double tolerance = 1e-6; //HARDCODED
+
+	  	    /*--- Assign weight based on distance from reference point (XCoord, YCoord, ZCoord) ---*/
+	  	    if (dist < tolerance){
+	  		  weight= 1.0;		// Dirac's delta (at the moment)
+
+	 		  config->SetTargetPointID(GlobalIndex);
+	 		  config->SetTargetQuantity(pressure_coeff, GlobalIndex);
+
+	  		  Target   = pressure_coeff;
+			  Computed = (node[iPoint]->GetPressure() - RefPressure)*factor;
+			  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
+
+			  cout << "x,y = " << Coord[0] << ", " << Coord[1] << ", GlobalIndex: " << GlobalIndex << endl;
+	  	    }
+	  	    else {
+	  	      Buffer_ErrorFunc += 0.0;
+	  	    }
+	      }
 	    }
 	  }
-
 	  Surface_file.close();
-	}
-
-}
-
-void CEulerSolver::SetErrorFuncOF(CGeometry *geometry, CConfig *config){
-
-  unsigned long iVertex, iPoint;
-  unsigned short iDim, iMarker, Boundary, Monitoring, iMarker_Monitoring;
-  su2double Buffer_ErrorFunc, Pressure = 0.0, *Normal = NULL, Area, Target, Computed, *Coord,
-		    RefVel2, RefTemp, RefDensity, RefPressure, Mach2Vel, Mach_Motion, factor;
-  su2double RefArea    = config->GetRefArea();
-
-#ifdef HAVE_MPI
-  su2double MyAllBound_ErrorFunc;
-#endif
-
-  /*--- Evaluate reference values for non-dimensionalization. ---*/
-
-  RefTemp     = Temperature_Inf;
-  RefDensity  = Density_Inf;
-  RefPressure = Pressure_Inf;
-  RefVel2 = 0.0;
-  for (iDim = 0; iDim < nDim; iDim++)
-    RefVel2  += Velocity_Inf[iDim]*Velocity_Inf[iDim];
-
-  factor = 1.0 / (0.5*RefDensity*RefVel2);
-
-  /*--- Initialize objective function ---*/
-
-  Buffer_ErrorFunc   = 0.0;
-  Total_ErrorFunc	 = 0.0;
-  AllBound_ErrorFunc = 0.0;
-
-  /*--- Read Target ErrorFunc file (TargetCp at the moment) ---*/
-  ReadErrorFuncFile(geometry, config);
-
-  for (iMarker = 0; iMarker < nMarker; iMarker++) {
-
-    Boundary   = config->GetMarker_All_KindBC(iMarker);
-	Monitoring = config->GetMarker_All_Monitoring(iMarker);
-
-    if ((Boundary == EULER_WALL             ) ||
-        (Boundary == HEAT_FLUX              ) ||
-        (Boundary == ISOTHERMAL             ) ||
-        (Boundary == NEARFIELD_BOUNDARY     ) ||
-		(Boundary == NONUNIFORM_BOUNDARY    )) {
-
-	  for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
-
-	    iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-
-	    /*--- Note that the pressure coefficient is computed at the
-	    halo cells (for visualization purposes), but not the forces ---*/
-
-	    if ((geometry->node[iPoint]->GetDomain()) && (Monitoring == YES)){
-
-          Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
-          Coord = geometry->node[iPoint]->GetCoord();
-
-          Area = 0.0;
-          for (iDim = 0; iDim < geometry->GetnDim(); iDim++)
-            Area += Normal[iDim]*Normal[iDim];
-          Area = sqrt(Area);
-
-		  unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-		  if (node[iPoint]->GetBoolErrorFunc() == true ){
-		    Target   = node[iPoint]->GetTargetQuantityErrorFunc();
-		    Computed = CPressure[iMarker][iVertex];
-		  	Buffer_ErrorFunc += Area * (Target - Computed) * (Target - Computed);
+    }
+    else{
+	  /*--- Loop over all points of a (partitioned) domain ---*/
+	  for (iPoint = 0; iPoint < nPointLocal; iPoint++){
+		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+		if (geometry->node[iPoint]->GetDomain()){
+		  if (config->GetTargetPointID(GlobalIndex) == true){
+		    weight = 1.0;
+		    Target = config->GetTargetQuantity(GlobalIndex);
+		    Computed = (node[iPoint]->GetPressure() - RefPressure)*factor;
+		    Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
 		  }
-	    }
+		}
+		else {
+  	      Buffer_ErrorFunc += 0.0;
+  	    }
 	  }
+    }
 
-	  if (Monitoring == YES) { AllBound_ErrorFunc += Buffer_ErrorFunc; }
+//	unsigned long ncount = 0.0;
+//
+//	if (!(Surface_file.fail())) {
+//	  getline(Surface_file, text_line);
+//
+//	  while (getline(Surface_file, text_line)) {
+//	    for (icommas = 0; icommas < 50; icommas++) {
+//		  position = text_line.find( ",", 0 );
+//		  if (position!=string::npos) text_line.erase (position,1);
+//	    }
+//	    stringstream  point_line(text_line);
+//
+//	    if (geometry->GetnDim() == 2) point_line >> PointID >> XCoord >> YCoord >> Pressure >> PressureCoeff;
+//	    if (geometry->GetnDim() == 3) point_line >> PointID >> XCoord >> YCoord >> ZCoord >> Pressure >> PressureCoeff;
+//
+//
+//	    if (NUBER ITERATIONS == 0){
+//
+//	      /*--- Loop over all points of a (partitioned) domain ---*/
+//	      for (iPoint = 0; iPoint < geometry->GetnPoint(); iPoint++) {
+//
+//	        /*--- Filter out the Halo nodes ---*/
+//	        if (geometry->node[iPoint]->GetDomain()){
+//
+//	          /*--- Obtain coordinates of given point ---*/
+//	  	      Coord = geometry->node[iPoint]->GetCoord();
+//
+//	  	      /*--- Compute distace from current point from Target file ---*/
+//	  	      if (geometry->GetnDim() == 2) dist = sqrt( (Coord[0]-XCoord)*(Coord[0]-XCoord) + (Coord[1]-YCoord)* (Coord[1]-YCoord) );
+//	  	      if (geometry->GetnDim() == 3) dist = sqrt( (Coord[0]-XCoord)*(Coord[0]-XCoord) + (Coord[1]-YCoord)*(Coord[1]-YCoord) + (Coord[2]-ZCoord)*(Coord[2]-ZCoord) );
+//
+//	  	      unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+//	  	      su2double tolerance = 1e-6; //HARDCODED
+//
+//	  	      /*--- Assign weight based on distance from reference point (XCoord, YCoord, ZCoord) ---*/
+//	  	      if (dist < tolerance){
+//	  		    weight= 1.0;		// Dirac's delta (at the moment)
+//	  		    TargetPoint[GlobalIndex] = true;
+//	  		    TargetErrorFunc[GlobalIndex] = PressureCoeff;
+////	  		    cout << "dist < " << tolerance << " for x,y = " << Coord[0] << ", " << Coord[1] << ", with GlobalIndex, PointID " << GlobalIndex << ", " << PointID << endl;
+//	  	      }
+//	  	      else {
+//	  	        weight = 0.0;
+//	  	      }
+//
+//	  	      /*--- Compute objective function ---*/
+//		      Target   = PressureCoeff;
+//		      Computed = (node[iPoint]->GetPressure() - RefPressure)*factor;
+//		      Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
+//	        }
+//	      }
+//	    }
+//	    else{
+//
+//	    }
+//	  }
+//
+//	  Surface_file.close();
+//	}
 
-	}
-  }
 
+	AllBound_ErrorFunc += Buffer_ErrorFunc;
 
 #ifdef HAVE_MPI
   /*--- Add AllBound information using all the nodes ---*/
   MyAllBound_ErrorFunc	= AllBound_ErrorFunc;	AllBound_ErrorFunc = 0.0;
+  MyAllBound_VolumeTot	= Buffer_VolumeTot;	    Buffer_VolumeTot = 0.0;
   SU2_MPI::Allreduce(&MyAllBound_ErrorFunc, &AllBound_ErrorFunc, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  SU2_MPI::Allreduce(&MyAllBound_VolumeTot, &Buffer_VolumeTot, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
-  Total_ErrorFunc	  = AllBound_ErrorFunc;
+    Total_ErrorFunc	  = AllBound_ErrorFunc;
 
 }
 
@@ -5927,7 +5991,8 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   Total_CNearFieldOF  = AllBound_CNearFieldOF_Inv;
 
   /*--- Compute the ErrorFunction for Data Assimilation ---*/
-  SetErrorFuncOF(geometry, config);
+  if (config->GetDataAssimilation() == true)
+	  SetErrorFuncOF(geometry, config);
 
   /*--- Update the total coefficients per surface (note that all the nodes have the same value)---*/
   
