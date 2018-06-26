@@ -412,8 +412,86 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 //	  }
 //  }
 
+  if((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_FLOW_SYS && config->GetBoolNonUniform())) {
 
+	  unsigned long iVertex, iPoint, GlobalIndex;
+	  unsigned short iMarker;
+	  unsigned long NUBCInputPoints;
+
+	  P_tot = new su2double*[nMarker]; // These quantities could be initialized somewhere else
+	  T_tot = new su2double*[nMarker];
+	  P_static = new su2double*[nMarker];
+	  Flow_alpha   = new su2double*[nMarker];
+	  Flow_beta   = new su2double*[nMarker];
+
+	  for (iMarker=0; iMarker < nMarker; iMarker++){
+		string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+		if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY){
+	      P_tot[iMarker] = new su2double[config->GetNUBC_InputPoints(iMarker)];
+	      T_tot[iMarker] = new su2double[config->GetNUBC_InputPoints(iMarker)];
+	      P_static[iMarker] = new su2double[config->GetNUBC_InputPoints(iMarker)];
+	      Flow_alpha[iMarker] = new su2double[config->GetNUBC_InputPoints(iMarker)];
+	      Flow_beta[iMarker] = new su2double[config->GetNUBC_InputPoints(iMarker)];
+		}
+	  }
+
+	  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+		  NUBCInputPoints = config->GetNUBC_InputPoints(iMarker);
+		  string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
+		  if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY){
+			  for (iPoint=0; iPoint < NUBCInputPoints; iPoint++){
+				  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+
+					  P_tot[iMarker][iPoint] = config->GetNUBC_Var1(iPoint, iMarker);
+					  T_tot[iMarker][iPoint] = config->GetNUBC_Var2(iPoint, iMarker);
+					  P_static[iMarker][iPoint] = config->GetNUBC_Var3(iPoint, iMarker);
+					  Flow_alpha[iMarker][iPoint] = config->GetNUBC_Var4(iPoint, iMarker);
+					  if (nDim == 3 ) { Flow_beta[iMarker][iPoint] = config->GetNUBC_Var4(iPoint, iMarker);}
+
+					  cout << P_tot[iMarker][iPoint] << ", " << T_tot[iMarker][iPoint] << ", " << Flow_alpha[iMarker][iPoint] << ", " << P_static[iMarker][iPoint] << endl;
+
+					  if (!reset){
+						  AD::RegisterInput(P_tot[iMarker][iPoint]);
+						  AD::RegisterInput(T_tot[iMarker][iPoint]);
+						  AD::RegisterInput(P_static[iMarker][iPoint]);
+						  AD::RegisterInput(Flow_alpha[iMarker][iPoint]);
+						  if (nDim == 3 ) {AD::RegisterInput(Flow_beta[iMarker][iPoint]);}
+					  }
+
+					  config->SetNUBC_Var1(P_tot[iMarker][iPoint], iPoint, iMarker);
+					  config->SetNUBC_Var2(T_tot[iMarker][iPoint], iPoint, iMarker);
+					  config->SetNUBC_Var3(P_static[iMarker][iPoint], iPoint, iMarker);
+					  config->SetNUBC_Var4(Flow_alpha[iMarker][iPoint], iPoint, iMarker);
+					  if (nDim == 3 ) {config->SetNUBC_Var5(Flow_beta[iMarker][iPoint], iPoint, iMarker);}
+				  }
+
+				  else if (config->GetKind_Data_NonUniform(Marker_Tag) == MASS_FLOW){
+					  Density[iMarker][iPoint]= config->GetNUBC_Var1(iPoint, iMarker);
+					  Vel_mag[iMarker][iPoint] = config->GetNUBC_Var2(iPoint, iMarker);
+					  P_static[iMarker][iPoint] = config->GetNUBC_Var3(iPoint, iMarker);
+					  Flow_alpha[iMarker][iPoint] = config->GetNUBC_Var4(iPoint, iMarker);
+					  if (nDim == 3 ) { Flow_beta[iMarker][iPoint] = config->GetNUBC_Var5(iPoint, iMarker);}
+
+					  if (!reset){
+						  AD::RegisterInput(Density[iMarker][iPoint]);
+						  AD::RegisterInput(Vel_mag[iMarker][iPoint]);
+						  AD::RegisterInput(P_static[iMarker][iPoint]);
+						  AD::RegisterInput(Flow_alpha[iMarker][iPoint]);
+						  if (nDim == 3 ) {AD::RegisterInput(Flow_beta[iMarker][iPoint]);}
+					 }
+
+					  config->SetNUBC_Var1(Density[iMarker][iPoint], iPoint, iMarker);
+					  config->SetNUBC_Var2(Vel_mag[iMarker][iPoint], iPoint, iMarker);
+					  config->SetNUBC_Var3(P_static[iMarker][iPoint], iPoint, iMarker);
+					  config->SetNUBC_Var4(Flow_alpha[iMarker][iPoint], iPoint, iMarker);
+					  if (nDim == 3 ) {config->SetNUBC_Var5(Flow_beta[iMarker][iPoint], iPoint, iMarker);}
+				  }
+			  }
+		  }
+	  }
+  }
 }
+
 
 void CDiscAdjSolver::RegisterOutput(CGeometry *geometry, CConfig *config) {
 
