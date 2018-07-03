@@ -4222,6 +4222,7 @@ public:
    * \return NonUniform_FileName
    */
   string GetNonUniform_file(string val_marker);
+  string GetNonUniform_file(unsigned short iMarker_NonUniform); //operator overloading
 
   /*!
    * \brief Get Kind Data of NonUniform boundary.
@@ -6025,10 +6026,8 @@ public:
   su2double GetNUBC_d2Var5(unsigned long val_pos, unsigned short val_marker);
   su2double GetNUBC_d2Var6(unsigned long val_pos, unsigned short val_marker);
 
-//  void Initialize_NonUniform_Variables(unsigned long val_points);
-  void Initialize_NonUniform_Variables(unsigned short nMarkers, unsigned long val_points); //operator overloading
-  void SetNUBC_InputPoints(unsigned long val_npoints, unsigned short val_marker);
-  unsigned long GetNUBC_InputPoints(unsigned short val_marker);
+  void Initialize_NonUniformVar(unsigned short n_nubc_marker, string *nubc_input_file);
+  unsigned long GetNUBC_nPoints(unsigned short val_marker);
 
   /*!
    * \brief Get the Flowdir at Riemann boundary.

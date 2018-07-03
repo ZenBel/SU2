@@ -602,27 +602,19 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
 
   SetInlet(config);
 
-  /*--- Store pointIDs and values from the Non-Uniform boundary input file ---*/
-  unsigned long nPointLocal = 0, nPointGlobal = 0;
-  nPointLocal = geometry->GetnPoint();
+  /*--- Initialize the Non-uniform boundary condition ---*/
+  if (config->GetBoolNonUniform()){
+    unsigned short nMarkerNonUniform = config->GetnMarkerNonUniform();
+    string *NUBC_InputFiles	 = new string[nMarkerNonUniform];
+    for (iMarker = 0; iMarker < nMarkerNonUniform; iMarker++)
+	  NUBC_InputFiles[iMarker] = config->GetNonUniform_file(iMarker);
 
-#ifdef HAVE_MPI
-  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-#else
-  nPointGlobal = nPointLocal;
-#endif
+    config->Initialize_NonUniformVar(nMarkerNonUniform, NUBC_InputFiles);
 
-  cout << "nMarker: " << nMarker << endl;
-  config->Initialize_NonUniform_Variables(nMarker, nPointGlobal);
-  for (iMarker = 0; iMarker < nMarker; iMarker++) {
-	string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
-	switch (config->GetMarker_All_KindBC(iMarker)) {
-	  case NONUNIFORM_BOUNDARY:
-		SetBC_NonUniform_Spline(geometry, config, iMarker, Marker_Tag);
-//		SetBC_NonUniform_Direct(geometry, config, Marker_Tag);
-		break;
-	}
+    for (iMarker = 0; iMarker < nMarkerNonUniform; iMarker++)
+	  SetBC_NonUniform_Spline(geometry, config, iMarker, NUBC_InputFiles[iMarker]);
   }
+
 
   /*--- Force definition and coefficient arrays for all of the markers ---*/
   
@@ -13204,12 +13196,12 @@ void CEulerSolver::BC_Dirichlet(CGeometry *geometry, CSolver **solver_container,
 
 void CEulerSolver::BC_Custom(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short val_marker) { }
 
-void CEulerSolver::SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config, unsigned short val_marker, string name_marker){
+void CEulerSolver::SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config, unsigned short val_nubc_marker, string NUBC_InputFile){
 
   /*--- Initialize NonUniform Boundary condition from external input file ---*/
   string text_line;
   ifstream input_file;
-  string input_filename = config->GetNonUniform_file(name_marker);
+  string input_filename = NUBC_InputFile;
 
   input_file.open(input_filename.data(), ios::in);
   if (input_file.fail()) {
@@ -13230,8 +13222,6 @@ void CEulerSolver::SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config,
   istringstream point_line(text_line);
   point_line >> InputPoints;
 
-  config->SetNUBC_InputPoints(InputPoints, val_marker);
-
   while (getline (input_file, text_line)) {
 	istringstream point_line(text_line);
 	point_line >> CoordIn[0] >> CoordIn[1] >> CoordIn[2] >> Var1In >> Var2In >> Var3In >> Alpha >> Beta;
@@ -13245,12 +13235,12 @@ void CEulerSolver::SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config,
   input_file.close();
 
   for (iPos=0; iPos < InputPoints; iPos++){
-	  config->SetNUBC_Coord(InputCoord[iPos], iPos, val_marker);
-	  config->SetNUBC_Var1(InputVar1[iPos], iPos, val_marker);
-	  config->SetNUBC_Var2(InputVar2[iPos], iPos, val_marker);
-	  config->SetNUBC_Var3(InputVar3[iPos], iPos, val_marker);
-	  config->SetNUBC_Var4(InputAlpha[iPos], iPos, val_marker);
-	  config->SetNUBC_Var5(InputBeta[iPos], iPos, val_marker);
+	  config->SetNUBC_Coord(InputCoord[iPos], iPos, val_nubc_marker);
+	  config->SetNUBC_Var1(InputVar1[iPos], iPos, val_nubc_marker);
+	  config->SetNUBC_Var2(InputVar2[iPos], iPos, val_nubc_marker);
+	  config->SetNUBC_Var3(InputVar3[iPos], iPos, val_nubc_marker);
+	  config->SetNUBC_Var4(InputAlpha[iPos], iPos, val_nubc_marker);
+	  config->SetNUBC_Var5(InputBeta[iPos], iPos, val_nubc_marker);
   }
 
   /*---  Check if input file is sorted ---*/
@@ -13275,63 +13265,13 @@ void CEulerSolver::SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config,
   dBeta_1 = (InputBeta[1]-InputBeta[0])/(InputCoord[1]-InputCoord[0]);
   dBeta_N = (InputBeta[InputPoints-2]-InputBeta[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
 
-  config->SetNUBC_d2Var1(InputCoord, InputVar1, InputPoints, dVar1_1, dVar1_N, val_marker);
-  config->SetNUBC_d2Var2(InputCoord, InputVar2, InputPoints, dVar2_1, dVar2_N, val_marker);
-  config->SetNUBC_d2Var3(InputCoord, InputVar3, InputPoints, dVar3_1, dVar3_N, val_marker);
-  config->SetNUBC_d2Var4(InputCoord, InputAlpha, InputPoints, dAlpha_1, dAlpha_N, val_marker);
-  config->SetNUBC_d2Var5(InputCoord, InputBeta, InputPoints, dBeta_1, dBeta_N, val_marker);
+  config->SetNUBC_d2Var1(InputCoord, InputVar1, InputPoints, dVar1_1, dVar1_N, val_nubc_marker);
+  config->SetNUBC_d2Var2(InputCoord, InputVar2, InputPoints, dVar2_1, dVar2_N, val_nubc_marker);
+  config->SetNUBC_d2Var3(InputCoord, InputVar3, InputPoints, dVar3_1, dVar3_N, val_nubc_marker);
+  config->SetNUBC_d2Var4(InputCoord, InputAlpha, InputPoints, dAlpha_1, dAlpha_N, val_nubc_marker);
+  config->SetNUBC_d2Var5(InputCoord, InputBeta, InputPoints, dBeta_1, dBeta_N, val_nubc_marker);
 
 }
-
-//void CEulerSolver::SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config, string name_marker){
-//
-//	/*--- Initialize NonUniform Boundary condition from external input file ---*/
-//	string text_line;
-//	ifstream input_file;
-//	string input_filename = config->GetNonUniform_file(name_marker);
-//	unsigned long InputPoints, iPos, jPos;
-//
-//    unsigned short iVertex, iPoint;
-//    unsigned long GlobalIndex;
-//
-//	input_file.open(input_filename.data(), ios::in);
-//	if (input_file.fail()) {
-//	cout << "There is no input file!! " << input_filename.data() << "."<< endl;
-//	exit(EXIT_FAILURE);
-//	}
-//
-//	su2double Var1In, Var2In, Var3In, Var4In, Var5In, Var6In;
-//    vector<su2double> InputVar1, InputVar2, InputVar3, InputVar4, InputVar5, InputVar6;
-//    vector<unsigned long> PointIn;
-//	unsigned long PointID;
-//
-//	/*--- Read head of the file for allocation ---*/
-//	getline (input_file, text_line);
-//	istringstream point_line(text_line);
-//	point_line >> InputPoints;
-//
-//	while (getline (input_file, text_line)) {
-//		istringstream point_line(text_line);
-//		point_line >> PointID >> Var1In >> Var2In >> Var3In >> Var4In >> Var5In ;
-//		PointIn.push_back(PointID);
-//		InputVar1.push_back(Var1In);
-//		InputVar2.push_back(Var2In);
-//		InputVar3.push_back(Var3In);
-//		InputVar4.push_back(Var4In);
-//		InputVar5.push_back(Var5In);
-//		}
-//	input_file.close();
-//
-//    for (iPos=0; iPos < InputPoints; iPos++){
-//	  GlobalIndex = PointIn[iPos];
-//	  config->SetNUBC_Var1(InputVar1[iPos], GlobalIndex);
-//	  config->SetNUBC_Var2(InputVar2[iPos], GlobalIndex);
-//	  config->SetNUBC_Var3(InputVar3[iPos], GlobalIndex);
-//	  config->SetNUBC_Var4(InputVar4[iPos], GlobalIndex);
-//	  config->SetNUBC_Var5(InputVar5[iPos], GlobalIndex);
-//    }
-//
-//}
 
 void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container,
     CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
@@ -13352,11 +13292,17 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
   bool implicit             = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
   bool grid_movement        = config->GetGrid_Movement();
-  string Marker_Tag         = config->GetMarker_All_TagBound(val_marker);
   bool viscous              = config->GetViscous();
   bool gravity = (config->GetGravityForce());
   bool tkeNeeded = (((config->GetKind_Solver() == RANS )|| (config->GetKind_Solver() == DISC_ADJ_RANS)) &&
                     (config->GetKind_Turb_Model() == SST));
+
+  string Marker_Tag         = config->GetMarker_All_TagBound(val_marker);
+  unsigned short nMarker_NonUniform = config->GetnMarkerNonUniform();
+  unsigned short count, iMarker;
+  for (iMarker = 0; iMarker < nMarker_NonUniform; iMarker++)
+    if (config->GetNonUniform_file(Marker_Tag) == config->GetNonUniform_file(iMarker))
+    	count = iMarker;
 
   su2double *Normal, TangVelocity, NormalVelocity;
   Normal = new su2double[nDim];
@@ -13383,14 +13329,14 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
   unsigned long iPos;
   vector<su2double> InputCoord, InputVar1, InputVar2, InputVar3, InputAlpha, InputBeta;
-  unsigned long InputPoints = config->GetNUBC_InputPoints(val_marker);
+  unsigned long InputPoints = config->GetNUBC_nPoints(count);
   for (iPos=0; iPos<InputPoints; iPos++){
-	InputCoord.push_back(config->GetNUBC_Coord(iPos, val_marker));
-	InputVar1.push_back(config->GetNUBC_Var1(iPos, val_marker));
-	InputVar2.push_back(config->GetNUBC_Var2(iPos, val_marker));
-	InputVar3.push_back(config->GetNUBC_Var3(iPos, val_marker));
-	InputAlpha.push_back(config->GetNUBC_Var4(iPos, val_marker));
-	InputBeta.push_back(config->GetNUBC_Var5(iPos, val_marker));
+	InputCoord.push_back(config->GetNUBC_Coord(iPos, count));
+	InputVar1.push_back(config->GetNUBC_Var1(iPos, count));
+	InputVar2.push_back(config->GetNUBC_Var2(iPos, count));
+	InputVar3.push_back(config->GetNUBC_Var3(iPos, count));
+	InputAlpha.push_back(config->GetNUBC_Var4(iPos, count));
+	InputBeta.push_back(config->GetNUBC_Var5(iPos, count));
   }
 
 //  for (iPos=0; iPos<InputPoints; iPos++){
@@ -13400,12 +13346,12 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
   vector<su2double> NUBC_d2Var1, NUBC_d2Var2, NUBC_d2Var3, NUBC_d2Var4, NUBC_d2Var5, NUBC_d2Var6;
   for (iPos=0; iPos<InputPoints; iPos++){
-	  NUBC_d2Var1.push_back(config->GetNUBC_d2Var1(iPos, val_marker));
-	  NUBC_d2Var2.push_back(config->GetNUBC_d2Var2(iPos, val_marker));
-	  NUBC_d2Var3.push_back(config->GetNUBC_d2Var3(iPos, val_marker));
-	  NUBC_d2Var4.push_back(config->GetNUBC_d2Var4(iPos, val_marker));
-	  NUBC_d2Var5.push_back(config->GetNUBC_d2Var5(iPos, val_marker));
-	  NUBC_d2Var6.push_back(config->GetNUBC_d2Var6(iPos, val_marker));
+	  NUBC_d2Var1.push_back(config->GetNUBC_d2Var1(iPos, count));
+	  NUBC_d2Var2.push_back(config->GetNUBC_d2Var2(iPos, count));
+	  NUBC_d2Var3.push_back(config->GetNUBC_d2Var3(iPos, count));
+	  NUBC_d2Var4.push_back(config->GetNUBC_d2Var4(iPos, count));
+	  NUBC_d2Var5.push_back(config->GetNUBC_d2Var5(iPos, count));
+	  NUBC_d2Var6.push_back(config->GetNUBC_d2Var6(iPos, count));
   }
 
   /*--- Loop over all the vertices on this boundary marker ---*/

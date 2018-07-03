@@ -137,12 +137,12 @@ CDiscAdjSolver::CDiscAdjSolver(CGeometry *geometry, CConfig *config, CSolver *di
   for (iPoint = 0; iPoint < nPoint; iPoint++)
     node[iPoint] = new CDiscAdjVariable(Solution, nDim, nVar, config);
 
-  Total_Sens_Ptot = new su2double[geometry->GetGlobal_nPointDomain()];
-  Total_Sens_Ttot = new su2double[geometry->GetGlobal_nPointDomain()];
-  Total_Sens_FlowX = new su2double[geometry->GetGlobal_nPointDomain()];
-  Total_Sens_FlowY = new su2double[geometry->GetGlobal_nPointDomain()];
-  if (nDim == 3 ) Total_Sens_FlowZ = new su2double[geometry->GetGlobal_nPointDomain()];
-  Total_Sens_Pstatic = new su2double[geometry->GetGlobal_nPointDomain()];
+//  Total_Sens_Ptot = new su2double[geometry->GetGlobal_nPointDomain()];
+//  Total_Sens_Ttot = new su2double[geometry->GetGlobal_nPointDomain()];
+//  Total_Sens_FlowX = new su2double[geometry->GetGlobal_nPointDomain()];
+//  Total_Sens_FlowY = new su2double[geometry->GetGlobal_nPointDomain()];
+//  if (nDim == 3 ) Total_Sens_FlowZ = new su2double[geometry->GetGlobal_nPointDomain()];
+//  Total_Sens_Pstatic = new su2double[geometry->GetGlobal_nPointDomain()];
 
 }
 
@@ -343,152 +343,53 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 
   /*--- Register NUBC values as input ---*/
 
-//  if((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_FLOW_SYS && config->GetBoolNonUniform())) {
-//
-//	  P_tot = new su2double[geometry->GetGlobal_nPointDomain()]; // Thes quantities could be initialized somewhere else
-//	  T_tot = new su2double[geometry->GetGlobal_nPointDomain()];
-//	  P_static = new su2double[geometry->GetGlobal_nPointDomain()];
-//	  Flow_alpha   = new su2double[geometry->GetGlobal_nPointDomain()];
-//	  Flow_beta   = new su2double[geometry->GetGlobal_nPointDomain()];
-//
-//	  unsigned long iVertex, iPoint, GlobalIndex;
-//	  unsigned short iMarker;
-//
-//	  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
-//		  string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
-//		  if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY){
-//			  for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
-//				  iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-//				  GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-//			      if (geometry->node[iPoint]->GetDomain()) {
-//
-//					  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
-//
-//						  P_tot[GlobalIndex] = config->GetNUBC_Var1(GlobalIndex);
-//						  T_tot[GlobalIndex] = config->GetNUBC_Var2(GlobalIndex);
-//						  P_static[GlobalIndex] = config->GetNUBC_Var3(GlobalIndex);
-//						  Flow_alpha[GlobalIndex] = config->GetNUBC_Var4(GlobalIndex);
-//						  if (nDim == 3 ) { Flow_beta[GlobalIndex] = config->GetNUBC_Var4(GlobalIndex);}
-//
-//						  if (!reset){
-//							  AD::RegisterInput(P_tot[GlobalIndex]);
-//							  AD::RegisterInput(T_tot[GlobalIndex]);
-//							  AD::RegisterInput(P_static[GlobalIndex]);
-//							  AD::RegisterInput(Flow_alpha[GlobalIndex]);
-//							  if (nDim == 3 ) {AD::RegisterInput(Flow_beta[GlobalIndex]);}
-//						  }
-//
-//						  config->SetNUBC_Var1(P_tot[GlobalIndex], GlobalIndex);
-//						  config->SetNUBC_Var2(T_tot[GlobalIndex], GlobalIndex);
-//						  config->SetNUBC_Var3(P_static[GlobalIndex], GlobalIndex);
-//						  config->SetNUBC_Var4(Flow_alpha[GlobalIndex], GlobalIndex);
-//						  if (nDim == 3 ) {config->SetNUBC_Var5(Flow_beta[GlobalIndex], GlobalIndex);}
-//					  }
-//
-//					  else if (config->GetKind_Data_NonUniform(Marker_Tag) == MASS_FLOW){
-//						  Density[GlobalIndex] = config->GetNUBC_Var1(GlobalIndex);
-//						  Vel_mag[GlobalIndex] = config->GetNUBC_Var2(GlobalIndex);
-//						  P_static[GlobalIndex] = config->GetNUBC_Var3(GlobalIndex);
-//						  Flow_alpha[GlobalIndex] = config->GetNUBC_Var4(GlobalIndex);
-//						  if (nDim == 3 ) { Flow_beta[GlobalIndex] = config->GetNUBC_Var4(GlobalIndex);}
-//
-//						  if (!reset){
-//							  AD::RegisterInput(Density[GlobalIndex]);
-//							  AD::RegisterInput(Vel_mag[GlobalIndex]);
-//							  AD::RegisterInput(P_static[GlobalIndex]);
-//							  AD::RegisterInput(Flow_alpha[GlobalIndex]);
-//							  if (nDim == 3 ) {AD::RegisterInput(Flow_beta[GlobalIndex]);}
-//						  }
-//
-//						  config->SetNUBC_Var1(Density[GlobalIndex], GlobalIndex);
-//						  config->SetNUBC_Var2(Vel_mag[GlobalIndex], GlobalIndex);
-//						  config->SetNUBC_Var3(P_static[GlobalIndex], GlobalIndex);
-//						  config->SetNUBC_Var4(Flow_alpha[GlobalIndex], GlobalIndex);
-//						  if (nDim == 3 ) {config->SetNUBC_Var5(Flow_beta[GlobalIndex], GlobalIndex);}
-//					  }
-//			      }
-//			  }
-//		  }
-//	  }
-//  }
-
   if((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_FLOW_SYS && config->GetBoolNonUniform())) {
 
-	  unsigned long iVertex, iPoint, GlobalIndex;
+	  unsigned long iPoint, NUBCInputPoints;
 	  unsigned short iMarker;
-	  unsigned long NUBCInputPoints;
+	  unsigned short nMarkerNonUniform = config->GetnMarkerNonUniform();
 
-	  P_tot = new su2double*[nMarker]; // These quantities could be initialized somewhere else
-	  T_tot = new su2double*[nMarker];
-	  P_static = new su2double*[nMarker];
-	  Flow_alpha   = new su2double*[nMarker];
-	  Flow_beta   = new su2double*[nMarker];
+	  NUBC_Var1    = new su2double*[nMarkerNonUniform]; // These quantities could be initialized somewhere else
+	  NUBC_Var2    = new su2double*[nMarkerNonUniform];
+	  NUBC_Pstatic = new su2double*[nMarkerNonUniform];
+	  NUBC_alpha   = new su2double*[nMarkerNonUniform];
+	  NUBC_beta    = new su2double*[nMarkerNonUniform];
 
-	  for (iMarker=0; iMarker < nMarker; iMarker++){
-		string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
-		if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY){
-	      P_tot[iMarker] = new su2double[config->GetNUBC_InputPoints(iMarker)];
-	      T_tot[iMarker] = new su2double[config->GetNUBC_InputPoints(iMarker)];
-	      P_static[iMarker] = new su2double[config->GetNUBC_InputPoints(iMarker)];
-	      Flow_alpha[iMarker] = new su2double[config->GetNUBC_InputPoints(iMarker)];
-	      Flow_beta[iMarker] = new su2double[config->GetNUBC_InputPoints(iMarker)];
-		}
+	  for (iMarker = 0; iMarker < nMarkerNonUniform; iMarker++) {
+		NUBCInputPoints		  =  config->GetNUBC_nPoints(iMarker);
+	    NUBC_Var1[iMarker]    = new su2double[NUBCInputPoints];
+		NUBC_Var2[iMarker]    = new su2double[NUBCInputPoints];
+		NUBC_Pstatic[iMarker] = new su2double[NUBCInputPoints];
+		NUBC_alpha[iMarker]   = new su2double[NUBCInputPoints];
+		NUBC_beta[iMarker]    = new su2double[NUBCInputPoints];
 	  }
 
-	  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
-		  NUBCInputPoints = config->GetNUBC_InputPoints(iMarker);
-		  string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
-		  if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY){
-			  for (iPoint=0; iPoint < NUBCInputPoints; iPoint++){
-				  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
+	  for (iMarker = 0; iMarker < nMarkerNonUniform; iMarker++) {
+	    NUBCInputPoints = config->GetNUBC_nPoints(iMarker);
+	    for (iPoint=0; iPoint < NUBCInputPoints; iPoint++){
 
-					  P_tot[iMarker][iPoint] = config->GetNUBC_Var1(iPoint, iMarker);
-					  T_tot[iMarker][iPoint] = config->GetNUBC_Var2(iPoint, iMarker);
-					  P_static[iMarker][iPoint] = config->GetNUBC_Var3(iPoint, iMarker);
-					  Flow_alpha[iMarker][iPoint] = config->GetNUBC_Var4(iPoint, iMarker);
-					  if (nDim == 3 ) { Flow_beta[iMarker][iPoint] = config->GetNUBC_Var4(iPoint, iMarker);}
+	      NUBC_Var1[iMarker][iPoint] = config->GetNUBC_Var1(iPoint, iMarker);
+	      NUBC_Var2[iMarker][iPoint] = config->GetNUBC_Var2(iPoint, iMarker);
+	      NUBC_Pstatic[iMarker][iPoint] = config->GetNUBC_Var3(iPoint, iMarker);
+	      NUBC_alpha[iMarker][iPoint] = config->GetNUBC_Var4(iPoint, iMarker);
+		  if (nDim == 3 ) { NUBC_beta[iMarker][iPoint] = config->GetNUBC_Var4(iPoint, iMarker);}
 
-					  cout << P_tot[iMarker][iPoint] << ", " << T_tot[iMarker][iPoint] << ", " << Flow_alpha[iMarker][iPoint] << ", " << P_static[iMarker][iPoint] << endl;
-
-					  if (!reset){
-						  AD::RegisterInput(P_tot[iMarker][iPoint]);
-						  AD::RegisterInput(T_tot[iMarker][iPoint]);
-						  AD::RegisterInput(P_static[iMarker][iPoint]);
-						  AD::RegisterInput(Flow_alpha[iMarker][iPoint]);
-						  if (nDim == 3 ) {AD::RegisterInput(Flow_beta[iMarker][iPoint]);}
-					  }
-
-					  config->SetNUBC_Var1(P_tot[iMarker][iPoint], iPoint, iMarker);
-					  config->SetNUBC_Var2(T_tot[iMarker][iPoint], iPoint, iMarker);
-					  config->SetNUBC_Var3(P_static[iMarker][iPoint], iPoint, iMarker);
-					  config->SetNUBC_Var4(Flow_alpha[iMarker][iPoint], iPoint, iMarker);
-					  if (nDim == 3 ) {config->SetNUBC_Var5(Flow_beta[iMarker][iPoint], iPoint, iMarker);}
-				  }
-
-				  else if (config->GetKind_Data_NonUniform(Marker_Tag) == MASS_FLOW){
-					  Density[iMarker][iPoint]= config->GetNUBC_Var1(iPoint, iMarker);
-					  Vel_mag[iMarker][iPoint] = config->GetNUBC_Var2(iPoint, iMarker);
-					  P_static[iMarker][iPoint] = config->GetNUBC_Var3(iPoint, iMarker);
-					  Flow_alpha[iMarker][iPoint] = config->GetNUBC_Var4(iPoint, iMarker);
-					  if (nDim == 3 ) { Flow_beta[iMarker][iPoint] = config->GetNUBC_Var5(iPoint, iMarker);}
-
-					  if (!reset){
-						  AD::RegisterInput(Density[iMarker][iPoint]);
-						  AD::RegisterInput(Vel_mag[iMarker][iPoint]);
-						  AD::RegisterInput(P_static[iMarker][iPoint]);
-						  AD::RegisterInput(Flow_alpha[iMarker][iPoint]);
-						  if (nDim == 3 ) {AD::RegisterInput(Flow_beta[iMarker][iPoint]);}
-					 }
-
-					  config->SetNUBC_Var1(Density[iMarker][iPoint], iPoint, iMarker);
-					  config->SetNUBC_Var2(Vel_mag[iMarker][iPoint], iPoint, iMarker);
-					  config->SetNUBC_Var3(P_static[iMarker][iPoint], iPoint, iMarker);
-					  config->SetNUBC_Var4(Flow_alpha[iMarker][iPoint], iPoint, iMarker);
-					  if (nDim == 3 ) {config->SetNUBC_Var5(Flow_beta[iMarker][iPoint], iPoint, iMarker);}
-				  }
-			  }
+		  if (!reset){
+		    AD::RegisterInput(NUBC_Var1[iMarker][iPoint]);
+			AD::RegisterInput(NUBC_Var2[iMarker][iPoint]);
+			AD::RegisterInput(NUBC_Pstatic[iMarker][iPoint]);
+			AD::RegisterInput(NUBC_alpha[iMarker][iPoint]);
+			if (nDim == 3 ) {AD::RegisterInput(NUBC_beta[iMarker][iPoint]);}
 		  }
-	  }
+
+		  config->SetNUBC_Var1(NUBC_Var1[iMarker][iPoint], iPoint, iMarker);
+		  config->SetNUBC_Var2(NUBC_Var2[iMarker][iPoint], iPoint, iMarker);
+		  config->SetNUBC_Var3(NUBC_Pstatic[iMarker][iPoint], iPoint, iMarker);
+		  config->SetNUBC_Var4(NUBC_alpha[iMarker][iPoint], iPoint, iMarker);
+		  if (nDim == 3 ) {config->SetNUBC_Var5(NUBC_beta[iMarker][iPoint], iPoint, iMarker);}
+
+		  }
+	    }
   }
 }
 
@@ -701,42 +602,82 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
 
   /*--- Extract the adjoint values of the NUBC values ---*/
 
-//  if ((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_FLOW_SYS) && config->GetBoolNonUniform()){
-//
-//    unsigned short iMarker;
-//    unsigned long iPoint, iVertex, GlobalIndex;
-//
-//    for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
-//      string Marker_Tag = config->GetMarker_All_TagBound(iMarker);
-//      if (config->GetMarker_All_KindBC(iMarker) == NONUNIFORM_BOUNDARY){
-//		for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
-//		  iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-//		  GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-//		  if (geometry->node[iPoint]->GetDomain()) {
-//			if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
-//
-//			  node[iPoint]->SetSensNUBC_Q1(SU2_TYPE::GetDerivative(P_tot[GlobalIndex]));
-//			  node[iPoint]->SetSensNUBC_Q2(SU2_TYPE::GetDerivative(T_tot[GlobalIndex]));
-//			  node[iPoint]->SetSensNUBC_Pressure(SU2_TYPE::GetDerivative(P_static[GlobalIndex]));
-//			  node[iPoint]->SetSensNUBC_FlowDirX(SU2_TYPE::GetDerivative(Flow_alpha[GlobalIndex]));
-//			  if (nDim == 3) node[iPoint]->SetSensNUBC_FlowDirY(SU2_TYPE::GetDerivative(Flow_beta[GlobalIndex]));
-//
-//			}
-//			else if (config->GetKind_Data_NonUniform(Marker_Tag) == MASS_FLOW){
-//
-//			  node[iPoint]->SetSensNUBC_Q1(SU2_TYPE::GetDerivative(Density[GlobalIndex]));
-//			  node[iPoint]->SetSensNUBC_Q2(SU2_TYPE::GetDerivative(Vel_mag[GlobalIndex]));
-//			  node[iPoint]->SetSensNUBC_Pressure(SU2_TYPE::GetDerivative(P_static[GlobalIndex]));
-//			  node[iPoint]->SetSensNUBC_FlowDirX(SU2_TYPE::GetDerivative(Flow_alpha[GlobalIndex]));
-//			  if (nDim == 3) node[iPoint]->SetSensNUBC_FlowDirY(SU2_TYPE::GetDerivative(Flow_beta[GlobalIndex]));
-//
-//			}
-//		  }
-//		}
-//      }
-//    }
-//
-//  }
+  if ((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_FLOW_SYS) && config->GetBoolNonUniform()){
+
+  	  unsigned short iMarker;
+	  unsigned long NUBCInputPoints, iPoint, totNUBCInputPoints = 0.0, pos = 0.0;
+	  unsigned short nMarkerNonUniform = config->GetnMarkerNonUniform();
+
+  	  for (iMarker = 0; iMarker < nMarkerNonUniform; iMarker++)
+	    totNUBCInputPoints += config->GetNUBC_nPoints(iMarker);
+
+	  su2double *LocalNUBCSens_Q1, *LocalNUBCSens_Q2, *LocalNUBCSens_Pstatic, *LocalNUBCSens_alpha, *LocalNUBCSens_beta;
+	  su2double *Total_Sens_Ptot, *Total_Sens_Ttot, *Total_Sens_beta, *Total_Sens_alpha, *Total_Sens_Pstatic;
+
+  	  LocalNUBCSens_Q1 = new su2double[totNUBCInputPoints];
+  	  LocalNUBCSens_Q2 = new su2double[totNUBCInputPoints];
+  	  LocalNUBCSens_Pstatic = new su2double[totNUBCInputPoints];
+  	  LocalNUBCSens_alpha = new su2double[totNUBCInputPoints];
+  	  LocalNUBCSens_beta = new su2double[totNUBCInputPoints];
+
+  	  Total_Sens_Ptot = new su2double[totNUBCInputPoints];
+  	  Total_Sens_Ttot = new su2double[totNUBCInputPoints];
+  	  Total_Sens_Pstatic = new su2double[totNUBCInputPoints];
+  	  Total_Sens_alpha = new su2double[totNUBCInputPoints];
+  	  Total_Sens_beta = new su2double[totNUBCInputPoints];
+
+ 	  for (iMarker = 0; iMarker < nMarkerNonUniform; iMarker++) {
+  	    NUBCInputPoints = config->GetNUBC_nPoints(iMarker);
+  		for (iPoint=0; iPoint < NUBCInputPoints; iPoint++){
+
+    	  LocalNUBCSens_Q1[pos] = SU2_TYPE::GetDerivative(NUBC_Var1[iMarker][iPoint]);
+  		  LocalNUBCSens_Q2[pos] = SU2_TYPE::GetDerivative(NUBC_Var2[iMarker][iPoint]);
+  		  LocalNUBCSens_Pstatic[pos] = SU2_TYPE::GetDerivative(NUBC_Pstatic[iMarker][iPoint]);
+		  LocalNUBCSens_alpha[pos] = SU2_TYPE::GetDerivative(NUBC_alpha[iMarker][iPoint]);
+		  if (nDim==3) { LocalNUBCSens_beta[pos] = SU2_TYPE::GetDerivative(NUBC_beta[iMarker][iPoint]);}
+
+		  pos += 1;
+  		}
+  	  }
+
+
+#ifdef HAVE_MPI
+	SU2_MPI::Allreduce(LocalNUBCSens_Q1, Total_Sens_Ptot, totNUBCInputPoints, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	SU2_MPI::Allreduce(LocalNUBCSens_Q2, Total_Sens_Ttot, totNUBCInputPoints, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	SU2_MPI::Allreduce(LocalNUBCSens_Pstatic, Total_Sens_Pstatic, totNUBCInputPoints, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	SU2_MPI::Allreduce(LocalNUBCSens_alpha, Total_Sens_alpha, totNUBCInputPoints, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	if (nDim ==3) {SU2_MPI::Allreduce(LocalNUBCSens_beta, Total_Sens_beta, totNUBCInputPoints, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);}
+#else
+	Total_Sens_Ptot = LocalNUBCSens_Q1;
+	Total_Sens_Ttot = LocalNUBCSens_Q2;
+	Total_Sens_Pstatic = LocalNUBCSens_Pstatic;
+	Total_Sens_alpha = LocalNUBCSens_alpha;
+	if (nDim ==3) {Total_Sens_beta = LocalNUBCSens_beta;}
+#endif
+
+	  if (rank == MASTER_NODE){
+	    for (iPoint=0; iPoint < totNUBCInputPoints; iPoint++){
+		  node[iPoint]->SetSensNUBC_Q1(Total_Sens_Ptot[iPoint]);
+		  node[iPoint]->SetSensNUBC_Q2(Total_Sens_Ttot[iPoint]);
+		  node[iPoint]->SetSensNUBC_Pstatic(Total_Sens_Pstatic[iPoint]);
+		  node[iPoint]->SetSensNUBC_alpha(Total_Sens_alpha[iPoint]);
+		  node[iPoint]->SetSensNUBC_beta(Total_Sens_beta[iPoint]);
+		}
+	  }
+
+
+	  delete [] LocalNUBCSens_Q1;
+	  delete [] LocalNUBCSens_Q2;
+	  delete [] LocalNUBCSens_Pstatic;
+	  delete [] LocalNUBCSens_alpha;
+	  delete [] LocalNUBCSens_beta;
+
+	  delete [] Total_Sens_Ptot;
+	  delete [] Total_Sens_Ttot;
+	  delete [] Total_Sens_Pstatic;
+	  delete [] Total_Sens_alpha;
+	  delete [] Total_Sens_beta;
+  }
 
 }
 

@@ -6581,7 +6581,7 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  void SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config, unsigned short val_marker, string name_marker);
+  void SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config, unsigned short val_nubc_marker, string NUBC_InputFile);
 //  void SetBC_NonUniform_RBF(CGeometry *geometry, CConfig *config, unsigned short val_marker, string name_marker);
   void SetBC_NonUniform_Direct(CGeometry *geometry, CConfig *config, string name_marker);
 
@@ -12189,8 +12189,7 @@ private:
   su2double Mach, Alpha, Beta, Pressure, Temperature, BPressure;
   unsigned long nMarker;        /*!< \brief Total number of markers using the grid information. */
   
-  su2double **P_tot, **T_tot, **Density, **Vel_mag, **P_static, **Flow_alpha, **Flow_beta;
-  su2double *Total_Sens_Ptot, *Total_Sens_Ttot, *Total_Sens_FlowX, *Total_Sens_FlowY, *Total_Sens_FlowZ, *Total_Sens_Pstatic;
+  su2double **NUBC_Var1, **NUBC_Var2, **NUBC_Pstatic, **NUBC_alpha, **NUBC_beta;
 
   su2double *Solution_Geometry; /*!< \brief Auxiliary vector for the geometry solution (dimension nDim instead of nVar). */
   

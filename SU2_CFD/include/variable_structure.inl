@@ -1667,19 +1667,14 @@ inline void CVariable::SetSensNUBC_Q2(su2double val_sens_nubc_q2) { SensNUBC_Q2 
 
 inline su2double CVariable::GetSensNUBC_Q2(void) { return SensNUBC_Q2; }
 
-inline void CVariable::SetSensNUBC_Pressure(su2double val_sens_nubc_pressure) { SensNUBC_Pressure = val_sens_nubc_pressure; }
+inline void CVariable::SetSensNUBC_Pstatic(su2double val_sens_nubc_pressure) { SensNUBC_Pstatic = val_sens_nubc_pressure; }
 
-inline su2double CVariable::GetSensNUBC_Pressure(void) { return SensNUBC_Pressure; }
+inline su2double CVariable::GetSensNUBC_Pstatic(void) { return SensNUBC_Pstatic; }
 
-inline void CVariable::SetSensNUBC_FlowDirX(su2double val_sens_nubc_flowdirx) { SensNUBC_FlowDirX = val_sens_nubc_flowdirx; }
+inline void CVariable::SetSensNUBC_alpha(su2double val_sens_nubc_alpha) { SensNUBC_alpha = val_sens_nubc_alpha; }
 
-inline su2double CVariable::GetSensNUBC_FlowDirX(void) { return SensNUBC_FlowDirX; }
+inline su2double CVariable::GetSensNUBC_alpha(void) { return SensNUBC_alpha; }
 
-inline void CVariable::SetSensNUBC_FlowDirY(su2double val_sens_nubc_flowdiry) { SensNUBC_FlowDirY = val_sens_nubc_flowdiry; }
+inline void CVariable::SetSensNUBC_beta(su2double val_sens_nubc_beta) { SensNUBC_beta = val_sens_nubc_beta; }
 
-inline su2double CVariable::GetSensNUBC_FlowDirY(void) { return SensNUBC_FlowDirY; }
-
-inline void CVariable::SetSensNUBC_FlowDirZ(su2double val_sens_nubc_flowdirz) { SensNUBC_FlowDirZ = val_sens_nubc_flowdirz; }
-
-inline su2double CVariable::GetSensNUBC_FlowDirZ(void) { return SensNUBC_FlowDirZ; }
-
+inline su2double CVariable::GetSensNUBC_beta(void) { return SensNUBC_beta; }

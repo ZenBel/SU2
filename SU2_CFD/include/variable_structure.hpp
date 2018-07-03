@@ -102,10 +102,9 @@ protected:
 
   su2double SensNUBC_Q1, 			/*!<brief Q1 sensitivity for the NUBC*/
   SensNUBC_Q2,						/*!<brief Q2 magnitude sensitivity for the NUBC*/
-  SensNUBC_Pressure,					/*!<brief pressure sensitivity for the NUBC*/
-  SensNUBC_FlowDirX,					/*!<brief x- flow direction sensitivity for the NUBC*/
-  SensNUBC_FlowDirY,					/*!<brief y- flow direction sensitivity for the NUBC*/
-  SensNUBC_FlowDirZ;					/*!<brief z- flow direction sensitivity for the NUBC*/
+  SensNUBC_Pstatic,					/*!<brief pressure sensitivity for the NUBC*/
+  SensNUBC_alpha,					/*!<brief x- flow direction sensitivity for the NUBC*/
+  SensNUBC_beta;					/*!<brief y- flow direction sensitivity for the NUBC*/
 
   su2double Ptot_nubc;
 
@@ -2509,49 +2508,37 @@ public:
   	 * \brief Set the value of the NUBC pressure sensitivity.
   	 * \param[in] val_sens_nubc_pressure - Value of SensNUBC_Pressure.
   	 */
-  	void SetSensNUBC_Pressure(su2double val_sens_nubc_pressure);
+  	void SetSensNUBC_Pstatic(su2double val_sens_nubc_pressure);
 
   	/*!
   	 * \brief Get the value of the NUBC pressure sensitivity.
   	 * \return the value of SensNUBC_Pressure.
   	 */
-  	su2double GetSensNUBC_Pressure(void);
+  	su2double GetSensNUBC_Pstatic(void);
 
   	/*!
   	 * \brief Set the value of the NUBC x- flow direction sensitivity.
   	 * \param[in] val_sens_nubc_flowdirx - Value of SensNUBC_FlowDirX.
   	 */
-  	void SetSensNUBC_FlowDirX(su2double val_sens_nubc_flowdirx);
+  	void SetSensNUBC_alpha(su2double val_sens_nubc_alpha);
 
   	/*!
   	 * \brief Get the value of the NUBC x- flow direction sensitivity.
   	 * \return the value of SensNUBC_FlowDirX.
   	 */
-  	su2double GetSensNUBC_FlowDirX(void);
+  	su2double GetSensNUBC_alpha(void);
 
   	/*!
   	 * \brief Set the value of the NUBC y- flow direction sensitivity.
   	 * \param[in] val_sens_nubc_flowdiry - Value of SensNUBC_FlowDirY.
   	 */
-  	void SetSensNUBC_FlowDirY(su2double val_sens_nubc_flowdiry);
+  	void SetSensNUBC_beta(su2double val_sens_nubc_beta);
 
   	/*!
   	 * \brief Get the value of the NUBC y- flow direction sensitivity.
   	 * \return the value of SensNUBC_FlowDirY.
   	 */
-  	su2double GetSensNUBC_FlowDirY(void);
-
-  	/*!
-  	 * \brief Set the value of the NUBC z- flow direction sensitivity.
-  	 * \param[in] val_sens_nubc_flowdirz - Value of SensNUBC_FlowDirZ.
-  	 */
-  	void SetSensNUBC_FlowDirZ(su2double val_sens_nubc_flowdirz);
-
-  	/*!
-  	 * \brief Get the value of the NUBC z- flow direction sensitivity.
-  	 * \return the value of SensNUBC_FlowDirZ.
-  	 */
-  	su2double GetSensNUBC_FlowDirZ(void);
+  	su2double GetSensNUBC_beta(void);
 
 };
 
