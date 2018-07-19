@@ -52,6 +52,7 @@
 #include <map>
 #include <assert.h>
 
+
 #include "./option_structure.hpp"
 #include "./datatype_structure.hpp"
 
@@ -285,6 +286,8 @@ private:
   bool *TargetPointID;
   su2double **NonUniform_d2Var1, **NonUniform_d2Var2, **NonUniform_d2Var3,
             **NonUniform_d2Var4, **NonUniform_d2Var5, **NonUniform_d2Var6;
+
+  su2double **CoeffSpline_Var1, **CoeffSpline_Var2, **CoeffSpline_Var3, **CoeffSpline_Var4, **CoeffSpline_Var5;
 
   su2double *Giles_Var1, *Giles_Var2, *RelaxFactorAverage, *RelaxFactorFourier;    /*!< \brief Specified values for Giles BC. */
   su2double **Giles_FlowDir;  /*!< \brief Specified flow direction vector (unit vector) for Giles BC. */
@@ -7618,6 +7621,23 @@ public:
   void SetSpline(vector<su2double> &x, vector<su2double> &y, unsigned long n, su2double yp1, su2double ypn, vector<su2double> &y2);
   void SetSpline(vector<su2double> &x, vector<su2double> &y, unsigned long n, su2double yp1, su2double ypn, su2double *y2);
   
+  void SetSpline_2(vector<su2double> &x, vector<su2double> &y, unsigned long n, su2double *y2);
+  su2double GetSpline_2(vector<su2double>&coords, su2double *aa, unsigned long n, su2double x);
+  su2double Spline_Basis(su2double xx, vector<su2double> &x, unsigned long j, unsigned long n);
+  void Gauss_Elimination(su2double** A, su2double* rhs, unsigned long nVar);
+
+  void SetSpline_Var1(vector<su2double> x, vector<su2double> y, unsigned long n, unsigned short val_marker);
+  void SetSpline_Var2(vector<su2double> x, vector<su2double> y, unsigned long n, unsigned short val_marker);
+  void SetSpline_Var3(vector<su2double> x, vector<su2double> y, unsigned long n, unsigned short val_marker);
+  void SetSpline_Var4(vector<su2double> x, vector<su2double> y, unsigned long n, unsigned short val_marker);
+  void SetSpline_Var5(vector<su2double> x, vector<su2double> y, unsigned long n, unsigned short val_marker);
+
+  su2double GetSpline_Var1(vector<su2double>&coords, unsigned short val_marker, unsigned long n, su2double x);
+  su2double GetSpline_Var2(vector<su2double>&coords, unsigned short val_marker, unsigned long n, su2double x);
+  su2double GetSpline_Var3(vector<su2double>&coords, unsigned short val_marker, unsigned long n, su2double x);
+  su2double GetSpline_Var4(vector<su2double>&coords, unsigned short val_marker, unsigned long n, su2double x);
+  su2double GetSpline_Var5(vector<su2double>&coords, unsigned short val_marker, unsigned long n, su2double x);
+
   /*!
    * \brief Given the arrays xa[1..n] and ya[1..n], which tabulate a function (with the xai’s in order),
    and given the array y2a[1..n], which is the output from spline above, and given a value of

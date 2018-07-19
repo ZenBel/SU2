@@ -5520,67 +5520,6 @@ void CEulerSolver::SetErrorFuncOF(CGeometry *geometry, CConfig *config){
 	  }
     }
 
-//	unsigned long ncount = 0.0;
-//
-//	if (!(Surface_file.fail())) {
-//	  getline(Surface_file, text_line);
-//
-//	  while (getline(Surface_file, text_line)) {
-//	    for (icommas = 0; icommas < 50; icommas++) {
-//		  position = text_line.find( ",", 0 );
-//		  if (position!=string::npos) text_line.erase (position,1);
-//	    }
-//	    stringstream  point_line(text_line);
-//
-//	    if (geometry->GetnDim() == 2) point_line >> PointID >> XCoord >> YCoord >> Pressure >> PressureCoeff;
-//	    if (geometry->GetnDim() == 3) point_line >> PointID >> XCoord >> YCoord >> ZCoord >> Pressure >> PressureCoeff;
-//
-//
-//	    if (NUBER ITERATIONS == 0){
-//
-//	      /*--- Loop over all points of a (partitioned) domain ---*/
-//	      for (iPoint = 0; iPoint < geometry->GetnPoint(); iPoint++) {
-//
-//	        /*--- Filter out the Halo nodes ---*/
-//	        if (geometry->node[iPoint]->GetDomain()){
-//
-//	          /*--- Obtain coordinates of given point ---*/
-//	  	      Coord = geometry->node[iPoint]->GetCoord();
-//
-//	  	      /*--- Compute distace from current point from Target file ---*/
-//	  	      if (geometry->GetnDim() == 2) dist = sqrt( (Coord[0]-XCoord)*(Coord[0]-XCoord) + (Coord[1]-YCoord)* (Coord[1]-YCoord) );
-//	  	      if (geometry->GetnDim() == 3) dist = sqrt( (Coord[0]-XCoord)*(Coord[0]-XCoord) + (Coord[1]-YCoord)*(Coord[1]-YCoord) + (Coord[2]-ZCoord)*(Coord[2]-ZCoord) );
-//
-//	  	      unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-//	  	      su2double tolerance = 1e-6; //HARDCODED
-//
-//	  	      /*--- Assign weight based on distance from reference point (XCoord, YCoord, ZCoord) ---*/
-//	  	      if (dist < tolerance){
-//	  		    weight= 1.0;		// Dirac's delta (at the moment)
-//	  		    TargetPoint[GlobalIndex] = true;
-//	  		    TargetErrorFunc[GlobalIndex] = PressureCoeff;
-////	  		    cout << "dist < " << tolerance << " for x,y = " << Coord[0] << ", " << Coord[1] << ", with GlobalIndex, PointID " << GlobalIndex << ", " << PointID << endl;
-//	  	      }
-//	  	      else {
-//	  	        weight = 0.0;
-//	  	      }
-//
-//	  	      /*--- Compute objective function ---*/
-//		      Target   = PressureCoeff;
-//		      Computed = (node[iPoint]->GetPressure() - RefPressure)*factor;
-//		      Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
-//	        }
-//	      }
-//	    }
-//	    else{
-//
-//	    }
-//	  }
-//
-//	  Surface_file.close();
-//	}
-
-
 	AllBound_ErrorFunc += Buffer_ErrorFunc;
 
 #ifdef HAVE_MPI
@@ -13249,27 +13188,33 @@ void CEulerSolver::SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config,
 	exit(EXIT_FAILURE);
   }
 
-  /*---  Compute first derivatives   ---*/
-  dVar1_1 = (InputVar1[1]-InputVar1[0])/(InputCoord[1]-InputCoord[0]);
-  dVar1_N = (InputVar1[InputPoints-2]-InputVar1[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+//  /*---  Compute first derivatives   ---*/
+//  dVar1_1 = (InputVar1[1]-InputVar1[0])/(InputCoord[1]-InputCoord[0]);
+//  dVar1_N = (InputVar1[InputPoints-2]-InputVar1[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+//
+//  dVar2_1 = (InputVar2[1]-InputVar2[0])/(InputCoord[1]-InputCoord[0]);
+//  dVar2_N = (InputVar2[InputPoints-2]-InputVar2[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+//
+//  dVar3_1 = (InputVar3[1]-InputVar3[0])/(InputCoord[1]-InputCoord[0]);
+//  dVar3_N = (InputVar3[InputPoints-2]-InputVar3[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+//
+//  dAlpha_1 = (InputAlpha[1]-InputAlpha[0])/(InputCoord[1]-InputCoord[0]);
+//  dAlpha_N = (InputAlpha[InputPoints-2]-InputAlpha[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+//
+//  dBeta_1 = (InputBeta[1]-InputBeta[0])/(InputCoord[1]-InputCoord[0]);
+//  dBeta_N = (InputBeta[InputPoints-2]-InputBeta[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+//
+//  config->SetNUBC_d2Var1(InputCoord, InputVar1, InputPoints, dVar1_1, dVar1_N, val_nubc_marker);
+//  config->SetNUBC_d2Var2(InputCoord, InputVar2, InputPoints, dVar2_1, dVar2_N, val_nubc_marker);
+//  config->SetNUBC_d2Var3(InputCoord, InputVar3, InputPoints, dVar3_1, dVar3_N, val_nubc_marker);
+//  config->SetNUBC_d2Var4(InputCoord, InputAlpha, InputPoints, dAlpha_1, dAlpha_N, val_nubc_marker);
+//  config->SetNUBC_d2Var5(InputCoord, InputBeta, InputPoints, dBeta_1, dBeta_N, val_nubc_marker);
 
-  dVar2_1 = (InputVar2[1]-InputVar2[0])/(InputCoord[1]-InputCoord[0]);
-  dVar2_N = (InputVar2[InputPoints-2]-InputVar2[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
-
-  dVar3_1 = (InputVar3[1]-InputVar3[0])/(InputCoord[1]-InputCoord[0]);
-  dVar3_N = (InputVar3[InputPoints-2]-InputVar3[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
-
-  dAlpha_1 = (InputAlpha[1]-InputAlpha[0])/(InputCoord[1]-InputCoord[0]);
-  dAlpha_N = (InputAlpha[InputPoints-2]-InputAlpha[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
-
-  dBeta_1 = (InputBeta[1]-InputBeta[0])/(InputCoord[1]-InputCoord[0]);
-  dBeta_N = (InputBeta[InputPoints-2]-InputBeta[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
-
-  config->SetNUBC_d2Var1(InputCoord, InputVar1, InputPoints, dVar1_1, dVar1_N, val_nubc_marker);
-  config->SetNUBC_d2Var2(InputCoord, InputVar2, InputPoints, dVar2_1, dVar2_N, val_nubc_marker);
-  config->SetNUBC_d2Var3(InputCoord, InputVar3, InputPoints, dVar3_1, dVar3_N, val_nubc_marker);
-  config->SetNUBC_d2Var4(InputCoord, InputAlpha, InputPoints, dAlpha_1, dAlpha_N, val_nubc_marker);
-  config->SetNUBC_d2Var5(InputCoord, InputBeta, InputPoints, dBeta_1, dBeta_N, val_nubc_marker);
+  config->SetSpline_Var1(InputCoord, InputVar1, InputPoints, val_nubc_marker);
+  config->SetSpline_Var2(InputCoord, InputVar2, InputPoints, val_nubc_marker);
+  config->SetSpline_Var3(InputCoord, InputVar3, InputPoints, val_nubc_marker);
+  config->SetSpline_Var4(InputCoord, InputAlpha, InputPoints, val_nubc_marker);
+  config->SetSpline_Var5(InputCoord, InputBeta, InputPoints, val_nubc_marker);
 
 }
 
@@ -13344,15 +13289,15 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 //		   << ", Var3 = " << InputVar3[iPos] << ", alpha = " << InputAlpha[iPos] << ", beta = " << InputBeta[iPos] << endl;
 //  }
 
-  vector<su2double> NUBC_d2Var1, NUBC_d2Var2, NUBC_d2Var3, NUBC_d2Var4, NUBC_d2Var5, NUBC_d2Var6;
-  for (iPos=0; iPos<InputPoints; iPos++){
-	  NUBC_d2Var1.push_back(config->GetNUBC_d2Var1(iPos, count));
-	  NUBC_d2Var2.push_back(config->GetNUBC_d2Var2(iPos, count));
-	  NUBC_d2Var3.push_back(config->GetNUBC_d2Var3(iPos, count));
-	  NUBC_d2Var4.push_back(config->GetNUBC_d2Var4(iPos, count));
-	  NUBC_d2Var5.push_back(config->GetNUBC_d2Var5(iPos, count));
-	  NUBC_d2Var6.push_back(config->GetNUBC_d2Var6(iPos, count));
-  }
+//  vector<su2double> NUBC_d2Var1, NUBC_d2Var2, NUBC_d2Var3, NUBC_d2Var4, NUBC_d2Var5, NUBC_d2Var6;
+//  for (iPos=0; iPos<InputPoints; iPos++){
+//	  NUBC_d2Var1.push_back(config->GetNUBC_d2Var1(iPos, count));
+//	  NUBC_d2Var2.push_back(config->GetNUBC_d2Var2(iPos, count));
+//	  NUBC_d2Var3.push_back(config->GetNUBC_d2Var3(iPos, count));
+//	  NUBC_d2Var4.push_back(config->GetNUBC_d2Var4(iPos, count));
+//	  NUBC_d2Var5.push_back(config->GetNUBC_d2Var5(iPos, count));
+//	  NUBC_d2Var6.push_back(config->GetNUBC_d2Var6(iPos, count));
+//  }
 
   /*--- Loop over all the vertices on this boundary marker ---*/
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
@@ -13430,11 +13375,17 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 //			  beta = 0.0;
 //			  if (nDim == 3 ) {beta  = config->GetNUBC_Var5(PointID);}
 
-			  P_Total = config->GetSpline(InputCoord, InputVar1, NUBC_d2Var1, InputPoints, Coord[1]);
-			  T_Total = config->GetSpline(InputCoord, InputVar2, NUBC_d2Var2, InputPoints, Coord[1]);
-			  alpha   = config->GetSpline(InputCoord, InputAlpha, NUBC_d2Var4, InputPoints, Coord[1]);
+//			  P_Total = config->GetSpline(InputCoord, InputVar1, NUBC_d2Var1, InputPoints, Coord[1]);
+//			  T_Total = config->GetSpline(InputCoord, InputVar2, NUBC_d2Var2, InputPoints, Coord[1]);
+//			  alpha   = config->GetSpline(InputCoord, InputAlpha, NUBC_d2Var4, InputPoints, Coord[1]);
+//			  beta    = 0.0;
+//			  if (nDim == 3 ) { beta   = config->GetSpline(InputCoord, InputBeta, NUBC_d2Var5, InputPoints, Coord[1]);}
+
+			  P_Total =config->GetSpline_Var1(InputCoord, count, InputPoints, Coord[1]);
+			  T_Total =config->GetSpline_Var2(InputCoord, count, InputPoints, Coord[1]);
+			  alpha =config->GetSpline_Var4(InputCoord, count, InputPoints, Coord[1]);
 			  beta    = 0.0;
-			  if (nDim == 3 ) { beta   = config->GetSpline(InputCoord, InputBeta, NUBC_d2Var5, InputPoints, Coord[1]);}
+			  if (nDim == 3 ) { beta = config->GetSpline_Var5(InputCoord, count, InputPoints, Coord[1]);}
 
 			  Flow_Dir_norm[0] = cos(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
 			  Flow_Dir_norm[1] = sin(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
@@ -13476,39 +13427,41 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 //			  beta = 0.0;
 //			  if (nDim == 3 ) {beta  = config->GetNUBC_Var5(PointID);}
 
-			  Density_e = config->GetSpline(InputCoord, InputVar1, NUBC_d2Var1, InputPoints, Coord[1]);
-			  VelMag_e  = config->GetSpline(InputCoord, InputVar2, NUBC_d2Var2, InputPoints, Coord[1]);
-			  alpha     = config->GetSpline(InputCoord, InputAlpha, NUBC_d2Var4, InputPoints, Coord[1]);
-			  beta      = 0.0;
-			  if (nDim == 3 ) { beta   = config->GetSpline(InputCoord, InputBeta, NUBC_d2Var5, InputPoints, Coord[1]);}
-
-			  Flow_Dir_norm[0] = cos(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
-			  Flow_Dir_norm[1] = sin(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
-			  if (nDim == 3 ) {Flow_Dir_norm[2] = cos(alpha*PI_NUMBER/180.0)*sin(beta*PI_NUMBER/180.0);}
-
-			  /*--- Non-dim. the inputs if necessary. ---*/
-			  Density_e /= config->GetDensity_Ref();
-			  VelMag_e /= config->GetVelocity_Ref();
-
-			  Energy_e = Energy_i;
-			  Velocity2_e = 0;
-			  for (iDim = 0; iDim < nDim; iDim++){
-				  Velocity_e[iDim] = VelMag_e*Flow_Dir_norm[iDim];
-				  Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
-			  }
-
-			  StaticEnergy_e = Energy_i - 0.5*Velocity2_e;
-			  //cout << Energy_e << ", " << 0.5*(Velocity_e[0]*Velocity_e[0] + Velocity_e[1]*Velocity_e[1]) << ", "<< StaticEnergy_e <<endl;
-
-			  FluidModel->SetTDState_rhoe(Density_e, StaticEnergy_e);
-			  Pressure_e = FluidModel->GetPressure();
+//			  Density_e = config->GetSpline(InputCoord, InputVar1, NUBC_d2Var1, InputPoints, Coord[1]);
+//			  VelMag_e  = config->GetSpline(InputCoord, InputVar2, NUBC_d2Var2, InputPoints, Coord[1]);
+//			  alpha     = config->GetSpline(InputCoord, InputAlpha, NUBC_d2Var4, InputPoints, Coord[1]);
+//			  beta      = 0.0;
+//			  if (nDim == 3 ) { beta   = config->GetSpline(InputCoord, InputBeta, NUBC_d2Var5, InputPoints, Coord[1]);}
+//
+//			  Flow_Dir_norm[0] = cos(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
+//			  Flow_Dir_norm[1] = sin(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
+//			  if (nDim == 3 ) {Flow_Dir_norm[2] = cos(alpha*PI_NUMBER/180.0)*sin(beta*PI_NUMBER/180.0);}
+//
+//			  /*--- Non-dim. the inputs if necessary. ---*/
+//			  Density_e /= config->GetDensity_Ref();
+//			  VelMag_e /= config->GetVelocity_Ref();
+//
+//			  Energy_e = Energy_i;
+//			  Velocity2_e = 0;
+//			  for (iDim = 0; iDim < nDim; iDim++){
+//				  Velocity_e[iDim] = VelMag_e*Flow_Dir_norm[iDim];
+//				  Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
+//			  }
+//
+//			  StaticEnergy_e = Energy_i - 0.5*Velocity2_e;
+//			  //cout << Energy_e << ", " << 0.5*(Velocity_e[0]*Velocity_e[0] + Velocity_e[1]*Velocity_e[1]) << ", "<< StaticEnergy_e <<endl;
+//
+//			  FluidModel->SetTDState_rhoe(Density_e, StaticEnergy_e);
+//			  Pressure_e = FluidModel->GetPressure();
 		  }
         }
 
         else if (ProjVelocity_i > 0.0) {
           /*--- Retrieve the staic pressure for this boundary. ---*/
 //          Pressure_e = config->GetNUBC_Var3(PointID);
-          Pressure_e = config->GetSpline(InputCoord, InputVar3, NUBC_d2Var3, InputPoints, Coord[1]);
+//          Pressure_e = config->GetSpline(InputCoord, InputVar3, NUBC_d2Var3, InputPoints, Coord[1]);
+
+          Pressure_e = config->GetSpline_Var3(InputCoord, count, InputPoints, Coord[1]);
 
           Pressure_e /= config->GetPressure_Ref();
           Density_e = Density_i;

@@ -7057,6 +7057,12 @@ void CConfig::Initialize_NonUniformVar( unsigned short n_nubc_marker, string *nu
   NonUniform_d2Var5 = new su2double*[n_nubc_marker];
   NonUniform_d2Var6 = new su2double*[n_nubc_marker];
 
+  CoeffSpline_Var1  = new su2double*[n_nubc_marker];
+  CoeffSpline_Var2  = new su2double*[n_nubc_marker];
+  CoeffSpline_Var3  = new su2double*[n_nubc_marker];
+  CoeffSpline_Var4  = new su2double*[n_nubc_marker];
+  CoeffSpline_Var5  = new su2double*[n_nubc_marker];
+
   for (iMarker=0; iMarker < n_nubc_marker; iMarker++){
 
 	input_filename =  nubc_input_file[iMarker];
@@ -7089,6 +7095,12 @@ void CConfig::Initialize_NonUniformVar( unsigned short n_nubc_marker, string *nu
     NonUniform_d2Var4[iMarker] = new su2double[InputPoints];
     NonUniform_d2Var5[iMarker] = new su2double[InputPoints];
     NonUniform_d2Var6[iMarker] = new su2double[InputPoints];
+
+    CoeffSpline_Var1[iMarker]  = new su2double[InputPoints+3];
+    CoeffSpline_Var2[iMarker]  = new su2double[InputPoints+3];
+    CoeffSpline_Var3[iMarker]  = new su2double[InputPoints+3];
+    CoeffSpline_Var4[iMarker]  = new su2double[InputPoints+3];
+    CoeffSpline_Var5[iMarker]  = new su2double[InputPoints+3];
 
     input_file.close();
   }
@@ -7759,6 +7771,184 @@ su2double CConfig::GetSpline(vector<su2double>&xa, vector<su2double>&ya, vector<
 
   return y;
 }
+
+void CConfig::SetSpline_Var1(vector<su2double> x, vector<su2double> y, unsigned long n, unsigned short val_marker){
+	SetSpline_2(x, y, n, CoeffSpline_Var1[val_marker] );
+	for (unsigned long i = 0; i<n+2; i++)
+		cout << "y2["<< i<<"]= " <<CoeffSpline_Var1[val_marker][i]<< endl;
+}
+
+void CConfig::SetSpline_Var2(vector<su2double> x, vector<su2double> y, unsigned long n, unsigned short val_marker){
+	SetSpline_2(x, y, n, CoeffSpline_Var2[val_marker] );
+}
+
+void CConfig::SetSpline_Var3(vector<su2double> x, vector<su2double> y, unsigned long n, unsigned short val_marker){
+	SetSpline_2(x, y, n, CoeffSpline_Var3[val_marker] );
+}
+
+void CConfig::SetSpline_Var4(vector<su2double> x, vector<su2double> y, unsigned long n, unsigned short val_marker){
+	SetSpline_2(x, y, n, CoeffSpline_Var4[val_marker] );
+}
+
+void CConfig::SetSpline_Var5(vector<su2double> x, vector<su2double> y, unsigned long n, unsigned short val_marker){
+	SetSpline_2(x, y, n, CoeffSpline_Var5[val_marker] );
+}
+
+void CConfig::SetSpline_2(vector<su2double> &x, vector<su2double> &y, unsigned long n, su2double *y2) {
+
+	unsigned long k = n-1;
+
+	su2double **A, *b_rhs, *aa;
+	unsigned long i,j;
+
+	A = new su2double*[k+3];
+	b_rhs = new su2double[k+3];
+	aa = new su2double[k+3];
+
+	for (i = 0; i<k+3; i++)
+		A[i] = new su2double[k+3];
+
+	for (i = 0; i<k+3; i++){
+		b_rhs[i] = 0.0;
+		aa[i] = 0.0;
+		for (j = 0; j<k+3; j++){
+			A[i][j] = 0.0;
+		}
+	}
+
+	for (i = 0; i<k+1; i++)
+		for (j = 0; j<k+3; j++)
+			A[i][j] = Spline_Basis(x[i], x, j, n);
+
+	A[k+1][2] = 1.0;		//Natural BC (left)
+	A[k+2][2] = 1.0;		//Natural BC (right)
+
+	for (i = 0; i<k; i++)
+		A[k+2][3+i] = 3*(x[k] - x[i]);
+
+	for (i = 0; i<k+1; i++)
+		b_rhs[i] = y[i];
+
+	unsigned long N = k+3;
+
+	Gauss_Elimination(A, b_rhs, N); //solves A*x = b and b_rhs contains the solution.
+
+	for (i = 0; i<k+3; i++){
+		y2[i] = b_rhs[i];
+//		cout << "y2["<< i<<"]= " <<y2[i]<< endl;
+	}
+
+}
+
+void CConfig::Gauss_Elimination(su2double** A, su2double* rhs, unsigned long nVar) {
+
+  short iVar, jVar, kVar;
+  su2double weight, aux;
+
+  if (nVar == 1)
+    rhs[0] /= A[0][0];
+  else {
+
+    /*--- Transform system in Upper Matrix ---*/
+
+    for (iVar = 1; iVar < (short)nVar; iVar++) {
+      for (jVar = 0; jVar < iVar; jVar++) {
+        weight = A[iVar][jVar]/A[jVar][jVar];
+        for (kVar = jVar; kVar < (short)nVar; kVar++)
+          A[iVar][kVar] -= weight*A[jVar][kVar];
+        rhs[iVar] -= weight*rhs[jVar];
+      }
+    }
+
+    /*--- Backwards substitution ---*/
+
+    rhs[nVar-1] = rhs[nVar-1]/A[nVar-1][nVar-1];
+    for (iVar = (short)nVar-2; iVar >= 0; iVar--) {
+      aux = 0;
+      for (jVar = iVar+1; jVar < (short)nVar; jVar++)
+        aux += A[iVar][jVar]*rhs[jVar];
+      rhs[iVar] = (rhs[iVar]-aux)/A[iVar][iVar];
+      if (iVar == 0) break;
+    }
+  }
+
+}
+
+
+su2double CConfig::Spline_Basis(su2double xx, vector<su2double> &x, unsigned long j, unsigned long n){
+
+	unsigned long k = n-1;
+	unsigned long i;
+	su2double *phi;
+	phi = new su2double[k+3];
+	for (i = 0; i<k+3; i++)
+		phi[i] = 0.0;
+
+	phi[0]=1.0;
+	phi[1]=(xx-x[0]);
+	phi[2]=(xx-x[0])*(xx-x[0]);
+	for (i=0; i<k; i++)
+		phi[i+3] = max( 0.0, (xx-x[i])*(xx-x[i])*(xx-x[i]) );
+
+	return phi[j];
+
+}
+
+su2double CConfig::GetSpline_Var1(vector<su2double>&coords, unsigned short val_marker, unsigned long n, su2double x){
+	su2double y=0;
+	unsigned long k = n-1;
+	unsigned long i;
+
+	for (i = 0; i<k+3; i++)
+		y += CoeffSpline_Var1[val_marker][i]*Spline_Basis(x, coords, i, n);
+
+	return y;
+}
+
+su2double CConfig::GetSpline_Var2(vector<su2double>&coords, unsigned short val_marker, unsigned long n, su2double x){
+	su2double y=0;
+	unsigned long k = n-1;
+	unsigned long i;
+
+	for (i = 0; i<k+3; i++)
+		y += CoeffSpline_Var2[val_marker][i]*Spline_Basis(x, coords, i, n);
+
+	return y;
+}
+
+su2double CConfig::GetSpline_Var3(vector<su2double>&coords, unsigned short val_marker, unsigned long n, su2double x){
+	su2double y=0;
+	unsigned long k = n-1;
+	unsigned long i;
+
+	for (i = 0; i<k+3; i++)
+		y += CoeffSpline_Var3[val_marker][i]*Spline_Basis(x, coords, i, n);
+
+	return y;
+}
+
+su2double CConfig::GetSpline_Var4(vector<su2double>&coords, unsigned short val_marker, unsigned long n, su2double x){
+	su2double y=0;
+	unsigned long k = n-1;
+	unsigned long i;
+
+	for (i = 0; i<k+3; i++)
+		y += CoeffSpline_Var4[val_marker][i]*Spline_Basis(x, coords, i, n);
+
+	return y;
+}
+
+su2double CConfig::GetSpline_Var5(vector<su2double>&coords, unsigned short val_marker, unsigned long n, su2double x){
+	su2double y=0;
+	unsigned long k = n-1;
+	unsigned long i;
+
+	for (i = 0; i<k+3; i++)
+		y += CoeffSpline_Var5[val_marker][i]*Spline_Basis(x, coords, i, n);
+
+	return y;
+}
+
 
 void CConfig::SetFreeStreamTurboNormal(su2double* turboNormal){
 
