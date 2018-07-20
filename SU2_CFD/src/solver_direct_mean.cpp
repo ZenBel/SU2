@@ -13188,33 +13188,27 @@ void CEulerSolver::SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config,
 	exit(EXIT_FAILURE);
   }
 
-//  /*---  Compute first derivatives   ---*/
-//  dVar1_1 = (InputVar1[1]-InputVar1[0])/(InputCoord[1]-InputCoord[0]);
-//  dVar1_N = (InputVar1[InputPoints-2]-InputVar1[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
-//
-//  dVar2_1 = (InputVar2[1]-InputVar2[0])/(InputCoord[1]-InputCoord[0]);
-//  dVar2_N = (InputVar2[InputPoints-2]-InputVar2[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
-//
-//  dVar3_1 = (InputVar3[1]-InputVar3[0])/(InputCoord[1]-InputCoord[0]);
-//  dVar3_N = (InputVar3[InputPoints-2]-InputVar3[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
-//
-//  dAlpha_1 = (InputAlpha[1]-InputAlpha[0])/(InputCoord[1]-InputCoord[0]);
-//  dAlpha_N = (InputAlpha[InputPoints-2]-InputAlpha[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
-//
-//  dBeta_1 = (InputBeta[1]-InputBeta[0])/(InputCoord[1]-InputCoord[0]);
-//  dBeta_N = (InputBeta[InputPoints-2]-InputBeta[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
-//
-//  config->SetNUBC_d2Var1(InputCoord, InputVar1, InputPoints, dVar1_1, dVar1_N, val_nubc_marker);
-//  config->SetNUBC_d2Var2(InputCoord, InputVar2, InputPoints, dVar2_1, dVar2_N, val_nubc_marker);
-//  config->SetNUBC_d2Var3(InputCoord, InputVar3, InputPoints, dVar3_1, dVar3_N, val_nubc_marker);
-//  config->SetNUBC_d2Var4(InputCoord, InputAlpha, InputPoints, dAlpha_1, dAlpha_N, val_nubc_marker);
-//  config->SetNUBC_d2Var5(InputCoord, InputBeta, InputPoints, dBeta_1, dBeta_N, val_nubc_marker);
+  /*---  Compute first derivatives   ---*/
+  dVar1_1 = (InputVar1[1]-InputVar1[0])/(InputCoord[1]-InputCoord[0]);
+  dVar1_N = (InputVar1[InputPoints-2]-InputVar1[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
 
-  config->SetSpline_Var1(InputCoord, InputVar1, InputPoints, val_nubc_marker);
-  config->SetSpline_Var2(InputCoord, InputVar2, InputPoints, val_nubc_marker);
-  config->SetSpline_Var3(InputCoord, InputVar3, InputPoints, val_nubc_marker);
-  config->SetSpline_Var4(InputCoord, InputAlpha, InputPoints, val_nubc_marker);
-  config->SetSpline_Var5(InputCoord, InputBeta, InputPoints, val_nubc_marker);
+  dVar2_1 = (InputVar2[1]-InputVar2[0])/(InputCoord[1]-InputCoord[0]);
+  dVar2_N = (InputVar2[InputPoints-2]-InputVar2[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+
+  dVar3_1 = (InputVar3[1]-InputVar3[0])/(InputCoord[1]-InputCoord[0]);
+  dVar3_N = (InputVar3[InputPoints-2]-InputVar3[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+
+  dAlpha_1 = (InputAlpha[1]-InputAlpha[0])/(InputCoord[1]-InputCoord[0]);
+  dAlpha_N = (InputAlpha[InputPoints-2]-InputAlpha[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+
+  dBeta_1 = (InputBeta[1]-InputBeta[0])/(InputCoord[1]-InputCoord[0]);
+  dBeta_N = (InputBeta[InputPoints-2]-InputBeta[InputPoints-1])/(InputCoord[InputPoints-2]-InputCoord[InputPoints-1]);
+
+  config->SetNUBC_d2Var1(InputCoord, InputVar1, InputPoints, dVar1_1, dVar1_N, val_nubc_marker);
+  config->SetNUBC_d2Var2(InputCoord, InputVar2, InputPoints, dVar2_1, dVar2_N, val_nubc_marker);
+  config->SetNUBC_d2Var3(InputCoord, InputVar3, InputPoints, dVar3_1, dVar3_N, val_nubc_marker);
+  config->SetNUBC_d2Var4(InputCoord, InputAlpha, InputPoints, dAlpha_1, dAlpha_N, val_nubc_marker);
+  config->SetNUBC_d2Var5(InputCoord, InputBeta, InputPoints, dBeta_1, dBeta_N, val_nubc_marker);
 
 }
 
@@ -13284,20 +13278,14 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 	InputBeta.push_back(config->GetNUBC_Var5(iPos, count));
   }
 
-//  for (iPos=0; iPos<InputPoints; iPos++){
-//	  cout << "Coord= " << InputCoord[iPos] << ", Var1 = " << InputVar1[iPos] << ", Var2 = " <<InputVar2[iPos]
-//		   << ", Var3 = " << InputVar3[iPos] << ", alpha = " << InputAlpha[iPos] << ", beta = " << InputBeta[iPos] << endl;
-//  }
-
-//  vector<su2double> NUBC_d2Var1, NUBC_d2Var2, NUBC_d2Var3, NUBC_d2Var4, NUBC_d2Var5, NUBC_d2Var6;
-//  for (iPos=0; iPos<InputPoints; iPos++){
-//	  NUBC_d2Var1.push_back(config->GetNUBC_d2Var1(iPos, count));
-//	  NUBC_d2Var2.push_back(config->GetNUBC_d2Var2(iPos, count));
-//	  NUBC_d2Var3.push_back(config->GetNUBC_d2Var3(iPos, count));
-//	  NUBC_d2Var4.push_back(config->GetNUBC_d2Var4(iPos, count));
-//	  NUBC_d2Var5.push_back(config->GetNUBC_d2Var5(iPos, count));
-//	  NUBC_d2Var6.push_back(config->GetNUBC_d2Var6(iPos, count));
-//  }
+  vector<su2double> NUBC_d2Var1, NUBC_d2Var2, NUBC_d2Var3, NUBC_d2Var4, NUBC_d2Var5, NUBC_d2Var6;
+  for (iPos=0; iPos<InputPoints; iPos++){
+	  NUBC_d2Var1.push_back(config->GetNUBC_d2Var1(iPos, count));
+	  NUBC_d2Var2.push_back(config->GetNUBC_d2Var2(iPos, count));
+	  NUBC_d2Var3.push_back(config->GetNUBC_d2Var3(iPos, count));
+	  NUBC_d2Var4.push_back(config->GetNUBC_d2Var4(iPos, count));
+	  NUBC_d2Var5.push_back(config->GetNUBC_d2Var5(iPos, count));
+  }
 
   /*--- Loop over all the vertices on this boundary marker ---*/
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
@@ -13368,24 +13356,11 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
 		  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
 
-//			  P_Total = config->GetNUBC_Var1(PointID);
-//			  T_Total = config->GetNUBC_Var2(PointID);
-//
-//			  alpha = config->GetNUBC_Var4(PointID);
-//			  beta = 0.0;
-//			  if (nDim == 3 ) {beta  = config->GetNUBC_Var5(PointID);}
-
-//			  P_Total = config->GetSpline(InputCoord, InputVar1, NUBC_d2Var1, InputPoints, Coord[1]);
-//			  T_Total = config->GetSpline(InputCoord, InputVar2, NUBC_d2Var2, InputPoints, Coord[1]);
-//			  alpha   = config->GetSpline(InputCoord, InputAlpha, NUBC_d2Var4, InputPoints, Coord[1]);
-//			  beta    = 0.0;
-//			  if (nDim == 3 ) { beta   = config->GetSpline(InputCoord, InputBeta, NUBC_d2Var5, InputPoints, Coord[1]);}
-
-			  P_Total =config->GetSpline_Var1(InputCoord, count, InputPoints, Coord[1]);
-			  T_Total =config->GetSpline_Var2(InputCoord, count, InputPoints, Coord[1]);
-			  alpha =config->GetSpline_Var4(InputCoord, count, InputPoints, Coord[1]);
+			  P_Total = config->GetSpline(InputCoord, InputVar1, NUBC_d2Var1, InputPoints, Coord[1]);
+			  T_Total = config->GetSpline(InputCoord, InputVar2, NUBC_d2Var2, InputPoints, Coord[1]);
+			  alpha   = config->GetSpline(InputCoord, InputAlpha, NUBC_d2Var4, InputPoints, Coord[1]);
 			  beta    = 0.0;
-			  if (nDim == 3 ) { beta = config->GetSpline_Var5(InputCoord, count, InputPoints, Coord[1]);}
+			  if (nDim == 3 ) { beta   = config->GetSpline(InputCoord, InputBeta, NUBC_d2Var5, InputPoints, Coord[1]);}
 
 			  Flow_Dir_norm[0] = cos(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
 			  Flow_Dir_norm[1] = sin(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
@@ -13458,10 +13433,8 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
         else if (ProjVelocity_i > 0.0) {
           /*--- Retrieve the staic pressure for this boundary. ---*/
-//          Pressure_e = config->GetNUBC_Var3(PointID);
-//          Pressure_e = config->GetSpline(InputCoord, InputVar3, NUBC_d2Var3, InputPoints, Coord[1]);
 
-          Pressure_e = config->GetSpline_Var3(InputCoord, count, InputPoints, Coord[1]);
+          Pressure_e = config->GetSpline(InputCoord, InputVar3, NUBC_d2Var3, InputPoints, Coord[1]);
 
           Pressure_e /= config->GetPressure_Ref();
           Density_e = Density_i;
