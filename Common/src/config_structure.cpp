@@ -7752,7 +7752,7 @@ su2double CConfig::GetSpline(vector<su2double>&xa, vector<su2double>&ya, vector<
     else klo=k;					// they remain appropriate on the next call.
   }								// klo and khi now bracket the input value of x
   h=xa[khi-1]-xa[klo-1];
-  if (h == 0.0) cout << "Bad xa input to routine splint" << endl;	// The xa’s must be distinct.
+  if (h == 0.0) cout << "Bad xa input to routine spline" << endl;	// The xa’s must be distinct.
   a=(xa[khi-1]-x)/h;
   b=(x-xa[klo-1])/h;												// Cubic spline polynomial is now evaluated.
   y=a*ya[klo-1]+b*ya[khi-1]+((a*a*a-a)*y2a[klo-1]+(b*b*b-b)*y2a[khi-1])*(h*h)/6.0;

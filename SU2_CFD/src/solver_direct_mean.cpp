@@ -5474,7 +5474,7 @@ void CEulerSolver::SetErrorFuncOF(CGeometry *geometry, CConfig *config){
 	        /*--- Obtain coordinates of given point ---*/
 	  	    Coord = geometry->node[iPoint]->GetCoord();
 
-	  	    /*--- Compute distace from current point from Target file ---*/
+	  	    /*--- Compute distance of current point from Target file ---*/
 	  	    if (geometry->GetnDim() == 2) dist = sqrt( (Coord[0]-x_coord)*(Coord[0]-x_coord) + (Coord[1]-y_coord)* (Coord[1]-y_coord) );
 	  	    if (geometry->GetnDim() == 3) dist = sqrt( (Coord[0]-x_coord)*(Coord[0]-x_coord) + (Coord[1]-y_coord)*(Coord[1]-y_coord) + (Coord[2]-z_coord)*(Coord[2]-z_coord) );
 
@@ -13164,7 +13164,7 @@ void CEulerSolver::SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config,
   while (getline (input_file, text_line)) {
 	istringstream point_line(text_line);
 	point_line >> CoordIn[0] >> CoordIn[1] >> CoordIn[2] >> Var1In >> Var2In >> Var3In >> Alpha >> Beta;
-	InputCoord.push_back(CoordIn[1]);
+	InputCoord.push_back(CoordIn[0]);
 	InputVar1.push_back(Var1In);
 	InputVar2.push_back(Var2In);
 	InputVar3.push_back(Var3In);
@@ -13351,16 +13351,20 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 	  Coord[2] = 0.0;
 	  if (nDim == 3) {Coord[2] = geometry->node[iPoint]->GetCoord(nDim);}
 
+	  su2double coord = Coord[0]; //also remember to change coord in SetNonUniform_BC
+
       /*--- Build the external state u_e from boundary data and internal node ---*/
       if (ProjVelocity_i < 0.0) {
 
 		  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
 
-			  P_Total = config->GetSpline(InputCoord, InputVar1, NUBC_d2Var1, InputPoints, Coord[1]);
-			  T_Total = config->GetSpline(InputCoord, InputVar2, NUBC_d2Var2, InputPoints, Coord[1]);
-			  alpha   = config->GetSpline(InputCoord, InputAlpha, NUBC_d2Var4, InputPoints, Coord[1]);
+			  P_Total = config->GetSpline(InputCoord, InputVar1, NUBC_d2Var1, InputPoints, coord);
+			  T_Total = config->GetSpline(InputCoord, InputVar2, NUBC_d2Var2, InputPoints, coord);
+			  alpha   = config->GetSpline(InputCoord, InputAlpha, NUBC_d2Var4, InputPoints, coord);
 			  beta    = 0.0;
-			  if (nDim == 3 ) { beta   = config->GetSpline(InputCoord, InputBeta, NUBC_d2Var5, InputPoints, Coord[1]);}
+			  if (nDim == 3 ) { beta = config->GetSpline(InputCoord, InputBeta, NUBC_d2Var5, InputPoints, coord);}
+
+//			  cout << "coord = " << Coord[0] << ", p_tot = " << P_Total << ", T_tot = " << T_Total << ", alpha = " << alpha << endl;
 
 			  Flow_Dir_norm[0] = cos(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
 			  Flow_Dir_norm[1] = sin(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
@@ -13434,7 +13438,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
         else if (ProjVelocity_i > 0.0) {
           /*--- Retrieve the staic pressure for this boundary. ---*/
 
-          Pressure_e = config->GetSpline(InputCoord, InputVar3, NUBC_d2Var3, InputPoints, Coord[1]);
+          Pressure_e = config->GetSpline(InputCoord, InputVar3, NUBC_d2Var3, InputPoints, coord);
 
           Pressure_e /= config->GetPressure_Ref();
           Density_e = Density_i;
