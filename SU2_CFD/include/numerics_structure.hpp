@@ -206,6 +206,8 @@ public:
     
   su2double *l, *m;
 
+  su2double discrepancyTerm;
+
   /*!
    * \brief Constructor of the class.
    */
@@ -273,6 +275,8 @@ public:
    */
   void SetVorticity(su2double *val_vorticity_i, su2double *val_vorticity_j);
   
+  void SetDiscrepancyTerm(su2double val_discrepancyTerm);
+
   /*!
    * \brief Set the value of the rate of strain magnitude.
    * \param[in] val_StrainMag_i - Value of the magnitude of rate of strain at point i.
@@ -4319,7 +4323,7 @@ private:
   su2double gamma_BC;
   su2double intermittency;
   su2double Production, Destruction, CrossProduction;
-  
+
 public:
   
   /*!

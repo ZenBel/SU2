@@ -311,7 +311,6 @@ void CAvgGrad_TurbSA_Neg::FinishResidualCalc(su2double *val_residual,
 
 CSourcePieceWise_TurbSA::CSourcePieceWise_TurbSA(unsigned short val_nDim, unsigned short val_nVar,
                                                  CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
-  
   incompressible = (config->GetKind_Regime() == INCOMPRESSIBLE);
   rotating_frame = config->GetRotating_Frame();
   transition = (config->GetKind_Trans_Model() == BC);
@@ -329,7 +328,7 @@ CSourcePieceWise_TurbSA::CSourcePieceWise_TurbSA(unsigned short val_nDim, unsign
   cb2   = 0.622;
   cb2_sigma = cb2/sigma;
   cw1 = cb1/k2+(1.0+cb2)/sigma;
-  
+
 }
 
 CSourcePieceWise_TurbSA::~CSourcePieceWise_TurbSA(void) { }
@@ -382,7 +381,7 @@ void CSourcePieceWise_TurbSA::ComputeResidual(su2double *val_residual, su2double
   /*--- Rotational correction term ---*/
   
   if (rotating_frame) { Omega += 2.0*min(0.0, StrainMag_i-Omega); }
-  
+
   if (dist_i > 1e-10) {
     
     /*--- Production term ---*/
@@ -428,7 +427,9 @@ void CSourcePieceWise_TurbSA::ComputeResidual(su2double *val_residual, su2double
       Production = gamma_BC*cb1*Shat*TurbVar_i[0]*Volume;
     }
     else {
-      Production = cb1*Shat*TurbVar_i[0]*Volume;
+//      cout << fixed << showpoint;
+//      cout << "discTerm = " << discrepancyTerm << endl;
+      Production = discrepancyTerm*cb1*Shat*TurbVar_i[0]*Volume;
     }
     
     /*--- Destruction term ---*/

@@ -457,7 +457,6 @@ void CFluidIteration::Iterate(COutput *output,
                                  CFreeFormDefBox*** FFDBox,
                                  unsigned short val_iZone) {
   unsigned long IntIter, ExtIter;
-  
   bool unsteady = (config_container[val_iZone]->GetUnsteady_Simulation() == DT_STEPPING_1ST) || (config_container[val_iZone]->GetUnsteady_Simulation() == DT_STEPPING_2ND);
   bool frozen_visc = (config_container[val_iZone]->GetContinuous_Adjoint() && config_container[val_iZone]->GetFrozen_Visc_Cont()) ||
                      (config_container[val_iZone]->GetDiscrete_Adjoint() && config_container[val_iZone]->GetFrozen_Visc_Disc());
@@ -470,17 +469,18 @@ void CFluidIteration::Iterate(COutput *output,
   else IntIter = config_container[val_iZone]->GetIntIter();
   
   /*--- Update global parameters ---*/
-  
   switch( config_container[val_iZone]->GetKind_Solver() ) {
       
     case EULER: case DISC_ADJ_EULER:
       config_container[val_iZone]->SetGlobalParam(EULER, RUNTIME_FLOW_SYS, ExtIter); break;
       
     case NAVIER_STOKES: case DISC_ADJ_NAVIER_STOKES:
-      config_container[val_iZone]->SetGlobalParam(NAVIER_STOKES, RUNTIME_FLOW_SYS, ExtIter); break;
+      config_container[val_iZone]->SetGlobalParam(NAVIER_STOKES, RUNTIME_FLOW_SYS, ExtIter);
+      break;
       
     case RANS: case DISC_ADJ_RANS:
-      config_container[val_iZone]->SetGlobalParam(RANS, RUNTIME_FLOW_SYS, ExtIter); break;
+      config_container[val_iZone]->SetGlobalParam(RANS, RUNTIME_FLOW_SYS, ExtIter);
+      break;
       
   }
   
@@ -493,11 +493,9 @@ void CFluidIteration::Iterate(COutput *output,
       ((config_container[val_iZone]->GetKind_Solver() == DISC_ADJ_RANS) && !frozen_visc)) {
     
     /*--- Solve the turbulence model ---*/
-    
     config_container[val_iZone]->SetGlobalParam(RANS, RUNTIME_TURB_SYS, ExtIter);
     integration_container[val_iZone][TURB_SOL]->SingleGrid_Iteration(geometry_container, solver_container, numerics_container,
                                                                      config_container, RUNTIME_TURB_SYS, IntIter, val_iZone);
-    
     /*--- Solve transition model ---*/
     
     if (config_container[val_iZone]->GetKind_Trans_Model() == LM) {
@@ -1933,6 +1931,9 @@ void CDiscAdjFluidIteration::Iterate(COutput *output,
 
     solver_container[val_iZone][MESH_0][ADJTURB_SOL]->ExtractAdjoint_Solution(geometry_container[val_iZone][MESH_0],
                                                                               config_container[val_iZone]);
+
+    solver_container[val_iZone][MESH_0][ADJTURB_SOL]->ExtractAdjoint_Variables(geometry_container[val_iZone][MESH_0],
+    																		  config_container[val_iZone]);
   }
 
   }
@@ -1980,6 +1981,8 @@ void CDiscAdjFluidIteration::RegisterInput(CSolver ****solver_container, CGeomet
     
     if ((Kind_Solver == DISC_ADJ_RANS) && !frozen_visc) {
       solver_container[iZone][MESH_0][ADJTURB_SOL]->RegisterSolution(geometry_container[iZone][MESH_0], config_container[iZone]);
+
+      solver_container[iZone][MESH_0][ADJTURB_SOL]->RegisterVariables(geometry_container[iZone][MESH_0], config_container[iZone]);
     }
   }
   if (kind_recording == MESH_COORDS){

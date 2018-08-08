@@ -1645,7 +1645,7 @@ void CDriver::Numerics_Preprocessing(CNumerics ****numerics_container,
       else if (menter_sst) numerics_container[iMGlevel][TURB_SOL][SOURCE_FIRST_TERM] = new CSourcePieceWise_TurbSST(nDim, nVar_Turb, constants, config);
       numerics_container[iMGlevel][TURB_SOL][SOURCE_SECOND_TERM] = new CSourceNothing(nDim, nVar_Turb, config);
     }
-    
+
     /*--- Definition of the boundary condition method ---*/
     
     for (iMGlevel = 0; iMGlevel <= config->GetnMGLevels(); iMGlevel++) {
@@ -2969,31 +2969,26 @@ void CDriver::StartSolver() {
     /*--- Perform some external iteration preprocessing. ---*/
 
     PreprocessExtIter(ExtIter);
-
     /*--- Perform a single iteration of the chosen PDE solver. ---*/
 
     if (!fsi) {
 
       /*--- Perform a dynamic mesh update if required. ---*/
-
       DynamicMeshUpdate(ExtIter);
-
       /*--- Run a single iteration of the problem (fluid, elasticity, wave, heat, ...). ---*/
 
       Run();
-
       /*--- Update the solution for dual time stepping strategy ---*/
 
       Update();
-
     }
     
     /*--- In the FSIDriver case, mesh and solution updates are already included into the Run function ---*/
     
     else {
-      
+
       Run();
-      
+
     }
 
     /*--- Monitor the computations after each iteration. ---*/
@@ -3265,12 +3260,10 @@ void CFluidDriver::Run() {
    and other intermediate procedures may be required. ---*/
 
   unsteady = (config_container[MESH_0]->GetUnsteady_Simulation() == DT_STEPPING_1ST) || (config_container[MESH_0]->GetUnsteady_Simulation() == DT_STEPPING_2ND);
-
   /*--- Zone preprocessing ---*/
 
   for (iZone = 0; iZone < nZone; iZone++)
     iteration_container[iZone]->Preprocess(output, integration_container, geometry_container, solver_container, numerics_container, config_container, surface_movement, grid_movement, FFDBox, iZone);
-
   /*--- Updating zone interface communication patterns,
    needed only for unsteady simulation since for steady problems
    this is done once in the interpolator_container constructor 
@@ -3298,7 +3291,6 @@ void CFluidDriver::Run() {
       for (jZone = 0; jZone < nZone; jZone++)
         if(jZone != iZone && transfer_container[iZone][jZone] != NULL)
           Transfer_Data(iZone, jZone);
-
     /*--- For each zone runs one single iteration ---*/
 
     for (iZone = 0; iZone < nZone; iZone++) {

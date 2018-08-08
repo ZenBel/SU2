@@ -251,6 +251,10 @@ inline void CNumerics::SetVorticity(su2double *val_vorticity_i, su2double *val_v
   Vorticity_j = val_vorticity_j;
 }
 
+inline void CNumerics::SetDiscrepancyTerm(su2double val_discrepancyTerm) {
+  discrepancyTerm = val_discrepancyTerm;
+}
+
 inline void CNumerics::SetStrainMag(su2double val_strainmag_i, su2double val_strainmag_j) {
   StrainMag_i = val_strainmag_i;
   StrainMag_j = val_strainmag_j;

@@ -552,7 +552,6 @@ void CTurbSolver::Upwind_Residual(CGeometry *geometry, CSolver **solver_containe
     }
     
     /*--- Add and subtract residual ---*/
-    
     numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
     
     LinSysRes.AddBlock(iPoint, Residual);
@@ -1390,8 +1389,10 @@ CTurbSASolver::CTurbSASolver(CGeometry *geometry, CConfig *config, unsigned shor
   }
 
   /*--- Set up inlet profiles, if necessary ---*/
-
   SetInlet(config);
+
+  /*--- Read values of discrepancyTerm from external file ---*/
+  ReadDiscrepancyTerm(geometry, config);
 
 }
 
@@ -1526,7 +1527,7 @@ void CTurbSASolver::Source_Residual(CGeometry *geometry, CSolver **solver_contai
   bool harmonic_balance = (config->GetUnsteady_Simulation() == HARMONIC_BALANCE);
   bool transition    = (config->GetKind_Trans_Model() == LM);
   bool transition_BC = (config->GetKind_Trans_Model() == BC);
-  
+
   for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
     
     /*--- Conservative variables w/o reconstruction ---*/
@@ -1540,8 +1541,11 @@ void CTurbSASolver::Source_Residual(CGeometry *geometry, CSolver **solver_contai
     /*--- Set vorticity and strain rate magnitude ---*/
     
     numerics->SetVorticity(solver_container[FLOW_SOL]->node[iPoint]->GetVorticity(), NULL);
-
     numerics->SetStrainMag(solver_container[FLOW_SOL]->node[iPoint]->GetStrainMag(), 0.0);
+
+    /*--- Set the discrepancy term ---*/
+    unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+    numerics->SetDiscrepancyTerm(config->GetDiscrTerm(GlobalIndex));
     
     /*--- Set intermittency ---*/
     
@@ -1619,6 +1623,68 @@ void CTurbSASolver::Source_Residual(CGeometry *geometry, CSolver **solver_contai
     }
   }
   
+}
+
+void CTurbSASolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
+
+  /*--- Initialize discrepancyTerm from external input file ---*/
+  string text_line;
+  ifstream input_file;
+  string input_filename = "discrepancyTerm.dat";
+
+  unsigned long nPointLocal, nPointGlobal;
+  unsigned long InputPoints, iPoint;
+  vector<su2double> VecdTerm;
+  su2double dTerm;
+
+  nPointLocal = nPointDomain;
+#ifdef HAVE_MPI
+  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+#else
+  nPointGlobal = nPointLocal; //Total number of points in the domain (no halo nodes considered)
+#endif
+
+  config->InitializeDiscrTerm(nPointGlobal);
+
+  input_file.open(input_filename.data(), ios::in);
+
+  if (input_file.fail()) {
+
+	  cout << "There is no input file!! " << input_filename.data() << ". Setting the discrepancy term to unity"<< endl;
+
+	for (iPoint=0; iPoint < nPointGlobal; iPoint++)
+		config->SetDiscrTerm(1.0, iPoint);
+  }
+  else{
+
+    /*--- Read head of the file for allocation ---*/
+    getline (input_file, text_line);
+    istringstream point_line(text_line);
+    point_line >> InputPoints;
+
+    if (InputPoints == nPointGlobal){
+
+      while (getline (input_file, text_line)) {
+	    istringstream point_line(text_line);
+	    point_line >> iPoint >> dTerm;
+	    VecdTerm.push_back(dTerm);
+	  }
+      input_file.close();
+
+      for (iPoint=0; iPoint < nPointGlobal; iPoint++)
+    	  config->SetDiscrTerm(VecdTerm[iPoint], iPoint);
+    }
+    else{
+
+      if (rank == MASTER_NODE){
+        cout << "The number of points in " << input_filename.data() << " is different from the total number of points in the mesh." << endl;
+        exit(EXIT_FAILURE);
+      }
+
+    }
+
+  }
+
 }
 
 void CTurbSASolver::Source_Template(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics,

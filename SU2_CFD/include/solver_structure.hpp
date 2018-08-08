@@ -8921,6 +8921,9 @@ public:
   void Source_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CNumerics *second_numerics,
                        CConfig *config, unsigned short iMesh);
   
+  void ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config);
+  su2double GetDiscrepancyTerm(unsigned long val_global_index);
+
   /*!
    * \brief Source term computation.
    * \param[in] geometry - Geometrical definition of the problem.
@@ -12190,6 +12193,8 @@ private:
   unsigned long nMarker;        /*!< \brief Total number of markers using the grid information. */
   
   su2double **NUBC_Var1, **NUBC_Var2, **NUBC_Pstatic, **NUBC_alpha, **NUBC_beta;
+
+  su2double *discTerm_adj;
 
   su2double *Solution_Geometry; /*!< \brief Auxiliary vector for the geometry solution (dimension nDim instead of nVar). */
   

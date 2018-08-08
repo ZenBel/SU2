@@ -6447,12 +6447,11 @@ void CConfig::SetGlobalParam(unsigned short val_solver,
                              unsigned long val_extiter) {
 
   /*--- Set the simulation global time ---*/
-  
+
   Current_UnstTime = static_cast<su2double>(val_extiter)*Delta_UnstTime;
   Current_UnstTimeND = static_cast<su2double>(val_extiter)*Delta_UnstTimeND;
 
   /*--- Set the solver methods ---*/
-  
   switch (val_solver) {
     case EULER:
       if (val_system == RUNTIME_FLOW_SYS) {
@@ -6910,6 +6909,17 @@ void CConfig::Initialize_ErrorFunc_Variables(unsigned long val_points) {
   TargetQuantity = new su2double[val_points];
 }
 
+void CConfig::SetDiscrTerm(su2double val_discTerm, unsigned long val_point){
+  discTerm[val_point] = val_discTerm;
+}
+
+su2double CConfig::GetDiscrTerm(unsigned long val_point){
+  return discTerm[val_point];
+}
+
+void CConfig::InitializeDiscrTerm(unsigned long val_point){
+  discTerm =  new su2double[val_point];
+}
 
 void CConfig::SetNUBC_Coord(su2double newVar, unsigned long val_pos, unsigned short val_marker) {
   NonUniform_Coord[val_marker][val_pos] = newVar;

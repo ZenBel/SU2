@@ -391,6 +391,34 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 		  }
 	    }
   }
+
+  bool BoolDiscTerm = true;
+
+  if((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_TURB_SYS && BoolDiscTerm)) {
+
+	  unsigned long nPointLocal, nPointGlobal, iPoint, GlobalIndex;
+	  nPointLocal = nPointDomain;
+
+#ifdef HAVE_MPI
+  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+#else
+  nPointGlobal = nPointLocal; //Total number of points in the domain (no halo nodes considered)
+#endif
+
+	  discTerm_adj = new su2double[nPointGlobal];
+
+	  for (iPoint=0; iPoint < nPointDomain; iPoint++){
+		  GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+		  discTerm_adj[GlobalIndex] = config->GetDiscrTerm(GlobalIndex);
+
+	      if (!reset){
+		      AD::RegisterInput(discTerm_adj[GlobalIndex]);
+	      }
+
+	      config->SetDiscrTerm(discTerm_adj[GlobalIndex], GlobalIndex);
+	  }
+  }
+
 }
 
 
@@ -677,6 +705,50 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
 	  delete [] Total_Sens_Pstatic;
 	  delete [] Total_Sens_alpha;
 	  delete [] Total_Sens_beta;
+  }
+
+  bool BoolDiscTerm = true;
+
+  if ((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_TURB_SYS) && BoolDiscTerm){
+
+	unsigned long nPointLocal, nPointGlobal, iPoint, GlobalIndex;
+	nPointLocal = nPointDomain;
+
+#ifdef HAVE_MPI
+  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+#else
+  nPointGlobal = nPointLocal; //Total number of points in the domain (no halo nodes considered)
+#endif
+
+	su2double *LocalSens_discrTerm, *Total_Sens_discrTerm;
+
+	LocalSens_discrTerm = new su2double[nPointGlobal];
+  	Total_Sens_discrTerm = new su2double[nPointGlobal];
+
+  	for (iPoint=0; iPoint < nPointDomain; iPoint++){
+  		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+  		LocalSens_discrTerm[GlobalIndex] = SU2_TYPE::GetDerivative(discTerm_adj[GlobalIndex]);
+
+  		cout << fixed << showpoint;
+  		cout << setprecision(15);
+  		cout << "LocalSens_discrTerm[" << iPoint << "] = " <<LocalSens_discrTerm[iPoint] << endl;
+  	}
+
+#ifdef HAVE_MPI
+  	SU2_MPI::Allreduce(LocalSens_discrTerm, Total_Sens_discrTerm, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+ #else
+  	Total_Sens_discrTerm = LocalSens_discrTerm;
+ #endif
+
+  	if (rank == MASTER_NODE){
+  		for (iPoint=0; iPoint < nPointGlobal; iPoint++){
+  			cout << "Sens_discrTerm[" << iPoint << "] = " << Total_Sens_discrTerm[iPoint] << endl;
+  		}
+  	}
+
+  	delete [] LocalSens_discrTerm;
+  	delete [] Total_Sens_discrTerm;
+
   }
 
 }

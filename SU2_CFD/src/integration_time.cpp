@@ -71,7 +71,7 @@ void CMultiGridIntegration::MultiGrid_Iteration(CGeometry ***geometry,
   }
   
   /*--- If restart, update multigrid levels at the first multigrid iteration ---*/
-	/*-- Since the restart takes care of this I dont think is required, but we should check after the new restart routines are added ---*/
+  /*-- Since the restart takes care of this I dont think is required, but we should check after the new restart routines are added ---*/
   
   if ((restart && (Iteration == config[iZone]->GetnStartUpIter())) || startup_multigrid)
   {
@@ -87,7 +87,6 @@ void CMultiGridIntegration::MultiGrid_Iteration(CGeometry ***geometry,
       
     }
   }
-	
   /*--- Full multigrid strategy and start up with fine grid only works with the direct problem ---*/
 
   if (!config[iZone]->GetRestart() && FullMG && direct && ( Convergence_FullMG && (config[iZone]->GetFinestMesh() != MESH_0 ))) {
@@ -97,7 +96,6 @@ void CMultiGridIntegration::MultiGrid_Iteration(CGeometry ***geometry,
                             config[iZone]);
     config[iZone]->SubtractFinestMesh();
   }
-
   /*--- Set the current finest grid (full multigrid strategy) ---*/
   
   FinestMesh = config[iZone]->GetFinestMesh();
@@ -107,23 +105,20 @@ void CMultiGridIntegration::MultiGrid_Iteration(CGeometry ***geometry,
   MultiGrid_Cycle(geometry, solver_container, numerics_container, config,
                   FinestMesh, RecursiveParam, RunTime_EqSystem,
                   Iteration, iZone);
-
   /*--- Computes primitive variables and gradients in the finest mesh (useful for the next solver (turbulence) and output ---*/
 
    solver_container[iZone][MESH_0][SolContainer_Position]->Preprocessing(geometry[iZone][MESH_0],
                                                                          solver_container[iZone][MESH_0], config[iZone],
                                                                          MESH_0, NO_RK_ITER, RunTime_EqSystem, true);
-  
   /*--- Compute non-dimensional parameters and the convergence monitor ---*/
   
   NonDimensional_Parameters(geometry[iZone], solver_container[iZone],
                             numerics_container[iZone], config[iZone],
                             FinestMesh, RunTime_EqSystem, Iteration, &monitor);
-  
+
   /*--- Convergence strategy ---*/
   
   Convergence_Monitoring(geometry[iZone][FinestMesh], config[iZone], Iteration, monitor, FinestMesh);
-
 }
 
 void CMultiGridIntegration::MultiGrid_Cycle(CGeometry ***geometry,
@@ -708,7 +703,6 @@ void CMultiGridIntegration::NonDimensional_Parameters(CGeometry **geometry, CSol
   switch (RunTime_EqSystem) {
       
     case RUNTIME_FLOW_SYS:
-      
       /*--- Calculate the inviscid and viscous forces ---*/
       
       solver_container[FinestMesh][FLOW_SOL]->Pressure_Forces(geometry[FinestMesh], config);

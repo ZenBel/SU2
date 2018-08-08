@@ -754,7 +754,7 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
 
   Surface_ErrorFunc      = new su2double[config->GetnMarker_Monitoring()];
   ErrorFunc              = new su2double[nMarker];
-  Total_ErrorFunc		   = 0.0;
+  Total_ErrorFunc		 = 0.0;
 
   /*--- Initialize the secondary values for direct derivative approxiations ---*/
   
@@ -5602,6 +5602,7 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   AllBound_CT_Inv = 0.0;           AllBound_CQ_Inv = 0.0;    AllBound_CMerit_Inv = 0.0;
   AllBound_CNearFieldOF_Inv = 0.0; AllBound_CEff_Inv = 0.0;
   
+
   for (iMarker_Monitoring = 0; iMarker_Monitoring < config->GetnMarker_Monitoring(); iMarker_Monitoring++) {
     Surface_CL_Inv[iMarker_Monitoring]      = 0.0; Surface_CD_Inv[iMarker_Monitoring]      = 0.0;
     Surface_CSF_Inv[iMarker_Monitoring] = 0.0; Surface_CEff_Inv[iMarker_Monitoring]       = 0.0;
@@ -5613,10 +5614,8 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
     Surface_CFx[iMarker_Monitoring]            = 0.0; Surface_CFy[iMarker_Monitoring]            = 0.0;
     Surface_CFz[iMarker_Monitoring]            = 0.0; Surface_CMx[iMarker_Monitoring]            = 0.0;
     Surface_CMy[iMarker_Monitoring]            = 0.0; Surface_CMz[iMarker_Monitoring]            = 0.0;
-
-    Surface_ErrorFunc[iMarker_Monitoring] = 0.0; //Extend to entire domain afterwards
   }
-  
+
   /*--- Loop over the Euler and Navier-Stokes markers ---*/
   
   for (iMarker = 0; iMarker < nMarker; iMarker++) {
@@ -5787,22 +5786,19 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
               Surface_CMx_Inv[iMarker_Monitoring]     += CMx_Inv[iMarker];
               Surface_CMy_Inv[iMarker_Monitoring]     += CMy_Inv[iMarker];
               Surface_CMz_Inv[iMarker_Monitoring]     += CMz_Inv[iMarker];
-              Surface_ErrorFunc[iMarker_Monitoring]	  += ErrorFunc[iMarker];
             }
           }
           
         }
-        
+
         /*--- At the Nearfield SU2 only cares about the pressure coeffient ---*/
         
         else {
           CNearFieldOF_Inv[iMarker] = NFPressOF;
           AllBound_CNearFieldOF_Inv += CNearFieldOF_Inv[iMarker];
         }
-        
+      
       }
-      
-      
     }
   }
   
@@ -5924,8 +5920,7 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   Total_CNearFieldOF  = AllBound_CNearFieldOF_Inv;
 
   /*--- Compute the ErrorFunction for Data Assimilation ---*/
-  if (config->GetDataAssimilation() == true)
-	  SetErrorFuncOF(geometry, config);
+  if (config->GetDataAssimilation() == true){ SetErrorFuncOF(geometry, config);}
 
   /*--- Update the total coefficients per surface (note that all the nodes have the same value)---*/
   
@@ -16592,6 +16587,7 @@ void CNSSolver::Preprocessing(CGeometry *geometry, CSolver **solver_container, C
   /*--- Evaluate the vorticity and strain rate magnitude ---*/
   
   StrainMag_Max = 0.0; Omega_Max = 0.0;
+
   for (iPoint = 0; iPoint < nPoint; iPoint++) {
     
     solver_container[FLOW_SOL]->node[iPoint]->SetVorticity();

@@ -281,6 +281,9 @@ private:
 
   su2double **NonUniform_Coord, **NonUniform_Var1, **NonUniform_Var2, **NonUniform_Var3,
             **NonUniform_Var4, **NonUniform_Var5, **NonUniform_Var6;
+
+  su2double *discTerm;
+
   unsigned long *NonUniform_InputPoints;
   su2double *TargetQuantity;
   bool *TargetPointID;
@@ -5980,6 +5983,10 @@ public:
 
   void SetNUBC_Coord(su2double newVar, unsigned long val_pos, unsigned short val_marker);
   su2double GetNUBC_Coord(unsigned long val_pos, unsigned short val_marker);
+
+  void SetDiscrTerm(su2double val_discTerm, unsigned long val_point);
+  void InitializeDiscrTerm(unsigned long val_point);
+  su2double GetDiscrTerm(unsigned long val_point);
 
   void SetNUBC_Var1(su2double newVar, unsigned long val_pos, unsigned short val_marker);
   void SetNUBC_Var2(su2double newVar, unsigned long val_pos, unsigned short val_marker);
