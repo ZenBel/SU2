@@ -78,11 +78,13 @@ def projection( config, state={}, step = 1e-3 ):
             ./
     """
     # local copy
-    konfig = copy.deepcopy(config)
-            
+    konfig = copy.deepcopy(config)    
+               
     # choose dv values 
     Definition_DV = konfig['DEFINITION_DV']
     n_DV          = sum(Definition_DV['SIZE'])
+          
+    
     if isinstance(step,list):
         assert len(step) == n_DV , 'unexpected step vector length'
     else:
@@ -104,19 +106,30 @@ def projection( config, state={}, step = 1e-3 ):
     
     # read raw gradients            
     raw_gradients = su2io.read_gradients(grad_filename)
+
     os.remove(grad_filename)
     
-    info = su2io.State()
+    info = su2io.State()   
     
     # If NUBC_DV, read gradients from SensNUBC.csv file
     if ('NUBC_DV' in konfig.DV_KIND):
        import external_gradient # Must be defined in run folder
-       chaingrad = external_gradient.of_gradient(konfig, state, step)
+       chaingrad = external_gradient.nubc_gradient(konfig, state)
        nubc_dv=0
        for idv in range(n_DV):
-                if (konfig.DV_KIND[idv] == 'NUBC_DV'):
-                    raw_gradients[idv] = chaingrad[nubc_dv]
-                    nubc_dv = nubc_dv+1
+            if (konfig.DV_KIND[idv] == 'NUBC_DV'):
+                raw_gradients[idv] = chaingrad[nubc_dv]
+                nubc_dv += 1
+          
+       
+    if ('DISCREPANCY_DV' in konfig.DV_KIND ):
+        import external_gradient
+        chaingrad = external_gradient.discrepancy_gradient(konfig, state)
+        discrepancy_dv = 0
+        for idv in range(n_DV):
+            if (konfig.DV_KIND[idv] == 'DISCREPANCY_DV'):
+                raw_gradients[idv] = chaingrad[discrepancy_dv]
+                discrepancy_dv += 1
                     
     # Write Gradients
     data_plot = su2util.ordered_bunch()

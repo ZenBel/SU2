@@ -2785,7 +2785,8 @@ void CSurfaceMovement::SetSurface_Deformation(CGeometry *geometry, CConfig *conf
       /* --- Check if the FFD boxes referenced in the design variable definition can be found --- */
       
       for (iDV = 0; iDV < config->GetnDV(); iDV++) {
-    	if (config->GetDesign_Variable(iDV) == NUBC_DV) { cout << "NUBC DVs do not need FFD box tag definition." << endl;}
+    	if ((config->GetDesign_Variable(iDV) == NUBC_DV) ||
+    		(config->GetDesign_Variable(iDV) == DISCREPANCY_DV)) { cout << "Non-Geometric DVs do not need FFD box tag definition." << endl;}
     	else if (!CheckFFDBoxDefinition(config, iDV)) {
           SU2_MPI::Error(string("There is no FFD box with tag \"") + config->GetFFDTag(iDV) + string("\" defined in the mesh file.\n") +
                          string("Check the definition of the design variables and/or the FFD settings !!"), CURRENT_FUNCTION);
@@ -3134,6 +3135,9 @@ void CSurfaceMovement::SetSurface_Deformation(CGeometry *geometry, CConfig *conf
   
   else if (config->GetDesign_Variable(0) == NUBC_DV && rank == MASTER_NODE)
     cout <<"NUBC design variable will be used in external script" << endl;
+
+  else if (config->GetDesign_Variable(0) == DISCREPANCY_DV && rank == MASTER_NODE)
+    cout <<"Discrepancy field design variables will be used in external script" << endl;
 
   /*--- Design variable not implement ---*/
   

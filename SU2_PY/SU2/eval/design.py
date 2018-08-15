@@ -327,7 +327,7 @@ def obj_df(dvs,config,state=None):
      
     dv_scales = config['DEFINITION_DV']['SCALE']
     dv_size   = config['DEFINITION_DV']['SIZE']
-    
+       
     # evaluate each objective
     vals_out = []
     if (combine_obj and n_obj>1):

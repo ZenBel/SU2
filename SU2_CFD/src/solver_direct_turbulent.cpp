@@ -1633,7 +1633,7 @@ void CTurbSASolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
   string input_filename = "discrepancyTerm.dat";
 
   unsigned long nPointLocal, nPointGlobal;
-  unsigned long InputPoints, iPoint;
+  unsigned long InputPoints, GlobalIndex;
   vector<su2double> VecdTerm;
   su2double dTerm;
 
@@ -1652,8 +1652,8 @@ void CTurbSASolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 
 	  cout << "There is no input file!! " << input_filename.data() << ". Setting the discrepancy term to unity"<< endl;
 
-	for (iPoint=0; iPoint < nPointGlobal; iPoint++)
-		config->SetDiscrTerm(1.0, iPoint);
+	for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
+		config->SetDiscrTerm(1.0, GlobalIndex);
   }
   else{
 
@@ -1666,13 +1666,13 @@ void CTurbSASolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 
       while (getline (input_file, text_line)) {
 	    istringstream point_line(text_line);
-	    point_line >> iPoint >> dTerm;
+	    point_line >> GlobalIndex >> dTerm;
 	    VecdTerm.push_back(dTerm);
 	  }
       input_file.close();
 
-      for (iPoint=0; iPoint < nPointGlobal; iPoint++)
-    	  config->SetDiscrTerm(VecdTerm[iPoint], iPoint);
+      for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
+    	  config->SetDiscrTerm(VecdTerm[GlobalIndex], GlobalIndex);
     }
     else{
 

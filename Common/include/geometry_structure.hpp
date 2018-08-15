@@ -167,6 +167,8 @@ public:
 	CPrimalGrid*** newBound;            /*!< \brief Boundary vector for new periodic elements (primal grid information). */
 	unsigned long *nNewElem_Bound;			/*!< \brief Number of new periodic elements of the boundary. */
 
+	su2double *Sens_discrepancyTerm;
+
   
   /*--- Partitioning-specific variables ---*/
   map<unsigned long,unsigned long> Global_to_Local_Elem;
@@ -253,6 +255,10 @@ public:
 	 * \return Number of vertices.
 	 */
 	unsigned long GetnVertex(unsigned short val_marker);
+
+	void Initialize_Sens_discrepancyTerm(unsigned long val_n_points_global);
+	void SetSens_discrepancyTerm(su2double val_sens, unsigned long val_global_index);
+	su2double GetSens_discrepancyTerm(unsigned long val_global_index);
 
 	/*!
 	 * \brief Get number of span wise section.

@@ -146,16 +146,14 @@ def gradient( func_name, method, config, state=None ):
         #                                                                    #the first 5 elements are other tyep of gradients
         #            custom_dv = custom_dv+1
         
-        
-        
         # store
         state['GRADIENTS'].update(grads)
-
+        
     # if not redundant
 
     # prepare output
     grads_out = state['GRADIENTS'][func_output]
-
+    
     return copy.deepcopy(grads_out)
 
 #: def gradient()
@@ -281,9 +279,12 @@ def adjoint( func_name, config, state=None ):
     # files: target heat flux coefficient
     if 'INV_DESIGN_HEATFLUX' in special_cases:
         pull.append(files['TARGET_HEATFLUX'])
-        
-    if 'DATA_ASSIMILATION' in special_cases :
-        pull.append(files['TARGET_CP'])
+                
+    if ( 'DATA_ASSIMILATION' in special_cases ):
+        if ( 'TARGET_CP' in files ):
+            pull.append(files['TARGET_CP'])
+        if ('DISCREPANCY_FILE' in files ):
+            pull.append(files['DISCREPANCY_FILE'])
         
     if (config.has_key('MARKER_NONUNIFORM')):
         path_nubc  = os.getcwd()
@@ -293,11 +294,11 @@ def adjoint( func_name, config, state=None ):
                 nubc_filenames.append(elem.strip(','))
         for i in range(len(nubc_filenames)):
             pull.append( files['NUBC_FILE_%s'%(i+1)])
-            
+                       
     # output redirection
     with redirect_folder( ADJ_NAME, pull, link ) as push:
-        with redirect_output(log_adjoint):        
-
+        with redirect_output(log_adjoint):    
+                       
             # Format objective list in config
             if multi_objective:
                 config['OBJECTIVE_FUNCTION'] = ", ".join(func_name)
@@ -308,7 +309,7 @@ def adjoint( func_name, config, state=None ):
             info = su2run.adjoint(config)
             su2io.restart2solution(config,info)
             state.update(info)
-
+            
             # Gradient Projection
             info = su2run.projection(config,state)
             state.update(info)
@@ -318,13 +319,13 @@ def adjoint( func_name, config, state=None ):
             name = su2io.expand_zones(name,config)
             name = su2io.expand_time(name,config)
             push.extend(name)
-
+            print name
     #: with output redirection
 
     # return output 
     grads = su2util.ordered_bunch()
     grads[func_output] = state['GRADIENTS'][func_output]
-    
+        
     return grads
 
 #: def adjoint()
@@ -731,9 +732,13 @@ def findiff( config, state=None ):
     # files: target heat flux distribution
     if 'INV_DESIGN_HEATFLUX' in special_cases and 'TARGET_HEATFLUX' in files:
         pull.append(files['TARGET_HEATFLUX'])
-        
-    if 'DATA_ASSIMILATION' in special_cases and 'TARGET_CP' in files:
-        pull.append(files['TARGET_CP'])
+                
+    if ( 'DATA_ASSIMILATION' in special_cases ):
+        if ( 'TARGET_CP' in files ):
+            pull.append(files['TARGET_CP'])
+        if ('DISCREPANCY_FILE' in files ):
+            print 'gradients.py: pulling the discrepancy file 2.'
+            pull.append(files['DISCREPANCY_FILE'])
                
     # files: Non-Uniform boundary input (.bc) files           
     if (config.has_key('MARKER_NONUNIFORM')):

@@ -492,9 +492,9 @@ void SetProjection_FD(CGeometry *geometry, CConfig *config, CSurfaceMovement *su
     
     /*--- Non-Uniform design variable ---*/
 
-    else if (config->GetDesign_Variable(iDV) == NUBC_DV){
-	if (rank == MASTER_NODE)
-     	  cout <<"NUBC_DV: this design variable will be used in an external script" << endl;
+    else if ((config->GetDesign_Variable(iDV) == NUBC_DV) || (config->GetDesign_Variable(iDV) == DISCREPANCY_DV)){
+    	if (rank == MASTER_NODE)
+     	  cout <<"Non-Geometric DV: this design variable will be used in an external script" << endl;
     }
 
     /*--- Design variable not implement ---*/
@@ -696,6 +696,8 @@ void OutputGradient(su2double** Gradient, CConfig* config, ofstream& Gradient_fi
   
   int rank = SU2_MPI::GetRank();
   
+  bool screen_print = true;
+
   nDV = config->GetnDV();
   
   /*--- Loop through all design variables and their gradients ---*/
@@ -703,36 +705,41 @@ void OutputGradient(su2double** Gradient, CConfig* config, ofstream& Gradient_fi
   for (iDV = 0; iDV  < nDV; iDV++){
     nDV_Value = config->GetnDV_Value(iDV);
     if (rank == MASTER_NODE){
-      
-      /*--- Print the kind of design variable on screen ---*/
-      
-      cout << endl << "Design variable (";
-      for (std::map<string, ENUM_PARAM>::const_iterator it = Param_Map.begin(); it != Param_Map.end(); ++it ){
-        if (it->second == config->GetDesign_Variable(iDV)){
-          cout << it->first << ") number "<< iDV << "." << endl;
-        }
-      }
-      
-      /*--- Print the kind of objective function to screen ---*/
-      
-      for (std::map<string, ENUM_OBJECTIVE>::const_iterator it = Objective_Map.begin(); it != Objective_Map.end(); ++it ){
-        if (it->second == config->GetKind_ObjFunc()){
-          cout << it->first << " gradient : ";
-          if (iDV == 0) Gradient_file << it->first << " gradient " << endl;
-        }
-      }
-      
-      /*--- Print the gradient to file and screen ---*/
-      
-      for (iDV_Value = 0; iDV_Value < nDV_Value; iDV_Value++){
-        cout << Gradient[iDV][iDV_Value];
-        if (iDV_Value != nDV_Value-1 ){
-          cout << ", ";
-        }
-        Gradient_file << Gradient[iDV][iDV_Value] << endl;
-      }
-      cout << endl;
-      cout <<"-------------------------------------------------------------------------" << endl;
+
+      if (config->GetDesign_Variable(iDV) == DISCREPANCY_DV ) { screen_print = false;}
+
+	  /*--- Print the kind of design variable on screen ---*/
+
+	  if (screen_print == true){ cout << endl << "Design variable (";}
+	  for (std::map<string, ENUM_PARAM>::const_iterator it = Param_Map.begin(); it != Param_Map.end(); ++it ){
+		if (it->second == config->GetDesign_Variable(iDV)){
+			if (screen_print == true){ cout << it->first << ") number "<< iDV << "." << endl;}
+		}
+	  }
+
+	  /*--- Print the kind of objective function to screen ---*/
+
+	  for (std::map<string, ENUM_OBJECTIVE>::const_iterator it = Objective_Map.begin(); it != Objective_Map.end(); ++it ){
+		if (it->second == config->GetKind_ObjFunc()){
+		  if (screen_print == true){cout << it->first << " gradient : ";}
+		  if (iDV == 0) Gradient_file << it->first << " gradient " << endl;
+		}
+	  }
+
+	  /*--- Print the gradient to file and screen ---*/
+
+	  for (iDV_Value = 0; iDV_Value < nDV_Value; iDV_Value++){
+		if (screen_print == true){cout << Gradient[iDV][iDV_Value];}
+		if (iDV_Value != nDV_Value-1 ){
+			if (screen_print == true){cout << ", ";}
+		}
+		Gradient_file << Gradient[iDV][iDV_Value] << endl;
+	  }
+	  if (screen_print == true){
+	  cout << endl;
+	  cout <<"-------------------------------------------------------------------------" << endl;
+	  }
+
     }
   }
 }

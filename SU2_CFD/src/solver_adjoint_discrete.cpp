@@ -396,26 +396,20 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 
   if((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_TURB_SYS && BoolDiscTerm)) {
 
-	  unsigned long nPointLocal, nPointGlobal, iPoint, GlobalIndex;
-	  nPointLocal = nPointDomain;
+	  unsigned long nPointGlobal, iPoint, GlobalIndex;
+	  nPointGlobal = geometry->GetGlobal_nPointDomain();
 
-#ifdef HAVE_MPI
-  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-#else
-  nPointGlobal = nPointLocal; //Total number of points in the domain (no halo nodes considered)
-#endif
-
-	  discTerm_adj = new su2double[nPointGlobal];
+	  discTerm_adj = new su2double[nPointDomain];
 
 	  for (iPoint=0; iPoint < nPointDomain; iPoint++){
 		  GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-		  discTerm_adj[GlobalIndex] = config->GetDiscrTerm(GlobalIndex);
+		  discTerm_adj[iPoint] = config->GetDiscrTerm(GlobalIndex);
 
 	      if (!reset){
-		      AD::RegisterInput(discTerm_adj[GlobalIndex]);
+		      AD::RegisterInput(discTerm_adj[iPoint]);
 	      }
 
-	      config->SetDiscrTerm(discTerm_adj[GlobalIndex], GlobalIndex);
+	      config->SetDiscrTerm(discTerm_adj[iPoint], GlobalIndex);
 	  }
   }
 
@@ -584,7 +578,7 @@ void CDiscAdjSolver::ExtractAdjoint_Solution(CGeometry *geometry, CConfig *confi
   SetResidual_RMS(geometry, config);
 }
 
-void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config) {
+void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool compute) {
 
   /*--- Extract the adjoint values of the farfield values ---*/
 
@@ -711,43 +705,42 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
 
   if ((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_TURB_SYS) && BoolDiscTerm){
 
-	unsigned long nPointLocal, nPointGlobal, iPoint, GlobalIndex;
-	nPointLocal = nPointDomain;
+	unsigned long nPointGlobal, iPoint, GlobalIndex;
+	nPointGlobal = geometry->GetGlobal_nPointDomain();
 
-#ifdef HAVE_MPI
-  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-#else
-  nPointGlobal = nPointLocal; //Total number of points in the domain (no halo nodes considered)
-#endif
-
-	su2double *LocalSens_discrTerm, *Total_Sens_discrTerm;
+	su2double *LocalSens_discrTerm, *TotalSens_discrTerm;
 
 	LocalSens_discrTerm = new su2double[nPointGlobal];
-  	Total_Sens_discrTerm = new su2double[nPointGlobal];
+  	TotalSens_discrTerm = new su2double[nPointGlobal];
+
+  	for (iPoint=0; iPoint < nPointGlobal; iPoint++){
+  		LocalSens_discrTerm[iPoint] = 0.0;
+  		TotalSens_discrTerm[iPoint] = 0.0;
+  	}
 
   	for (iPoint=0; iPoint < nPointDomain; iPoint++){
   		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-  		LocalSens_discrTerm[GlobalIndex] = SU2_TYPE::GetDerivative(discTerm_adj[GlobalIndex]);
-
-  		cout << fixed << showpoint;
-  		cout << setprecision(15);
-  		cout << "LocalSens_discrTerm[" << iPoint << "] = " <<LocalSens_discrTerm[iPoint] << endl;
+  		LocalSens_discrTerm[GlobalIndex] = SU2_TYPE::GetDerivative(discTerm_adj[iPoint]);
   	}
 
 #ifdef HAVE_MPI
-  	SU2_MPI::Allreduce(LocalSens_discrTerm, Total_Sens_discrTerm, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  	SU2_MPI::Allreduce(LocalSens_discrTerm, TotalSens_discrTerm, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
  #else
-  	Total_Sens_discrTerm = LocalSens_discrTerm;
+  	TotalSens_discrTerm = LocalSens_discrTerm;
  #endif
 
-  	if (rank == MASTER_NODE){
-  		for (iPoint=0; iPoint < nPointGlobal; iPoint++){
-  			cout << "Sens_discrTerm[" << iPoint << "] = " << Total_Sens_discrTerm[iPoint] << endl;
+  	if ( (rank == MASTER_NODE) && (compute == true)){
+  		cout << "Storing the Sensitivity of the discrepancy term" << endl;
+  		geometry->Initialize_Sens_discrepancyTerm(nPointGlobal);
+  		for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
+//  			cout << "Sens_discrTerm[" << iPoint << "] = " << Total_Sens_discrTerm[iPoint] << endl;
+  			geometry->SetSens_discrepancyTerm(TotalSens_discrTerm[GlobalIndex], GlobalIndex);
   		}
   	}
 
+
   	delete [] LocalSens_discrTerm;
-  	delete [] Total_Sens_discrTerm;
+  	delete [] TotalSens_discrTerm;
 
   }
 

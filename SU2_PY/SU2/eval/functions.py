@@ -247,9 +247,11 @@ def aerodynamics( config, state=None ):
          'TARGET_HEATFLUX' in files ) :
         pull.append( files['TARGET_HEATFLUX'] )
     
-    if ( 'DATA_ASSIMILATION' in special_cases and 
-       'TARGET_CP' in files ):
-        pull.append(files['TARGET_CP'])
+    if ( 'DATA_ASSIMILATION' in special_cases ):
+        if ( 'TARGET_CP' in files ):
+            pull.append(files['TARGET_CP'])
+        if ('DISCREPANCY_FILE' in files ):
+            pull.append(files['DISCREPANCY_FILE'])
         
     if (config.has_key('MARKER_NONUNIFORM')):
         path_nubc  = os.getcwd()
@@ -261,7 +263,7 @@ def aerodynamics( config, state=None ):
             pull.append( files['NUBC_FILE_%s'%(i+1)])
             
     ### Update nubc file(s)
-    i=0; x_0=[]
+    i=0;
     nubc_new = config['DV_VALUE_NEW']
     for file in state['FILES']:
         if 'NUBC' in file:
@@ -275,6 +277,14 @@ def aerodynamics( config, state=None ):
             numpy.savetxt(state['FILES'][nubc_f], buf, fmt='%.4f\t %.4f\t %.4f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f\t', comments='', header=str(buf.shape[0]))  
             i+=1
             
+    ### Update discrepancy file
+    nubc_new = config['DV_VALUE_NEW']
+    if 'DISCREPANCY_FILE' in files:
+        buf = numpy.loadtxt(state['FILES']['DISCREPANCY_FILE'], skiprows=1)
+        buf[:,1:] = numpy.matrix(nubc_new).T
+        numpy.savetxt(state['FILES']['DISCREPANCY_FILE'], buf, fmt='%i\t %.16f\t', comments='', header=str(buf.shape[0]))  
+        
+  
     # output redirection
     with redirect_folder( 'DIRECT', pull, link ) as push:
         with redirect_output(log_direct):     

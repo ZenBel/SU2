@@ -4436,13 +4436,16 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
 
   if (((val_software == SU2_DEF) || (val_software == SU2_DOT)) && (Design_Variable[0] != NONE)) {
 
+
+	int ii = 0;
     for (unsigned short iDV = 0; iDV < nDV; iDV++) {
 
       
       if ((Design_Variable[iDV] != NO_DEFORMATION) &&
           (Design_Variable[iDV] != FFD_SETTING) &&
           (Design_Variable[iDV] != SURFACE_FILE) &&
-		  (Design_Variable[iDV] != NUBC_DV)) {
+		  (Design_Variable[iDV] != NUBC_DV) &&
+		  (Design_Variable[iDV] != DISCREPANCY_DV)) {
         
         if (iDV == 0)
           cout << "Design variables definition (markers <-> value <-> param):" << endl;
@@ -4488,7 +4491,8 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
         if ((Design_Variable[iDV] == NO_DEFORMATION) ||
             (Design_Variable[iDV] == FFD_SETTING) ||
             (Design_Variable[iDV] == SCALE) ||
-			(Design_Variable[iDV] == NUBC_DV) ) nParamDV = 1;
+			(Design_Variable[iDV] == NUBC_DV) ||
+			(Design_Variable[iDV] == DISCREPANCY_DV)) nParamDV = 1;
         if (Design_Variable[iDV] == ANGLE_OF_ATTACK) nParamDV = 1;
         if ((Design_Variable[iDV] == FFD_CAMBER_2D) ||
             (Design_Variable[iDV] == FFD_THICKNESS_2D) ||
@@ -4546,6 +4550,13 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
 
       else if (Design_Variable[iDV] == NUBC_DV) {
         cout << "Quantities at the Non-Uniform boundary/boundaries specified as DV" << endl;
+      }
+
+      else if (Design_Variable[iDV] == DISCREPANCY_DV) {
+    	if (ii == 0) {
+            cout << "Discrepancy field in the entire domain specified as DVs." << endl;
+            ii += 1;}
+    	else {break;}
       }
 
       else if (Design_Variable[iDV] == FFD_SETTING) {

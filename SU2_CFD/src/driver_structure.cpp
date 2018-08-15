@@ -3739,11 +3739,13 @@ void CDiscAdjFluidDriver::Run() {
 
   }
 
+
   /*--- Compute the geometrical sensitivities ---*/
 
   if ((ExtIter+1 >= config_container[ZONE_0]->GetnExtIter()) ||
       integration_container[ZONE_0][ADJFLOW_SOL]->GetConvergence() ||
       (ExtIter % config_container[ZONE_0]->GetWrt_Sol_Freq() == 0) || unsteady){
+
 
     /*--- SetRecording stores the computational graph on one iteration of the direct problem. Calling it with NONE
      * as argument ensures that all information from a previous recording is removed. ---*/
@@ -3775,6 +3777,10 @@ void CDiscAdjFluidDriver::Run() {
 
     for (iZone = 0; iZone < nZone; iZone++) {
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetSensitivity(geometry_container[iZone][MESH_0],config_container[iZone]);
+
+      bool compute = true;
+	  solver_container[iZone][MESH_0][ADJTURB_SOL]->ExtractAdjoint_Variables(geometry_container[iZone][MESH_0],
+			                                                    config_container[iZone], compute );
     }
 
     /*--- Clear the stored adjoint information to be ready for a new evaluation. ---*/

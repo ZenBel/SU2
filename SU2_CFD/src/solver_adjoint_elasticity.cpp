@@ -856,7 +856,7 @@ void CDiscAdjFEASolver::ExtractAdjoint_Solution(CGeometry *geometry, CConfig *co
 
 }
 
-void CDiscAdjFEASolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config){
+void CDiscAdjFEASolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool compute){
 
   unsigned short iVar;
 

@@ -106,6 +106,8 @@ protected:
   SensNUBC_alpha,					/*!<brief x- flow direction sensitivity for the NUBC*/
   SensNUBC_beta;					/*!<brief y- flow direction sensitivity for the NUBC*/
 
+  su2double Sens_discrepancyTerm;
+
   su2double Ptot_nubc;
 
   su2double TargetQuantityErrorFunc;

@@ -998,7 +998,7 @@ inline void CSolver::SetTemperature_Inf(su2double t_inf){}
 
 inline void CSolver::RegisterVariables(CGeometry *geometry, CConfig *config, bool reset){}
 
-inline void CSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config){}
+inline void CSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool compute){}
 
 inline void CSolver::SetFreeStream_Solution(CConfig *config){}
 

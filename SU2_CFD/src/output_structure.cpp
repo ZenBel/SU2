@@ -1168,11 +1168,61 @@ void COutput::SetSurfaceCSV_Adjoint(CConfig *config, CGeometry *geometry, CSolve
 
 void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *AdjSolver, CSolver *FlowSolution, unsigned long iExtIter, unsigned short val_iZone) {
 
+  unsigned long nPointDomain, nPointGlobal, iPoint, GlobalIndex;
+  nPointGlobal = geometry->GetGlobal_nPointDomain();
+  nPointDomain = geometry->GetnPointDomain();
+
+  unsigned long *local_gidx, *total_gidx;
+  su2double *local_xx, *local_yy, *local_zz, *total_xx, *total_yy, *total_zz;
+  local_gidx = new unsigned long[nPointGlobal];
+  total_gidx = new unsigned long[nPointGlobal];
+  local_xx = new su2double[nPointGlobal];
+  local_yy = new su2double[nPointGlobal];
+  local_zz = new su2double[nPointGlobal];
+  total_xx = new su2double[nPointGlobal];
+  total_yy = new su2double[nPointGlobal];
+  total_zz = new su2double[nPointGlobal];
+
+  for (iPoint=0; iPoint<nPointGlobal; iPoint++){
+	  local_gidx[iPoint] = 0.0;
+	  local_xx[iPoint] = 0.0;
+	  local_yy[iPoint] = 0.0;
+	  local_zz[iPoint] = 0.0;
+
+	  total_gidx[iPoint] = 0.0;
+	  total_xx[iPoint] = 0.0;
+	  total_yy[iPoint] = 0.0;
+	  total_zz[iPoint] = 0.0;
+  }
+
+  /*---Build vector of coordinates and GlobalIndex---*/
+  for (iPoint=0; iPoint<nPointDomain; iPoint++){
+	  GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+	  local_gidx[GlobalIndex] = GlobalIndex;
+	  local_xx[GlobalIndex] = geometry->node[iPoint]->GetCoord(geometry->GetnDim()-2);
+	  local_yy[GlobalIndex] = geometry->node[iPoint]->GetCoord(geometry->GetnDim()-1);
+	  if (geometry->GetnDim() == 3) {local_xx[GlobalIndex] = geometry->node[iPoint]->GetCoord(geometry->GetnDim());}
+  }
+
+#ifdef HAVE_MPI
+  	SU2_MPI::Allreduce(local_gidx, total_gidx, nPointGlobal, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+  	SU2_MPI::Allreduce(local_xx, total_xx, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  	SU2_MPI::Allreduce(local_yy, total_yy, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  	if (geometry->GetnDim() == 3) {SU2_MPI::Allreduce(local_zz, total_zz, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);}
+#else
+  	total_gidx = local_gidx;
+  	total_xx = local_xx;
+  	total_yy = local_yy;
+  	if (geometry->GetnDim() == 3) {total_zz = local_zz;}
+#endif
+
   if (rank == MASTER_NODE){
 
 		  /*--- Print sensitivities values to file: SensNUBC_file.csv ---*/
 	  unsigned long iPoint, iVertex, Global_Index, NUBCInputPoints, totNUBCInputPoints = 0.0;
 	  su2double SensNUBC_Q1, SensNUBC_Q2, SensNUBC_Pstatic, SensNUBC_alpha, SensNUBC_beta, Coord;
+	  su2double Sens_discrepancyTerm;
+	  su2double x, y, z;
 	  unsigned short iMarker;
 	  unsigned short nMarkerNonUniform = config->GetnMarkerNonUniform();
 	  char cstr[200], buffer[50];
@@ -1209,6 +1259,22 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 		  pos += 1;
 	    }
 	  }
+
+	  SensNUBC_file <<  "\"PointID\",\"x\",\"y\",\"z\",\"Sens_discrepancyTerm\"";
+	  SensNUBC_file << "\n";
+	  for (GlobalIndex = 0; GlobalIndex < nPointGlobal; GlobalIndex++) {
+		  if (GlobalIndex == total_gidx[GlobalIndex]){ //safety check
+			  x = total_xx[GlobalIndex];
+			  y = total_yy[GlobalIndex];
+			  z = 0.0;
+			  if (geometry->GetnDim() == 3) {z = total_zz[GlobalIndex];}
+			  Sens_discrepancyTerm = geometry->GetSens_discrepancyTerm(GlobalIndex);
+
+			  SensNUBC_file << scientific << GlobalIndex << ", " << x << ", " << y << ", " << z << ", " << Sens_discrepancyTerm;
+			  SensNUBC_file << "\n";
+		  }
+	  }
+
 	  SensNUBC_file.close();
 
   }
@@ -12481,12 +12547,18 @@ void COutput::LoadLocalData_AdjFlow(CConfig *config, CGeometry *geometry, CSolve
       }
 
       /*--- Load data for the discrete sensitivities. ---*/
+//      bool DiscrepancyTerm = true;
+//      su2double Sensdisc;
+//      unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+//      if (DiscrepancyTerm == true){ Sensdisc = geometry->GetSens_discrepancyTerm(GlobalIndex);}
 
       if ((Kind_Solver == DISC_ADJ_EULER)         ||
           (Kind_Solver == DISC_ADJ_NAVIER_STOKES) ||
           (Kind_Solver == DISC_ADJ_RANS)) {
         Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(0); iVar++;
         Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(1); iVar++;
+//        if (DiscrepancyTerm == true){ Local_Data[jPoint][iVar] = Sensdisc; iVar++;}
+//        else{Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(1); iVar++;}
         if (geometry->GetnDim()== 3) {
           Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(2);
           iVar++;

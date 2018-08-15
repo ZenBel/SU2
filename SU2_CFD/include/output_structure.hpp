@@ -315,7 +315,8 @@ public:
    */
   void SetSurfaceCSV_Adjoint(CConfig *config, CGeometry *geometry, CSolver *AdjSolver, CSolver *FlowSolution, unsigned long iExtIter, unsigned short val_iZone);
 
-  void SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *AdjSolver, CSolver *FlowSolution, unsigned long iExtIter, unsigned short val_iZone);
+  void SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *AdjSolver, CSolver *FlowSolution,
+		               unsigned long iExtIter, unsigned short val_iZone);
 
   /*!
    * \brief Merge the geometry into a data structure used for output file writing.

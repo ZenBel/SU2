@@ -885,7 +885,7 @@ void COutput::WriteTecplotASCII_Parallel(CConfig *config, CGeometry *geometry, C
   
   if (rank == MASTER_NODE) {
     Tecplot_File.open(cstr, ios::out);
-    unsigned short precision = 15;
+    unsigned short precision = 6;
     Tecplot_File.precision(precision);
     Tecplot_File << "# Current writing precision of this file is " << precision
     		     << " significant digits. Change this number in COutput::WriteTecplotASCII_Parallel() to change memory load of this file." << endl;

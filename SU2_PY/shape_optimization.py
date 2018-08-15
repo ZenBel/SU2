@@ -143,7 +143,7 @@ def shape_optimization( filename                           ,
     def_dv           = config.DEFINITION_DV                               # complete definition of the desing variable
     n_dv             = sum(def_dv['SIZE'])                                # number of design variables
     accu             = float ( config.OPT_ACCURACY ) * gradient_factor    # optimizer accuracy
-    x0               = [0.0]*n_dv # initial design
+    x0               = [0.0]*n_dv                                         # initial design
     xb_low           = [float(bound_lower)/float(relax_factor)]*n_dv      # lower dv bound it includes the line search acceleration factor
     xb_up            = [float(bound_upper)/float(relax_factor)]*n_dv      # upper dv bound it includes the line search acceleration fa
     xb               = list(zip(xb_low, xb_up)) # design bounds
@@ -159,7 +159,7 @@ def shape_optimization( filename                           ,
     else:
         project = SU2.opt.Project(config,state)  
         
-    # Update initial design in case NUBC are used
+    # Update initial design in case NUBC are used (MAYBE CAN BE DONE IN CONFIG.PY)
     i=0; x_0=[]
     for file in state['FILES']:
         if 'NUBC' in file:
@@ -169,18 +169,32 @@ def shape_optimization( filename                           ,
             buf = numpy.loadtxt(state['FILES'][nubc_f], skiprows=1, usecols=(3,4,5,6,7))
             for elem in buf.flatten():
                 x_0.append(elem)
+                
+    # Update initial design in case DISCREPANCY_TERM is used
+    i=0; 
+    if 'DISCREPANCY_FILE' in state['FILES']:
+        buf = numpy.loadtxt(state['FILES']['DISCREPANCY_FILE'], skiprows=1, usecols=(1))
+        for elem in buf.flatten():
+            x_0.append(elem)
     
-    x0 = x_0    
-                   
+    ### Alter the original DVs only if the custom DVs are present
+    if 'DISCREPANCY_FILE' in state['FILES'] or 'NUBC' in state['FILES']:
+        x0     = x_0
+        xb_low = [float(bound_lower)/float(relax_factor)]*len(x_0)
+        xb_up  = [float(bound_upper)/float(relax_factor)]*len(x_0)
+        xb     = list(zip(xb_low, xb_up))
+     
+     
+         
     # Optimize
     if optimization == 'SLSQP':
-      SU2.opt.SLSQP(project,x0,xb,its,accu)
+        SU2.opt.SLSQP(project,x0,xb,its,accu)
     if optimization == 'CG':
-      SU2.opt.CG(project,x0,xb,its,accu)
+        SU2.opt.CG(project,x0,xb,its,accu)
     if optimization == 'BFGS':
-      SU2.opt.BFGS(project,x0,xb,its,accu)
+        SU2.opt.BFGS(project,x0,xb,its,accu)
     if optimization == 'POWELL':
-      SU2.opt.POWELL(project,x0,xb,its,accu)
+        SU2.opt.POWELL(project,x0,xb,its,accu)
 
 
     # rename project file

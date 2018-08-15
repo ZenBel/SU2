@@ -3740,7 +3740,7 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  virtual void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config);
+  virtual void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool compute = false);
   
   /*!
    * \brief A virtual member.
@@ -12403,7 +12403,7 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config);
+  void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool compute = false);
   
   /*!
    * \brief Update the dual-time derivatives.
@@ -12755,7 +12755,7 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config);
+  void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool compute = false);
   
   /*!
    * \brief Update the dual-time derivatives.

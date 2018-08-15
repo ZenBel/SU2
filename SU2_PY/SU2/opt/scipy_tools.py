@@ -64,11 +64,11 @@ def scipy_slsqp(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
         
         Outputs:
            result - the outputs from scipy.fmin_slsqp
-    """
-
+    """         
+                                                          
     # import scipy optimizer
     from scipy.optimize import fmin_slsqp
-
+    
     # handle input cases
     if x0 is None: x0 = []
     if xb is None: xb = []
@@ -86,12 +86,12 @@ def scipy_slsqp(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
     else:
         fprime         = obj_df
         fprime_eqcons  = con_dceq
-        fprime_ieqcons = con_dcieq        
-    
+        fprime_ieqcons = con_dcieq     
+            
     # number of design variables
     dv_size = project.config['DEFINITION_DV']['SIZE']
     n_dv = sum( dv_size)
-    project.n_dv = n_dv
+    project.n_dv = n_dv          
     
     # Initial guess
     if not x0: x0 = [0.0]*n_dv
@@ -123,8 +123,13 @@ def scipy_slsqp(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
     sys.stdout.write('Objective function scaling factor: ' + str(obj_scale) + '\n')
     sys.stdout.write('Maximum number of iterations: ' + str(its) + '\n')
     sys.stdout.write('Requested accuracy: ' + str(accu) + '\n')
-    sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0) + '\n')
-    sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n\n')
+    if 'DISCREPANCY_DV' in project.config['DEFINITION_DV']['KIND']:
+        sys.stdout.write('Data assimilation involving a discrepancy term. \n')
+        sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0[0]) + '\n')
+        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb[0]) + '\n\n')
+    else:
+        sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0) + '\n')
+        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n\n')        
 
     # Run Optimizer
     outputs = fmin_slsqp( x0             = x0             ,
@@ -141,7 +146,7 @@ def scipy_slsqp(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
                           full_output    = True           ,
                           acc            = accu           ,
                           epsilon        = eps            )
-    
+
     # Done
     return outputs
     
@@ -291,8 +296,13 @@ def scipy_bfgs(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
     sys.stdout.write('Objective function scaling factor: ' + str(obj_scale) + '\n')
     sys.stdout.write('Maximum number of iterations: ' + str(its) + '\n')
     sys.stdout.write('Requested accuracy: ' + str(accu) + '\n')
-    sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0) + '\n')
-    sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n\n')
+    if 'DISCREPANCY_DV' in project.config['DEFINITION_DV']['KIND']:
+        sys.stdout.write('Data assimilation involving a discrepancy term. \n')
+        sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0[0]) + '\n')
+        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb[0]) + '\n\n')
+    else:
+        sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0) + '\n')
+        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n\n')  
 
     # Evaluate the objective function (only 1st iteration)
     obj_f(x0,project)
@@ -416,7 +426,7 @@ def obj_df(x,project):
             dobj[idv] = dobj[idv]+this_dv_dobj;
             idv+=1
     dobj = array( dobj )
-    
+        
     return dobj
 
 def con_ceq(x,project):
@@ -488,3 +498,4 @@ def con_dcieq(x,project):
     else:     dcons = zeros([0,dim])
     
     return -dcons
+
