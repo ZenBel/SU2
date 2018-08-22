@@ -169,7 +169,7 @@ def shape_optimization( filename                           ,
             buf = numpy.loadtxt(state['FILES'][nubc_f], skiprows=1, usecols=(3,4,5,6,7))
             for elem in buf.flatten():
                 x_0.append(elem)
-                
+                 
     # Update initial design in case DISCREPANCY_TERM is used
     i=0; 
     if 'DISCREPANCY_FILE' in state['FILES']:
@@ -178,13 +178,13 @@ def shape_optimization( filename                           ,
             x_0.append(elem)
     
     ### Alter the original DVs only if the custom DVs are present
-    if 'DISCREPANCY_FILE' in state['FILES'] or 'NUBC' in state['FILES']:
+    if 'DISCREPANCY_FILE' in state['FILES'] or 'NUBC_FILE_1' in state['FILES']:
         x0     = x_0
         xb_low = [float(bound_lower)/float(relax_factor)]*len(x_0)
         xb_up  = [float(bound_upper)/float(relax_factor)]*len(x_0)
-        xb     = list(zip(xb_low, xb_up))
-     
-     
+        xb     = list(zip(xb_low, xb_up))    
+        
+    
          
     # Optimize
     if optimization == 'SLSQP':

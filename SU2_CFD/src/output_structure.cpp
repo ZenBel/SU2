@@ -1260,24 +1260,28 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 	    }
 	  }
 
-	  SensNUBC_file <<  "\"PointID\",\"x\",\"y\",\"z\",\"Sens_discrepancyTerm\"";
-	  SensNUBC_file << "\n";
-	  for (GlobalIndex = 0; GlobalIndex < nPointGlobal; GlobalIndex++) {
-		  if (GlobalIndex == total_gidx[GlobalIndex]){ //safety check
-			  x = total_xx[GlobalIndex];
-			  y = total_yy[GlobalIndex];
-			  z = 0.0;
-			  if (geometry->GetnDim() == 3) {z = total_zz[GlobalIndex];}
-			  Sens_discrepancyTerm = geometry->GetSens_discrepancyTerm(GlobalIndex);
 
-			  SensNUBC_file << scientific << GlobalIndex << ", " << x << ", " << y << ", " << z << ", " << Sens_discrepancyTerm;
-			  SensNUBC_file << "\n";
+	  if (config->GetBoolDiscrepancyTerm()){
+		  SensNUBC_file <<  "\"PointID\",\"x\",\"y\",\"z\",\"Sens_discrepancyTerm\"";
+		  SensNUBC_file << "\n";
+		  for (GlobalIndex = 0; GlobalIndex < nPointGlobal; GlobalIndex++) {
+			  if (GlobalIndex == total_gidx[GlobalIndex]){ //safety check
+				  x = total_xx[GlobalIndex];
+				  y = total_yy[GlobalIndex];
+				  z = 0.0;
+				  if (geometry->GetnDim() == 3) {z = total_zz[GlobalIndex];}
+				  Sens_discrepancyTerm = geometry->GetSens_discrepancyTerm(GlobalIndex);
+
+				  SensNUBC_file << scientific << GlobalIndex << ", " << x << ", " << y << ", " << z << ", " << Sens_discrepancyTerm;
+				  SensNUBC_file << "\n";
+			  }
 		  }
 	  }
 
 	  SensNUBC_file.close();
 
   }
+
 }
 
 void COutput::MergeConnectivity(CConfig *config, CGeometry *geometry, unsigned short val_iZone) {
@@ -4767,7 +4771,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
     su2double Total_CL = 0.0, Total_CD = 0.0, Total_CSF = 0.0, Total_CMx = 0.0, Total_CMy = 0.0, Total_CMz = 0.0, Total_CEff = 0.0,
     Total_CEquivArea = 0.0, Total_CNearFieldOF = 0.0, Total_CFx = 0.0, Total_CFy = 0.0, Total_CFz = 0.0, Total_CMerit = 0.0,
     Total_CT = 0.0, Total_CQ = 0.0, Total_CWave = 0.0, Total_CHeat = 0.0,
-    Total_Heat = 0.0, Total_MaxHeat = 0.0, Total_CFEM = 0.0, Total_Custom_ObjFunc = 0.0, Total_ErrorFunc = 0.0,
+    Total_Heat = 0.0, Total_MaxHeat = 0.0, Total_CFEM = 0.0, Total_Custom_ObjFunc = 0.0,
     Total_ComboObj = 0.0, Total_AeroCD = 0.0, Total_SolidCD = 0.0, Total_IDR = 0.0, Total_IDC = 0.0,
     Total_AoA = 0.0;
     su2double Surface_MassFlow = 0.0, Surface_Mach = 0.0, Surface_Temperature = 0.0, Surface_Pressure = 0.0, Surface_Density = 0.0, Surface_Enthalpy = 0.0, Surface_NormalVelocity = 0.0, Surface_TotalTemperature = 0.0, Surface_TotalPressure = 0.0;
@@ -5203,6 +5207,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
               if (thermal && !turbo) SPRINTF (Heat_inverse_design, ", %14.8e", solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_HeatFluxDiff());
             }
             if (data_assimilation) SPRINTF (ErrorFunc, ", %14.8e", solver_container[val_iZone][FinestMesh][FLOW_SOL]->GetTotal_ErrorFunc());
+
             
             if (direct_diff != NO_DERIVATIVE) {
               if (!turbo)
@@ -5623,6 +5628,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
             else if (rotating_frame && nDim == 3 && !turbo ) cout << "   CThrust(Total)" << "   CTorque(Total)" << endl;
             else if (aeroelastic) cout << "   CLift(Total)" << "   CDrag(Total)" << "         plunge" << "          pitch" << endl;
             else if (equiv_area) cout << "   CLift(Total)" << "   CDrag(Total)" << "    CPress(N-F)" << endl;
+            else if (data_assimilation) cout <<  "   CLift(Total)" << "    CDrag(Total)" << "     ErrorFunc" << endl;
             else if (turbo){
               if (nZone < 2){
                 /*--- single zone output ---*/
@@ -5934,6 +5940,8 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
               cout.precision(4);
               cout.setf(ios::scientific, ios::floatfield);
               cout << Total_CNearFieldOF; }
+              else if (data_assimilation){ cout.width(15); cout << min(10000.0, max(-10000.0, Total_CL)); cout.width(15); cout << min(10000.0, max(-10000.0, Total_CD)); cout.width(10);
+              cout << fixed; cout <<  ErrorFunc; }
               else if (turbo) {
                 cout.setf(ios::scientific, ios::floatfield);
                 if (nZone < 2){
@@ -12337,10 +12345,16 @@ void COutput::LoadLocalData_AdjFlow(CConfig *config, CGeometry *geometry, CSolve
       (Kind_Solver == DISC_ADJ_NAVIER_STOKES) ||
       (Kind_Solver == DISC_ADJ_RANS)) {
     nVar_Par += nDim;
-    Variable_Names.push_back("Sensitivity_x");
-    Variable_Names.push_back("Sensitivity_y");
-    if (geometry->GetnDim()== 3)
-      Variable_Names.push_back("Sensitivity_z");
+    if (config->GetBoolDiscrepancyTerm()){
+      Variable_Names.push_back("GlobalIndex");
+      Variable_Names.push_back("Sens_discrepancy");
+    }
+    else{
+      Variable_Names.push_back("Sensitivity_x");
+      Variable_Names.push_back("Sensitivity_y");
+      if (geometry->GetnDim()== 3)
+        Variable_Names.push_back("Sensitivity_z");
+    }
   }
 
   /*--- If requested, register the limiter and residuals for all of the
@@ -12547,18 +12561,21 @@ void COutput::LoadLocalData_AdjFlow(CConfig *config, CGeometry *geometry, CSolve
       }
 
       /*--- Load data for the discrete sensitivities. ---*/
-//      bool DiscrepancyTerm = true;
-//      su2double Sensdisc;
-//      unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-//      if (DiscrepancyTerm == true){ Sensdisc = geometry->GetSens_discrepancyTerm(GlobalIndex);}
+      unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 
       if ((Kind_Solver == DISC_ADJ_EULER)         ||
           (Kind_Solver == DISC_ADJ_NAVIER_STOKES) ||
           (Kind_Solver == DISC_ADJ_RANS)) {
-        Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(0); iVar++;
-        Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(1); iVar++;
-//        if (DiscrepancyTerm == true){ Local_Data[jPoint][iVar] = Sensdisc; iVar++;}
-//        else{Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(1); iVar++;}
+//        Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(0); iVar++;
+//        Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(1); iVar++;
+        if (config->GetBoolDiscrepancyTerm()){
+        	Local_Data[jPoint][iVar] = GlobalIndex; iVar++;
+        	Local_Data[jPoint][iVar] = geometry->GetSens_discrepancyTerm(GlobalIndex); iVar++;
+        }
+        else{
+        	Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(0); iVar++;
+        	Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(1); iVar++;
+        }
         if (geometry->GetnDim()== 3) {
           Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(2);
           iVar++;

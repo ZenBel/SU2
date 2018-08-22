@@ -282,13 +282,17 @@ private:
   su2double **NonUniform_Coord, **NonUniform_Var1, **NonUniform_Var2, **NonUniform_Var3,
             **NonUniform_Var4, **NonUniform_Var5, **NonUniform_Var6;
 
-  su2double *discTerm;
-
+  string    *NonUniform_spaceVar;
   unsigned long *NonUniform_InputPoints;
-  su2double *TargetQuantity;
-  bool *TargetPointID;
+
   su2double **NonUniform_d2Var1, **NonUniform_d2Var2, **NonUniform_d2Var3,
             **NonUniform_d2Var4, **NonUniform_d2Var5, **NonUniform_d2Var6;
+
+  su2double *discTerm;
+  bool BoolDiscTerm;
+
+  su2double *TargetQuantity;
+  bool *TargetPointID;
 
   su2double *Giles_Var1, *Giles_Var2, *RelaxFactorAverage, *RelaxFactorFourier;    /*!< \brief Specified values for Giles BC. */
   su2double **Giles_FlowDir;  /*!< \brief Specified flow direction vector (unit vector) for Giles BC. */
@@ -4190,6 +4194,8 @@ public:
   bool GetBoolNonUniform(void);
   unsigned short GetnMarkerNonUniform(void);
 
+  bool GetBoolDiscrepancyTerm(void);
+
   /*!
    * \brief number Turbomachinery blades computed using the pitch information.
    * \return nBlades.
@@ -6036,6 +6042,7 @@ public:
 
   void Initialize_NonUniformVar(unsigned short n_nubc_marker, string *nubc_input_file);
   unsigned long GetNUBC_nPoints(unsigned short val_marker);
+  string GetNUBC_spaceVar(unsigned short val_marker);
 
   /*!
    * \brief Get the Flowdir at Riemann boundary.

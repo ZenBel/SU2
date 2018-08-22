@@ -285,6 +285,8 @@ unsigned short CConfig::GetnDim(string val_mesh_filename, unsigned short val_for
 }
 
 void CConfig::SetPointersNull(void) {
+
+  BoolDiscTerm = false;
   
   Marker_CfgFile_GeoEval      = NULL;   Marker_All_GeoEval       = NULL;
   Marker_CfgFile_Monitoring   = NULL;   Marker_All_Monitoring    = NULL;
@@ -6930,6 +6932,7 @@ su2double CConfig::GetDiscrTerm(unsigned long val_point){
 
 void CConfig::InitializeDiscrTerm(unsigned long val_point){
   discTerm =  new su2double[val_point];
+  BoolDiscTerm = true;
 }
 
 void CConfig::SetNUBC_Coord(su2double newVar, unsigned long val_pos, unsigned short val_marker) {
@@ -7054,14 +7057,20 @@ unsigned long CConfig::GetNUBC_nPoints(unsigned short val_marker) {
   return NonUniform_InputPoints[val_marker];
 }
 
+string CConfig::GetNUBC_spaceVar(unsigned short val_marker) {
+  return NonUniform_spaceVar[val_marker];
+}
+
 void CConfig::Initialize_NonUniformVar( unsigned short n_nubc_marker, string *nubc_input_file) {
 
   unsigned short iMarker;
   unsigned long InputPoints;
   string text_line, input_filename;
+  string spaceVar;
   ifstream input_file;
 
   NonUniform_InputPoints = new unsigned long[n_nubc_marker];
+  NonUniform_spaceVar = new string[n_nubc_marker];
 
   NonUniform_Coord = new su2double*[n_nubc_marker];
   NonUniform_Var1 = new su2double*[n_nubc_marker];
@@ -7092,9 +7101,10 @@ void CConfig::Initialize_NonUniformVar( unsigned short n_nubc_marker, string *nu
     /*--- Read head of the file for allocation ---*/
     getline (input_file, text_line);
     istringstream point_line(text_line);
-    point_line >> InputPoints;
+    point_line >> InputPoints >> spaceVar;
 
     NonUniform_InputPoints[iMarker] = InputPoints;
+    NonUniform_spaceVar[iMarker] = spaceVar;
 
     NonUniform_Coord[iMarker] = new su2double[InputPoints];
     NonUniform_Var1[iMarker] = new su2double[InputPoints];

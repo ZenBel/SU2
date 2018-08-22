@@ -3176,6 +3176,11 @@ void CDriver::Output(unsigned long ExtIter) {
     
   }
 
+  /*--- Delete Discrepancy Term Sensitivities ---*/
+  if ( (config_container[ZONE_0]->GetBoolDiscrepancyTerm()) && (config_container[ZONE_0]->GetKind_Solver() == DISC_ADJ_RANS) ){
+	  geometry_container[ZONE_0][MESH_0]->DeleteSens_discrepancyTerm();
+  }
+
   /*--- Export Surface Solution File for Unsteady Simulations ---*/
   /*--- When calculate mean/fluctuation option will be available, delete the following part ---*/
   if ((config_container[ZONE_0]->GetUnsteady_Simulation() == DT_STEPPING_2ND) && (ExtIter % config_container[ZONE_0]->GetWrt_Surf_Freq_DualTime() == 0)) {
@@ -3746,7 +3751,6 @@ void CDiscAdjFluidDriver::Run() {
       integration_container[ZONE_0][ADJFLOW_SOL]->GetConvergence() ||
       (ExtIter % config_container[ZONE_0]->GetWrt_Sol_Freq() == 0) || unsteady){
 
-
     /*--- SetRecording stores the computational graph on one iteration of the direct problem. Calling it with NONE
      * as argument ensures that all information from a previous recording is removed. ---*/
 
@@ -3777,10 +3781,6 @@ void CDiscAdjFluidDriver::Run() {
 
     for (iZone = 0; iZone < nZone; iZone++) {
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetSensitivity(geometry_container[iZone][MESH_0],config_container[iZone]);
-
-      bool compute = true;
-	  solver_container[iZone][MESH_0][ADJTURB_SOL]->ExtractAdjoint_Variables(geometry_container[iZone][MESH_0],
-			                                                    config_container[iZone], compute );
     }
 
     /*--- Clear the stored adjoint information to be ready for a new evaluation. ---*/

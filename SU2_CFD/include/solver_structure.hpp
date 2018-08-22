@@ -4166,7 +4166,6 @@ protected:
   
   su2double
   *ErrorFunc,
-  *Surface_ErrorFunc,
   *CD_Inv,  /*!< \brief Drag coefficient (inviscid contribution) for each boundary. */
   *CL_Inv,      /*!< \brief Lift coefficient (inviscid contribution) for each boundary. */
   *CSF_Inv,    /*!< \brief Sideforce coefficient (inviscid contribution) for each boundary. */

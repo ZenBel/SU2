@@ -177,6 +177,8 @@ inline void CGeometry::SetSens_discrepancyTerm(su2double val_sens, unsigned long
 	
 inline su2double CGeometry::GetSens_discrepancyTerm(unsigned long val_global_index){return Sens_discrepancyTerm[val_global_index]; }
 
+inline void CGeometry::DeleteSens_discrepancyTerm(void){ delete [] Sens_discrepancyTerm;}
+
 inline unsigned long CGeometry::GetnVertex(unsigned short val_marker) { return nVertex[val_marker]; }
 
 inline unsigned short CGeometry::GetnSpanWiseSections(unsigned short marker_flag) { return nSpanWiseSections[marker_flag -1]; }

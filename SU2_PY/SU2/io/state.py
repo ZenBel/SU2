@@ -304,7 +304,8 @@ class State(ordered_bunch):
           
         if 'DATA_ASSIMILATION' in special_cases:
             register_file('TARGET_CP',targetcp_name)
-            if config.OPT_OBJECTIVE:
+            if 'DISCREPANCY_DV' in config['DEFINITION_DV']['KIND']:
+                assert config['DEFINITION_DV']['KIND'][-1] == 'DISCREPANCY_DV', 'DISCREPANCY_DV must be defined only once as the last design variable.'
                 assert discrepancyTerm_name in os.listdir(os.getcwd()), 'discrepancyTerm.dat not found. Note that it should be defined for optimizations.'
                 register_file('DISCREPANCY_FILE', discrepancyTerm_name)
         

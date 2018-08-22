@@ -1071,6 +1071,8 @@ inline bool CConfig::GetBoolTurbomachinery(void) { return (nMarker_Turbomachiner
 
 inline bool CConfig::GetBoolNonUniform(void) { return (nMarker_NonUniform !=0);}
 
+inline bool CConfig::GetBoolDiscrepancyTerm(void) { return BoolDiscTerm;}
+
 inline unsigned short CConfig::GetnMarkerNonUniform(void) { return nMarker_NonUniform;}
 
 inline bool CConfig::GetBoolTurbMixingPlane(void) { return turbMixingPlane;}

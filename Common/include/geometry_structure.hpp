@@ -259,6 +259,7 @@ public:
 	void Initialize_Sens_discrepancyTerm(unsigned long val_n_points_global);
 	void SetSens_discrepancyTerm(su2double val_sens, unsigned long val_global_index);
 	su2double GetSens_discrepancyTerm(unsigned long val_global_index);
+	void DeleteSens_discrepancyTerm(void);
 
 	/*!
 	 * \brief Get number of span wise section.

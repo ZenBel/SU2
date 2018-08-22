@@ -69,7 +69,6 @@ CEulerSolver::CEulerSolver(void) : CSolver() {
   Surface_CFx = NULL; Surface_CFy = NULL; Surface_CFz = NULL;
   Surface_CMx = NULL; Surface_CMy = NULL; Surface_CMz = NULL;
 
-  Surface_ErrorFunc = NULL;
   ErrorFunc			= NULL;
 
   /*--- Rotorcraft simulation array initialization ---*/
@@ -251,7 +250,6 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   Surface_CFx = NULL; Surface_CFy = NULL; Surface_CFz = NULL;
   Surface_CMx = NULL; Surface_CMy = NULL; Surface_CMz = NULL;
 
-  Surface_ErrorFunc = NULL;
   ErrorFunc			= NULL;
 
   /*--- Rotorcraft simulation array initialization ---*/
@@ -752,7 +750,6 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   
   /*--- Initialize the quantities for Error Function OF ---*/
 
-  Surface_ErrorFunc      = new su2double[config->GetnMarker_Monitoring()];
   ErrorFunc              = new su2double[nMarker];
   Total_ErrorFunc		 = 0.0;
 
@@ -917,7 +914,6 @@ CEulerSolver::~CEulerSolver(void) {
   if (Surface_CMy_Inv != NULL)  delete [] Surface_CMy_Inv;
   if (Surface_CMz_Inv != NULL)  delete [] Surface_CMz_Inv;
 
-  if (Surface_ErrorFunc != NULL)  delete [] Surface_ErrorFunc;
   if (ErrorFunc != NULL)          delete [] ErrorFunc;
 
   if (CD_Mnt != NULL)         delete [] CD_Mnt;
@@ -5416,7 +5412,7 @@ void CEulerSolver::SetErrorFuncOF(CGeometry *geometry, CConfig *config){
 
 	Buffer_VolumeTot   = 0.0;
 	Buffer_ErrorFunc   = 0.0;
-	Total_ErrorFunc	   = 0.0;
+	//Total_ErrorFunc	   = 0.0;
 	AllBound_ErrorFunc = 0.0;
 
 #ifdef HAVE_MPI
@@ -5435,6 +5431,13 @@ void CEulerSolver::SetErrorFuncOF(CGeometry *geometry, CConfig *config){
     if ( config->GetExtIter() == 0){
 
       config->Initialize_ErrorFunc_Variables(nPointGlobal);
+
+      if (rank==MASTER_NODE){
+        cout << "Reading TargetCp.dat and storing the information."<< endl;
+//        if (config->GetBoolDiscrepancyTerm() && rank == MASTER_NODE){
+//    	    cout << "Tikhonov regularization of the OF implemented with lambda = 1e-4. (only for DISCREPANCY_DV)"<< endl;
+//        }
+      }
 
 	  /*--- Prepare to read the surface pressure files (CSV) ---*/
 	  surfCp_filename = "TargetCp";
@@ -5475,48 +5478,41 @@ void CEulerSolver::SetErrorFuncOF(CGeometry *geometry, CConfig *config){
 	  	    Coord = geometry->node[iPoint]->GetCoord();
 
 	  	    /*--- Compute distance of current point from Target file ---*/
-	  	    if (geometry->GetnDim() == 2) dist = sqrt( (Coord[0]-x_coord)*(Coord[0]-x_coord) + (Coord[1]-y_coord)* (Coord[1]-y_coord) );
+	  	    if (geometry->GetnDim() == 2) dist = sqrt( (Coord[0]-x_coord)*(Coord[0]-x_coord) + (Coord[1]-y_coord)*(Coord[1]-y_coord) );
 	  	    if (geometry->GetnDim() == 3) dist = sqrt( (Coord[0]-x_coord)*(Coord[0]-x_coord) + (Coord[1]-y_coord)*(Coord[1]-y_coord) + (Coord[2]-z_coord)*(Coord[2]-z_coord) );
 
 	  	    GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 	  	    su2double tolerance = 1e-6; //HARDCODED
 
-	  	    /*--- Assign weight based on distance from reference point (XCoord, YCoord, ZCoord) ---*/
+	  	    /*--- Save Point ID and Target quantity for quick retrieval ---*/
 	  	    if (dist < tolerance){
-	  		  weight= 1.0;		// Dirac's delta (at the moment)
-
 	 		  config->SetTargetPointID(GlobalIndex);
 	 		  config->SetTargetQuantity(pressure_coeff, GlobalIndex);
-
-	  		  Target   = pressure_coeff;
-			  Computed = (node[iPoint]->GetPressure() - RefPressure)*factor;
-			  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
-
-//			  cout << "x,y = " << Coord[0] << ", " << Coord[1] << ", GlobalIndex: " << GlobalIndex << endl;
-	  	    }
-	  	    else {
-	  	      Buffer_ErrorFunc += 0.0;
+//	 		  cout << "GlobalIndex = " << GlobalIndex << ", X - x = " << Coord[0] - x_coord << ", Y - y = " << Coord[1] - y_coord << endl;
 	  	    }
 	      }
 	    }
 	  }
 	  Surface_file.close();
     }
-    else{
-	  /*--- Loop over all points of a (partitioned) domain ---*/
-	  for (iPoint = 0; iPoint < nPointLocal; iPoint++){
+
+    /*--- Loop over all points of a (partitioned) domain ---*/
+    unsigned long i = 0;
+    for (iPoint = 0; iPoint < nPointLocal; iPoint++){
+      /*--- Filter out the Halo nodes ---*/
+	  if (geometry->node[iPoint]->GetDomain()){
 		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-		if (geometry->node[iPoint]->GetDomain()){
-		  if (config->GetTargetPointID(GlobalIndex) == true){
-		    weight = 1.0;
-		    Target = config->GetTargetQuantity(GlobalIndex);
-		    Computed = (node[iPoint]->GetPressure() - RefPressure)*factor;
-		    Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
-		  }
-		}
-		else {
-  	      Buffer_ErrorFunc += 0.0;
-  	    }
+		if (config->GetTargetPointID(GlobalIndex) == true){
+		  weight = 1.0; //HARCODED
+		  Target = config->GetTargetQuantity(GlobalIndex);
+		  Computed = (node[iPoint]->GetPressure() - RefPressure) * factor;
+		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
+	    }
+		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
+//		if (config->GetBoolDiscrepancyTerm()){
+//			su2double lambda = 1e-4; //HARDCODED
+//			Buffer_ErrorFunc += lambda * (config->GetDiscrTerm(GlobalIndex) - 1.0) * (config->GetDiscrTerm(GlobalIndex) - 1.0);
+//		}
 	  }
     }
 
@@ -5548,7 +5544,7 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
 #ifdef HAVE_MPI
   su2double MyAllBound_CD_Inv, MyAllBound_CL_Inv, MyAllBound_CSF_Inv, MyAllBound_CMx_Inv, MyAllBound_CMy_Inv, MyAllBound_CMz_Inv, MyAllBound_CoPx_Inv, MyAllBound_CoPy_Inv, MyAllBound_CoPz_Inv, MyAllBound_CFx_Inv, MyAllBound_CFy_Inv, MyAllBound_CFz_Inv, MyAllBound_CT_Inv, MyAllBound_CQ_Inv, MyAllBound_CNearFieldOF_Inv, *MySurface_CL_Inv = NULL, *MySurface_CD_Inv = NULL, *MySurface_CSF_Inv = NULL, *MySurface_CEff_Inv = NULL, *MySurface_CFx_Inv = NULL, *MySurface_CFy_Inv = NULL, *MySurface_CFz_Inv = NULL, *MySurface_CMx_Inv = NULL, *MySurface_CMy_Inv = NULL, *MySurface_CMz_Inv = NULL;
   su2double MyAllBound_PressureAtOnePoint;
-  su2double MyAllBound_ErrorFunc, *MySurface_ErrorFunc = NULL;
+  su2double MyAllBound_ErrorFunc;
 #endif
   
   su2double Alpha           = config->GetAoA()*PI_NUMBER/180.0;
@@ -13150,16 +13146,20 @@ void CEulerSolver::SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config,
   unsigned long InputPoints;
   CoordIn = new su2double[3]; //always read the 3D coordinates (also for 2D or 1D boundaries).
   unsigned long iPos, jPos;
+  string spaceVar;
 
   /*--- Read head of the file for allocation ---*/
   getline (input_file, text_line);
   istringstream point_line(text_line);
-  point_line >> InputPoints;
+  point_line >> InputPoints >> spaceVar;
 
   while (getline (input_file, text_line)) {
 	istringstream point_line(text_line);
 	point_line >> CoordIn[0] >> CoordIn[1] >> CoordIn[2] >> Var1In >> Var2In >> Var3In >> Alpha >> Beta;
-	InputCoord.push_back(CoordIn[0]);
+	if (spaceVar == "x") {InputCoord.push_back(CoordIn[0]);}
+	else if (spaceVar == "y") {InputCoord.push_back(CoordIn[1]);}
+	else if (spaceVar == "z") {InputCoord.push_back(CoordIn[3]);}
+	else {cout << "SpaceVar not specified!" << endl; break; }
 	InputVar1.push_back(Var1In);
 	InputVar2.push_back(Var2In);
 	InputVar3.push_back(Var3In);
@@ -13264,6 +13264,7 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
   unsigned long iPos;
   vector<su2double> InputCoord, InputVar1, InputVar2, InputVar3, InputAlpha, InputBeta;
   unsigned long InputPoints = config->GetNUBC_nPoints(count);
+  string spaceVar = config->GetNUBC_spaceVar(count);
   for (iPos=0; iPos<InputPoints; iPos++){
 	InputCoord.push_back(config->GetNUBC_Coord(iPos, count));
 	InputVar1.push_back(config->GetNUBC_Var1(iPos, count));
@@ -13346,7 +13347,11 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 	  Coord[2] = 0.0;
 	  if (nDim == 3) {Coord[2] = geometry->node[iPoint]->GetCoord(nDim);}
 
-	  su2double coord = Coord[0]; //also remember to change coord in SetNonUniform_BC
+	  su2double coord;
+
+	  if (spaceVar == "x"){ coord = Coord[0];}
+	  else if (spaceVar == "y"){ coord = Coord[1];}
+	  else {cout << "Cannot recognize Marker " << Marker_Tag << " as a Non-Uniform marker." << endl; break;}
 
       /*--- Build the external state u_e from boundary data and internal node ---*/
       if (ProjVelocity_i < 0.0) {

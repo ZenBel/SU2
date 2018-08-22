@@ -268,13 +268,16 @@ def aerodynamics( config, state=None ):
     for file in state['FILES']:
         if 'NUBC' in file:
             nubc_f = 'NUBC_FILE_%i'%(i+1)
+            with open(state['FILES'][nubc_f]) as f:
+                spaceVar = f.readline().split()[-1]
             buf = numpy.loadtxt(state['FILES'][nubc_f], skiprows=1)
             #nubc_new = config['DV_VALUE_NEW'][i*5*len(buf):(i+1)*5*len(buf)]
             nubc_new_ = nubc_new[:len(buf)*5]
             nubc_new  = nubc_new[len(buf)*5:] #delete elements of nubc_new already used
             nubc_new_ = numpy.array(nubc_new_).reshape((buf.shape[0],5))
             buf[:,3:] = nubc_new_ #valid when DVs are specified at each cell node
-            numpy.savetxt(state['FILES'][nubc_f], buf, fmt='%.4f\t %.4f\t %.4f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f\t', comments='', header=str(buf.shape[0]))  
+            numpy.savetxt(state['FILES'][nubc_f], buf, fmt='%.4f\t %.4f\t %.4f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f\t', 
+                          comments='', header='%s\t%s'%(str(buf.shape[0]),spaceVar))  
             i+=1
             
     ### Update discrepancy file

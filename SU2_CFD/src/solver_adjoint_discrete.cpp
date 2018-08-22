@@ -390,11 +390,10 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 
 		  }
 	    }
+
   }
 
-  bool BoolDiscTerm = true;
-
-  if((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_TURB_SYS && BoolDiscTerm)) {
+  if((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_TURB_SYS && config->GetBoolDiscrepancyTerm())) {
 
 	  unsigned long nPointGlobal, iPoint, GlobalIndex;
 	  nPointGlobal = geometry->GetGlobal_nPointDomain();
@@ -701,9 +700,7 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
 	  delete [] Total_Sens_beta;
   }
 
-  bool BoolDiscTerm = true;
-
-  if ((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_TURB_SYS) && BoolDiscTerm){
+  if ((config->GetKind_Regime() == COMPRESSIBLE) && (KindDirect_Solver == RUNTIME_TURB_SYS) && config->GetBoolDiscrepancyTerm()){
 
 	unsigned long nPointGlobal, iPoint, GlobalIndex;
 	nPointGlobal = geometry->GetGlobal_nPointDomain();
@@ -729,14 +726,11 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
   	TotalSens_discrTerm = LocalSens_discrTerm;
  #endif
 
-  	if ( (rank == MASTER_NODE) && (compute == true)){
-  		cout << "Storing the Sensitivity of the discrepancy term" << endl;
-  		geometry->Initialize_Sens_discrepancyTerm(nPointGlobal);
-  		for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
-//  			cout << "Sens_discrTerm[" << iPoint << "] = " << Total_Sens_discrTerm[iPoint] << endl;
-  			geometry->SetSens_discrepancyTerm(TotalSens_discrTerm[GlobalIndex], GlobalIndex);
-  		}
-  	}
+	geometry->Initialize_Sens_discrepancyTerm(nPointGlobal);
+	//cout << "Storing the Sensitivity of the discrepancy term for each node." << endl;
+	for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
+		geometry->SetSens_discrepancyTerm(TotalSens_discrTerm[GlobalIndex], GlobalIndex);
+	}
 
 
   	delete [] LocalSens_discrTerm;
