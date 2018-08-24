@@ -69,8 +69,6 @@ CEulerSolver::CEulerSolver(void) : CSolver() {
   Surface_CFx = NULL; Surface_CFy = NULL; Surface_CFz = NULL;
   Surface_CMx = NULL; Surface_CMy = NULL; Surface_CMz = NULL;
 
-  ErrorFunc			= NULL;
-
   /*--- Rotorcraft simulation array initialization ---*/
   
   CMerit_Inv = NULL;  CT_Inv = NULL;  CQ_Inv = NULL;
@@ -249,8 +247,6 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   Surface_CL = NULL; Surface_CD = NULL; Surface_CSF = NULL; Surface_CEff = NULL;
   Surface_CFx = NULL; Surface_CFy = NULL; Surface_CFz = NULL;
   Surface_CMx = NULL; Surface_CMy = NULL; Surface_CMz = NULL;
-
-  ErrorFunc			= NULL;
 
   /*--- Rotorcraft simulation array initialization ---*/
 
@@ -739,6 +735,8 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   Total_CMx_Prev      = 0.0; Total_CMy_Prev      = 0.0; Total_CMz_Prev      = 0.0;
   Total_AeroCD = 0.0;  Total_SolidCD = 0.0;   Total_IDR   = 0.0;    Total_IDC   = 0.0;
 
+  Total_ErrorFunc = 0.0;
+
   /*--- Read farfield conditions ---*/
   
   Density_Inf     = config->GetDensity_FreeStreamND();
@@ -747,11 +745,6 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   Energy_Inf      = config->GetEnergy_FreeStreamND();
   Temperature_Inf = config->GetTemperature_FreeStreamND();
   Mach_Inf        = config->GetMach();
-  
-  /*--- Initialize the quantities for Error Function OF ---*/
-
-  ErrorFunc              = new su2double[nMarker];
-  Total_ErrorFunc		 = 0.0;
 
   /*--- Initialize the secondary values for direct derivative approxiations ---*/
   
@@ -913,8 +906,6 @@ CEulerSolver::~CEulerSolver(void) {
   if (Surface_CMx_Inv != NULL)  delete [] Surface_CMx_Inv;
   if (Surface_CMy_Inv != NULL)  delete [] Surface_CMy_Inv;
   if (Surface_CMz_Inv != NULL)  delete [] Surface_CMz_Inv;
-
-  if (ErrorFunc != NULL)          delete [] ErrorFunc;
 
   if (CD_Mnt != NULL)         delete [] CD_Mnt;
   if (CL_Mnt != NULL)         delete [] CL_Mnt;
@@ -5390,146 +5381,6 @@ void CEulerSolver::SetUpwind_Ducros_Sensor(CGeometry *geometry, CConfig *config)
   
 }
 
-void CEulerSolver::SetErrorFuncOF(CGeometry *geometry, CConfig *config){
-
-	unsigned short icommas, iMarker, iDim;// Boundary, iDim;
-	unsigned long iVertex, iPoint, PointID, GlobalIndex, iPos, nPointLocal=0.0, nPointGlobal=0.0;
-	su2double x_coord, y_coord, z_coord, pressure, pressure_coeff;
-	string text_line, surfCp_filename;
-	char buffer[50], cstr[200];
-	ifstream Surface_file;
-
-	su2double RefVel2, RefTemp, RefDensity, RefPressure, factor, weight;
-	su2double dist, *Coord, Target, Computed, Buffer_ErrorFunc, Volume, Buffer_VolumeTot;
-
-    nPointLocal = geometry->GetnPoint(); // Total number of mesh points on the decomposed geometry managed by a single processor
-
-#ifdef HAVE_MPI
-  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-#else
-  nPointGlobal = nPointLocal;
-#endif
-
-	Buffer_VolumeTot   = 0.0;
-	Buffer_ErrorFunc   = 0.0;
-	//Total_ErrorFunc	   = 0.0;
-	AllBound_ErrorFunc = 0.0;
-
-#ifdef HAVE_MPI
-  su2double MyAllBound_ErrorFunc, MyAllBound_VolumeTot;
-#endif
-
-    RefTemp     = Temperature_Inf;
-    RefDensity  = Density_Inf;
-    RefPressure = Pressure_Inf;
-    RefVel2 = 0.0;
-    for (iDim = 0; iDim < nDim; iDim++)
-	  RefVel2  += Velocity_Inf[iDim]*Velocity_Inf[iDim];
-
-    factor = 1.0 / (0.5*RefDensity*RefVel2);
-
-    if ( config->GetExtIter() == 0){
-
-      config->Initialize_ErrorFunc_Variables(nPointGlobal);
-
-      if (rank==MASTER_NODE){
-        cout << "Reading TargetCp.dat and storing the information."<< endl;
-//        if (config->GetBoolDiscrepancyTerm() && rank == MASTER_NODE){
-//    	    cout << "Tikhonov regularization of the OF implemented with lambda = 1e-4. (only for DISCREPANCY_DV)"<< endl;
-//        }
-      }
-
-	  /*--- Prepare to read the surface pressure files (CSV) ---*/
-	  surfCp_filename = "TargetCp";
-	  strcpy (cstr, surfCp_filename.c_str());
-	  SPRINTF (buffer, ".dat");
-	  strcat (cstr, buffer);
-
-	  /*--- Read the surface pressure file ---*/
-	  string::size_type position;
-
-	  Surface_file.open(cstr, ios::in);
-	  if (Surface_file.fail()) {
-	  cout << "There is no Target file for ERROR_FUNC!! " << surfCp_filename.data() << "."<< endl;
-	  exit(EXIT_FAILURE);
-	  }
-
-	  getline(Surface_file, text_line);
-	  istringstream point_line(text_line);
-
-	  while (getline(Surface_file, text_line)) {
-	    for (icommas = 0; icommas < 50; icommas++) {
-	      position = text_line.find( ",", 0 );
-	      if (position!=string::npos) text_line.erase (position,1);
-	    }
-
-	    stringstream  point_line(text_line);
-
-	    if (geometry->GetnDim() == 2) point_line >> PointID >> x_coord >> y_coord >> pressure >> pressure_coeff;
-	    if (geometry->GetnDim() == 3) point_line >> PointID >> x_coord >> y_coord >> z_coord >> pressure >> pressure_coeff;
-
-	    /*--- Loop over all points of a (partitioned) domain ---*/
-	    for (iPoint = 0; iPoint < nPointLocal; iPoint++) {
-
-	      /*--- Filter out the Halo nodes ---*/
-	      if (geometry->node[iPoint]->GetDomain()){
-
-	        /*--- Obtain coordinates of given point ---*/
-	  	    Coord = geometry->node[iPoint]->GetCoord();
-
-	  	    /*--- Compute distance of current point from Target file ---*/
-	  	    if (geometry->GetnDim() == 2) dist = sqrt( (Coord[0]-x_coord)*(Coord[0]-x_coord) + (Coord[1]-y_coord)*(Coord[1]-y_coord) );
-	  	    if (geometry->GetnDim() == 3) dist = sqrt( (Coord[0]-x_coord)*(Coord[0]-x_coord) + (Coord[1]-y_coord)*(Coord[1]-y_coord) + (Coord[2]-z_coord)*(Coord[2]-z_coord) );
-
-	  	    GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-	  	    su2double tolerance = 1e-6; //HARDCODED
-
-	  	    /*--- Save Point ID and Target quantity for quick retrieval ---*/
-	  	    if (dist < tolerance){
-	 		  config->SetTargetPointID(GlobalIndex);
-	 		  config->SetTargetQuantity(pressure_coeff, GlobalIndex);
-//	 		  cout << "GlobalIndex = " << GlobalIndex << ", X - x = " << Coord[0] - x_coord << ", Y - y = " << Coord[1] - y_coord << endl;
-	  	    }
-	      }
-	    }
-	  }
-	  Surface_file.close();
-    }
-
-    /*--- Loop over all points of a (partitioned) domain ---*/
-    unsigned long i = 0;
-    for (iPoint = 0; iPoint < nPointLocal; iPoint++){
-      /*--- Filter out the Halo nodes ---*/
-	  if (geometry->node[iPoint]->GetDomain()){
-		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-		if (config->GetTargetPointID(GlobalIndex) == true){
-		  weight = 1.0; //HARCODED
-		  Target = config->GetTargetQuantity(GlobalIndex);
-		  Computed = (node[iPoint]->GetPressure() - RefPressure) * factor;
-		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
-	    }
-		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
-//		if (config->GetBoolDiscrepancyTerm()){
-//			su2double lambda = 1e-4; //HARDCODED
-//			Buffer_ErrorFunc += lambda * (config->GetDiscrTerm(GlobalIndex) - 1.0) * (config->GetDiscrTerm(GlobalIndex) - 1.0);
-//		}
-	  }
-    }
-
-	AllBound_ErrorFunc += Buffer_ErrorFunc;
-
-#ifdef HAVE_MPI
-  /*--- Add AllBound information using all the nodes ---*/
-  MyAllBound_ErrorFunc	= AllBound_ErrorFunc;	AllBound_ErrorFunc = 0.0;
-  MyAllBound_VolumeTot	= Buffer_VolumeTot;	    Buffer_VolumeTot = 0.0;
-  SU2_MPI::Allreduce(&MyAllBound_ErrorFunc, &AllBound_ErrorFunc, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  SU2_MPI::Allreduce(&MyAllBound_VolumeTot, &Buffer_VolumeTot, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-#endif
-
-    Total_ErrorFunc	  = AllBound_ErrorFunc;
-
-}
-
 void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   
   unsigned long iVertex, iPoint;
@@ -5544,7 +5395,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
 #ifdef HAVE_MPI
   su2double MyAllBound_CD_Inv, MyAllBound_CL_Inv, MyAllBound_CSF_Inv, MyAllBound_CMx_Inv, MyAllBound_CMy_Inv, MyAllBound_CMz_Inv, MyAllBound_CoPx_Inv, MyAllBound_CoPy_Inv, MyAllBound_CoPz_Inv, MyAllBound_CFx_Inv, MyAllBound_CFy_Inv, MyAllBound_CFz_Inv, MyAllBound_CT_Inv, MyAllBound_CQ_Inv, MyAllBound_CNearFieldOF_Inv, *MySurface_CL_Inv = NULL, *MySurface_CD_Inv = NULL, *MySurface_CSF_Inv = NULL, *MySurface_CEff_Inv = NULL, *MySurface_CFx_Inv = NULL, *MySurface_CFy_Inv = NULL, *MySurface_CFz_Inv = NULL, *MySurface_CMx_Inv = NULL, *MySurface_CMy_Inv = NULL, *MySurface_CMz_Inv = NULL;
   su2double MyAllBound_PressureAtOnePoint;
-  su2double MyAllBound_ErrorFunc;
 #endif
   
   su2double Alpha           = config->GetAoA()*PI_NUMBER/180.0;
@@ -5914,9 +5764,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   Total_CQ            = AllBound_CQ_Inv;
   Total_CMerit        = Total_CT / (Total_CQ + EPS);
   Total_CNearFieldOF  = AllBound_CNearFieldOF_Inv;
-
-  /*--- Compute the ErrorFunction for Data Assimilation ---*/
-  if (config->GetDataAssimilation() == true){ SetErrorFuncOF(geometry, config);}
 
   /*--- Update the total coefficients per surface (note that all the nodes have the same value)---*/
   
@@ -16310,6 +16157,8 @@ CNSSolver::CNSSolver(CGeometry *geometry, CConfig *config, unsigned short iMesh)
   Total_AeroCD     = 0.0;   Total_SolidCD     = 0.0;   Total_IDR   = 0.0; Total_IDC           = 0.0;
   Total_Custom_ObjFunc = 0.0;
   
+  Total_ErrorFunc = 0.0;
+
   /*--- Read farfield conditions from config ---*/
   
   Density_Inf     = config->GetDensity_FreeStreamND();
@@ -17079,7 +16928,7 @@ void CNSSolver::Friction_Forces(CGeometry *geometry, CConfig *config) {
             Tau[iDim][jDim] = Viscosity*(Grad_Vel[jDim][iDim] + Grad_Vel[iDim][jDim]) - TWO3*Viscosity*div_vel*delta[iDim][jDim];
           }
         }
-        
+
         /*--- If necessary evaluate the QCR contribution to Tau ---*/
         
         if (QCR){

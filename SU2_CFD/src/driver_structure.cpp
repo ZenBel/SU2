@@ -3029,6 +3029,12 @@ void CDriver::PreprocessExtIter(unsigned long ExtIter) {
     output->SetHeatFlux_InverseDesign(solver_container[ZONE_0][MESH_0][FLOW_SOL],
         geometry_container[ZONE_0][MESH_0], config_container[ZONE_0], ExtIter);
 
+  /*--- Read the target Error Function ---*/
+  if (config_container[ZONE_0]->GetDataAssimilation() == true){
+	output->SetErrorFuncOF(solver_container[ZONE_0][MESH_0][FLOW_SOL],
+		geometry_container[ZONE_0][MESH_0], config_container[ZONE_0]);
+  }
+
   /*--- Set the initial condition for EULER/N-S/RANS and for a non FSI simulation ---*/
 
   if ( (!fsi) &&
@@ -3916,6 +3922,11 @@ void CDiscAdjFluidDriver::SetObjFunction(){
   if (config_container[ZONE_0]->GetInvDesign_Cp() == YES){
     output->SetCp_InverseDesign(solver_container[ZONE_0][MESH_0][FLOW_SOL],
     geometry_container[ZONE_0][MESH_0], config_container[ZONE_0], ExtIter);
+  }
+
+  if (config_container[ZONE_0]->GetDataAssimilation() == true){
+	output->SetErrorFuncOF(solver_container[ZONE_0][MESH_0][FLOW_SOL],
+		geometry_container[ZONE_0][MESH_0], config_container[ZONE_0]);
   }
 
   /*--- Surface based obj. function ---*/

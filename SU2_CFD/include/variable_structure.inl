@@ -311,6 +311,8 @@ inline su2double CVariable::GetThermalConductivity_ve(void) { return 0; }
 inline su2double* CVariable::GetVorticity(void) { return 0; }
 
 inline su2double CVariable::GetStrainMag(void) { return 0; }
+inline su2double CVariable::GetProduction(void) { return 0; }
+inline su2double CVariable::GetDestruction(void) { return 0;}
 
 inline void CVariable::SetForceProj_Vector(su2double *val_ForceProj_Vector) { }
 
@@ -455,6 +457,7 @@ inline void CVariable::SetSpecificHeatCp(su2double Cp) { }
 inline bool CVariable::SetVorticity(void) { return false; }
 
 inline bool CVariable::SetStrainMag(void) { return false; }
+inline void CVariable::SetProductionDestruction(su2double val_production, su2double val_destruction) { }
 
 inline void CVariable::SetGradient_PrimitiveZero(unsigned short val_primvar) { }
 
@@ -1301,6 +1304,14 @@ inline void CPotentialVariable::SetChargeDensity(su2double positive_charge, su2d
 inline su2double* CHeatVariable::GetSolution_Direct() { return Solution_Direct;}
 
 inline void CHeatVariable::SetSolution_Direct(su2double *val_solution_direct) { for (unsigned short iVar = 0; iVar < nVar; iVar++) Solution_Direct[iVar] += val_solution_direct[iVar];}
+
+inline su2double CTurbSAVariable::GetProduction(void) { return Production; }
+inline su2double CTurbSAVariable::GetDestruction(void) { return Destruction;}
+inline void CTurbSAVariable::SetProductionDestruction(su2double val_production, su2double val_destruction) { 
+  Production = val_production;
+  Destruction = val_destruction;
+}
+
 
 inline void CTurbSAVariable::SetHarmonicBalance_Source(unsigned short val_var, su2double val_source) { HB_Source[val_var] = val_source; }
 

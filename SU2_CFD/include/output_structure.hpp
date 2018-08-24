@@ -254,6 +254,8 @@ public:
   void SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry, CConfig *config,
                          unsigned long iExtIter);
   
+  void SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CConfig *config);
+
   /*!
    * \brief Writes inverse design.
    * \param[in] solver_container - Container vector with all the solutions.
@@ -303,6 +305,8 @@ public:
    * \param[in] val_iZone - Current zone number in the grid file.
    */
   void SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry, CSolver *FlowSolver, unsigned long iExtIter, unsigned short val_iZone);
+
+  void SetTurbulent_CSV(CConfig *config, CGeometry *geometry, CSolver *FlowSolver, CSolver *TurbSolver, unsigned long iExtIter, unsigned short val_iZone);
 
   /*! 
    * \brief Create and write the file with the adjoint coefficients on the surface for serial computations.

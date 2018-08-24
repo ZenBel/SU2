@@ -2111,6 +2111,7 @@ public:
    * \return Value of the difference of the presure and the target pressure.
    */
   virtual su2double GetTotal_CpDiff(void);
+  virtual su2double GetTotal_ErrorFunc(void);
   
   /*!
    * \brief A virtual member.
@@ -2172,6 +2173,7 @@ public:
    * \param[in] val_pressure - Value of the difference between pressure and the target pressure.
    */
   virtual void SetTotal_CpDiff(su2double val_pressure);
+  virtual void SetTotal_ErrorFunc(su2double val_errorfunc);
   
   /*!
    * \brief A virtual member.
@@ -2298,7 +2300,6 @@ public:
    * \return Value of the custom objective function.
    */
   virtual su2double GetTotal_Custom_ObjFunc(void);
-  virtual su2double GetTotal_ErrorFunc(void);
 
   /*!
    * \brief A virtual member.
@@ -4165,7 +4166,6 @@ protected:
   *Velocity_Inf;    /*!< \brief Flow Velocity vector at the infinity. */
   
   su2double
-  *ErrorFunc,
   *CD_Inv,  /*!< \brief Drag coefficient (inviscid contribution) for each boundary. */
   *CL_Inv,      /*!< \brief Lift coefficient (inviscid contribution) for each boundary. */
   *CSF_Inv,    /*!< \brief Sideforce coefficient (inviscid contribution) for each boundary. */
@@ -4255,7 +4255,6 @@ protected:
   
   su2double
   AllBound_PressureAtOnePoint,
-  AllBound_ErrorFunc,
   AllBound_CD_Inv,  /*!< \brief Total drag coefficient (inviscid contribution) for all the boundaries. */
   AllBound_CL_Inv,      /*!< \brief Total lift coefficient (inviscid contribution) for all the boundaries. */
   AllBound_CSF_Inv,      /*!< \brief Total sideforce coefficient (inviscid contribution) for all the boundaries. */
@@ -4294,7 +4293,6 @@ protected:
    AllBound_CQ_Mnt;      /*!< \brief Total torque coefficient (inviscid contribution) for all the boundaries. */
   
   su2double
-  Total_ErrorFunc,
   Total_ComboObj, /*!< \brief Total 'combo' objective for all monitored boundaries */
   AoA_Prev, /*!< \brief Old value of the AoA for fixed lift mode. */
   Total_CD, /*!< \brief Total drag coefficient for all the boundaries. */
@@ -4340,6 +4338,7 @@ protected:
   Total_CEquivArea,      /*!< \brief Total Equivalent Area coefficient for all the boundaries. */
   Total_CNearFieldOF,      /*!< \brief Total Near-Field Pressure coefficient for all the boundaries. */
   Total_CpDiff,      /*!< \brief Total Equivalent Area coefficient for all the boundaries. */
+  Total_ErrorFunc,
   Total_HeatFluxDiff,      /*!< \brief Total Equivalent Area coefficient for all the boundaries. */
   Total_MassFlowRate;     /*!< \brief Total Mass Flow Rate on monitored boundaries. */
   su2double *Surface_CL,   /*!< \brief Lift coefficient for each monitoring surface. */
@@ -5097,7 +5096,6 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  void SetErrorFuncOF(CGeometry *geometry, CConfig *config);
 
   /*!
    * \brief Compute the pressure forces and all the adimensional coefficients.
@@ -5432,6 +5430,7 @@ public:
    * \return Value of the Equivalent Area coefficient (inviscid + viscous contribution).
    */
   su2double GetTotal_CpDiff(void);
+  su2double GetTotal_ErrorFunc(void);
   
   /*!
    * \brief Provide the total (inviscid + viscous) non dimensional Equivalent Area coefficient.
@@ -5469,6 +5468,7 @@ public:
    * \param[in] val_cequivarea - Value of the Equivalent Area coefficient.
    */
   void SetTotal_CpDiff(su2double val_pressure);
+  void SetTotal_ErrorFunc(su2double val_errorfunc);
   
   /*!
    * \brief Set the value of the Equivalent Area coefficient.
@@ -5591,7 +5591,6 @@ public:
    * \return Value of the custom objective function.
    */
   su2double GetTotal_Custom_ObjFunc(void);
-  su2double GetTotal_ErrorFunc(void);
 
   /*!
    * \brief Provide the total (inviscid + viscous) non dimensional x moment coefficient.
@@ -6731,6 +6730,7 @@ protected:
   Total_Heat,    /*!< \brief Total heat load for all the boundaries. */
   Total_MaxHeat, /*!< \brief Maximum heat flux on all boundaries. */
   Total_CpDiff,      /*!< \brief Total Equivalent Area coefficient for all the boundaries. */
+  Total_ErrorFunc,
   Total_HeatFluxDiff,      /*!< \brief Total Equivalent Area coefficient for all the boundaries. */
   Total_Custom_ObjFunc,        /*!< \brief Total custom objective function for all the boundaries. */
   Total_MassFlowRate;     /*!< \brief Total Mass Flow Rate on monitored boundaries. */
@@ -7437,6 +7437,7 @@ public:
    * \return Value of the Equivalent Area coefficient (inviscid + viscous contribution).
    */
   su2double GetTotal_CpDiff(void);
+  su2double GetTotal_ErrorFunc(void);
   
   /*!
    * \brief Provide the total (inviscid + viscous) non dimensional Equivalent Area coefficient.
@@ -7449,6 +7450,7 @@ public:
    * \param[in] val_cequivarea - Value of the Equivalent Area coefficient.
    */
   void SetTotal_CpDiff(su2double val_pressure);
+  void SetTotal_ErrorFunc(su2double val_errorfunc);
   
   /*!
    * \brief Set the value of the Equivalent Area coefficient.
@@ -8183,7 +8185,7 @@ public:
    * \return Value of the skin friction coefficient.
    */
   su2double GetCSkinFriction(unsigned short val_marker, unsigned long val_vertex, unsigned short val_dim);
-  
+
   /*!
    * \brief Get the skin friction coefficient.
    * \param[in] val_marker - Surface marker where the coefficient is computed.

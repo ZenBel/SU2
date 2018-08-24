@@ -355,7 +355,6 @@ inline su2double CSolver::GetTotal_IDC_Mach() { return 0; }
 inline su2double CSolver::GetTotal_DC60() { return 0; }
 
 inline su2double CSolver::GetTotal_Custom_ObjFunc() { return 0; }
-inline su2double CSolver::GetTotal_ErrorFunc() { return 0; }
 
 inline su2double CSolver::GetTotal_CMx() { return 0; }
 
@@ -411,6 +410,8 @@ inline su2double CSolver::GetTotal_IDC() { return 0; }
 
 inline su2double CSolver::GetTotal_CpDiff() { return 0; }
 
+inline su2double CSolver::GetTotal_ErrorFunc() { return 0; }
+
 inline su2double CSolver::GetTotal_HeatFluxDiff() { return 0; }
 
 inline su2double CSolver::GetTotal_CFEA() { return 0; }
@@ -430,6 +431,8 @@ inline void CSolver::SetTotal_CEquivArea(su2double val_cequivarea) { }
 inline void CSolver::SetTotal_AeroCD(su2double val_aerocd) { }
 
 inline void CSolver::SetTotal_CpDiff(su2double val_pressure) { }
+
+inline void CSolver::SetTotal_ErrorFunc(su2double val_errorfunc) { }
 
 inline void CSolver::SetTotal_HeatFluxDiff(su2double val_heat) { }
 
@@ -1298,7 +1301,6 @@ inline su2double CEulerSolver::GetTotal_IDC_Mach() { return Total_IDC_Mach; }
 inline su2double CEulerSolver::GetTotal_DC60() { return Total_DC60; }
 
 inline su2double CEulerSolver::GetTotal_Custom_ObjFunc() { return Total_Custom_ObjFunc; }
-inline su2double CEulerSolver::GetTotal_ErrorFunc() { return Total_ErrorFunc; }
 
 inline su2double CEulerSolver::GetTotal_CMx() { return Total_CMx; }
 
@@ -1350,6 +1352,8 @@ inline su2double CEulerSolver::GetTotal_IDC() { return Total_IDC; }
 
 inline su2double CEulerSolver::GetTotal_CpDiff() { return Total_CpDiff; }
 
+inline su2double CEulerSolver::GetTotal_ErrorFunc() { return Total_ErrorFunc; }
+
 inline su2double CEulerSolver::GetTotal_HeatFluxDiff() { return Total_HeatFluxDiff; }
 
 inline su2double CEulerSolver::GetTotal_CNearFieldOF() { return Total_CNearFieldOF; }
@@ -1361,6 +1365,8 @@ inline void CEulerSolver::SetTotal_CEquivArea(su2double val_cequivarea) { Total_
 inline void CEulerSolver::SetTotal_AeroCD(su2double val_aerocd) { Total_AeroCD = val_aerocd; }
 
 inline void CEulerSolver::SetTotal_CpDiff(su2double pressure) { Total_CpDiff = pressure; }
+
+inline void CEulerSolver::SetTotal_ErrorFunc(su2double errorfunc) { Total_ErrorFunc = errorfunc; }
 
 inline void CEulerSolver::SetTotal_HeatFluxDiff(su2double heat) { Total_HeatFluxDiff = heat; }
 
@@ -1826,9 +1832,13 @@ inline su2double CIncEulerSolver::GetTotal_CMerit() { return Total_CMerit; }
 
 inline su2double CIncEulerSolver::GetTotal_CpDiff() { return Total_CpDiff; }
 
+inline su2double CIncEulerSolver::GetTotal_ErrorFunc() { return Total_ErrorFunc; }
+
 inline su2double CIncEulerSolver::GetTotal_HeatFluxDiff() { return Total_HeatFluxDiff; }
 
 inline void CIncEulerSolver::SetTotal_CpDiff(su2double pressure) { Total_CpDiff = pressure; }
+
+inline void CIncEulerSolver::SetTotal_ErrorFunc(su2double errorfunc) { Total_ErrorFunc = errorfunc; }
 
 inline void CIncEulerSolver::SetTotal_HeatFluxDiff(su2double heat) { Total_HeatFluxDiff = heat; }
 

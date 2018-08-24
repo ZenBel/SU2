@@ -431,6 +431,7 @@ CIncEulerSolver::CIncEulerSolver(CGeometry *geometry, CConfig *config, unsigned 
   Total_CT      = 0.0;  Total_CQ           = 0.0;  Total_CMerit       = 0.0;
   Total_MaxHeat = 0.0;  Total_Heat         = 0.0;  Total_ComboObj     = 0.0;
   Total_CpDiff  = 0.0;  Total_HeatFluxDiff = 0.0;  Total_Custom_ObjFunc=0.0;
+  Total_ErrorFunc = 0.0;
   
   /*--- Coefficients for fixed lift mode. ---*/
   
@@ -4417,6 +4418,9 @@ void CIncEulerSolver::Evaluate_ObjFunc(CConfig *config) {
       case CUSTOM_OBJFUNC:
         Total_ComboObj+=Weight_ObjFunc*Total_Custom_ObjFunc;
         break;
+      case ERROR_FUNC:
+    	Total_ComboObj+=Weight_ObjFunc*Total_ErrorFunc;
+    	break;
       default:
         break;
 
@@ -6178,6 +6182,7 @@ CIncNSSolver::CIncNSSolver(CGeometry *geometry, CConfig *config, unsigned short 
   Total_CT      = 0.0;  Total_CQ           = 0.0;  Total_CMerit       = 0.0;
   Total_MaxHeat = 0.0;  Total_Heat         = 0.0;
   Total_CpDiff  = 0.0;  Total_HeatFluxDiff = 0.0;
+  Total_ErrorFunc = 0.0;
   
   /*--- Coefficients for fixed lift mode. ---*/
   

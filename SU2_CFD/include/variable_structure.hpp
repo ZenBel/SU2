@@ -1078,6 +1078,8 @@ public:
    * \return Value of the rate of strain magnitude.
    */
   virtual su2double GetStrainMag(void);
+  virtual su2double GetProduction(void);
+  virtual su2double GetDestruction(void);
   
   /*!
    * \brief A virtual member.
@@ -1608,6 +1610,7 @@ public:
    * \brief A virtual member.
    */
   virtual bool SetStrainMag(void);
+  virtual void SetProductionDestruction(su2double val_production, su2double val_destruction);
   
   /*!
    * \brief A virtual member.
@@ -3961,7 +3964,7 @@ private:
   su2double inv_TimeScale;   /*!< \brief Inverse of the reference time scale. */
   su2double Roe_Dissipation; /*!< \brief Roe low dissipation coefficient. */
   su2double Vortex_Tilting;  /*!< \brief Value of the vortex tilting variable for DES length scale computation. */
-  
+
 public:
   
   /*!
@@ -4268,6 +4271,8 @@ protected:
   su2double muT;                /*!< \brief Eddy viscosity. */
   su2double *HB_Source;          /*!< \brief Harmonic Balance source term. */
   
+  su2double Production, Destruction;
+
 public:
   /*!
    * \brief Constructor of the class.
@@ -4292,7 +4297,7 @@ public:
    * \return the value of the eddy viscosity.
    */
   su2double GetmuT();
-  
+
   /*!
    * \brief Set the value of the eddy viscosity.
    * \param[in] val_muT - Value of the eddy viscosity.
@@ -4383,6 +4388,10 @@ public:
    */
   su2double GetVortex_Tilting();
   
+  void SetProductionDestruction(su2double val_production, su2double val_destruction);
+  su2double GetProduction(void);
+  su2double GetDestruction(void);
+
 };
 
 /*!

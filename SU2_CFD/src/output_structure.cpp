@@ -760,6 +760,337 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
   
 }
 
+void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
+                                 CSolver *FlowSolver, CSolver *TurbSolver, unsigned long iExtIter,
+                                 unsigned short val_iZone) {
+
+  unsigned short iMarker;
+  unsigned long iPoint, iVertex, Global_Index, nPointDomain;
+  su2double PressCoeff = 0.0, SkinFrictionCoeff[3];
+  su2double xCoord = 0.0, yCoord = 0.0, zCoord = 0.0, Mach, Pressure;
+  char cstr[200];
+
+  unsigned short solver = config->GetKind_Solver();
+  unsigned short nDim = geometry->GetnDim();
+  nPointDomain = geometry->GetnPointDomain();
+
+//#ifndef HAVE_MPI
+
+  unsigned short iDim, jDim;
+  su2double HeatFlux;
+  char buffer [50];
+  ofstream SurfFlow_file;
+
+  /*--- Write file name with extension if unsteady ---*/
+  strcpy (cstr, config->GetSurfFlowCoeff_FileName().c_str());
+
+  strcat (cstr, buffer);
+  SurfFlow_file.precision(15);
+  SurfFlow_file.open(cstr, ios::out);
+
+  SurfFlow_file << "\"Global_Index\", \"x_coord\", \"y_coord\", \"z_coord\", ";
+  SurfFlow_file << "\"discrTerm\", \"Omega\", \"dist_i_2\", \"nu\", \"nu_hat\", \"Ji\", ";
+  SurfFlow_file << "\"Strain_Mag\", \"Production\", \"Destruction\", \"fd\", ";
+  SurfFlow_file << "\"dudx\", \"dudy\", \"dudz\", \"dvdx\", \"dvdy\", \"dvdz\", \"dwdx\", \"dwdy\", \"dwdz\""<< "\n";
+
+
+  su2double discrTerm, Omega, dist_i_2, nu, nu_hat, Ji, Strain_Mag, Production, Destruction, fd;
+  su2double Grad_Vel[3][3] = {{0.0, 0.0, 0.0},{0.0, 0.0, 0.0},{0.0, 0.0, 0.0}};
+
+  su2double *Vorticity, rho, mu;
+
+  for (iPoint = 0; iPoint < nPointDomain; iPoint++ ){
+    iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+    Global_Index = geometry->node[iPoint]->GetGlobalIndex();
+    xCoord = geometry->node[iPoint]->GetCoord(0);
+    yCoord = geometry->node[iPoint]->GetCoord(1);
+    zCoord = 0.0;
+    if (nDim == 3) zCoord = geometry->node[iPoint]->GetCoord(2);
+
+    discrTerm = config->GetDiscrTerm(Global_Index);
+    dist_i_2 = geometry->node[iPoint]->GetWall_Distance();
+
+    Vorticity = FlowSolver->node[iPoint]->GetVorticity();
+    Omega = sqrt(Vorticity[0]*Vorticity[0]+ Vorticity[1]*Vorticity[1]+ Vorticity[2]*Vorticity[2]);
+
+    rho = FlowSolver->node[iPoint]->GetDensity();
+    mu  = FlowSolver->node[iPoint]->GetLaminarViscosity();
+    nu  = mu/rho;
+
+    nu_hat = TurbSolver->node[iPoint]->GetSolution(0); //only valid for SA model
+    su2double eddy_visc = TurbSolver->node[iPoint]->GetmuT();
+    Ji = nu_hat/nu;
+    Strain_Mag = FlowSolver->node[iPoint]->GetStrainMag();
+
+    /*--- Evaluate Tau ---*/
+    for (iDim = 0; iDim < nDim; iDim++)
+      for (jDim = 0 ; jDim < nDim; jDim++)
+        Grad_Vel[iDim][jDim] = FlowSolver->node[iPoint]->GetGradient_Primitive(iDim+1, jDim);
+
+    Production = TurbSolver->node[iPoint]->GetProduction();
+    Destruction = TurbSolver->node[iPoint]->GetDestruction();
+    fd = 0.0;
+
+    SurfFlow_file << scientific << Global_Index << ", " << xCoord << ", " << yCoord << ", " << zCoord;
+    SurfFlow_file << scientific << discrTerm << ", " << Omega << ", " << dist_i_2 << ", " << nu << ", " << nu_hat << ", " << Ji
+    		      << Strain_Mag << ", " << Production << ", " << Destruction << ", " << fd << ", "
+				  << Grad_Vel[0][0]<< ", " << Grad_Vel[0][1] << ", " << Grad_Vel[0][2] << ", "
+				  << Grad_Vel[1][0]<< ", " << Grad_Vel[1][1] << ", " << Grad_Vel[1][2] << ", "
+				  << Grad_Vel[2][0]<< ", " << Grad_Vel[2][1] << ", " << Grad_Vel[2][2] << "\n";
+  }
+
+  SurfFlow_file.close();
+
+//#else
+//
+//  int iProcessor, nProcessor = size;
+//
+//  unsigned long Buffer_Send_nVertex[1], *Buffer_Recv_nVertex = NULL;
+//  unsigned long nVertex_Surface = 0, nLocalVertex_Surface = 0;
+//  unsigned long MaxLocalVertex_Surface = 0;
+//
+//  /*--- Find the max number of surface vertices among all
+//   partitions and set up buffers. The master node will handle the
+//   writing of the CSV file after gathering all of the data. ---*/
+//
+//  nLocalVertex_Surface = 0;
+//  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++)
+//    if (config->GetMarker_All_Plotting(iMarker) == YES)
+//      for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
+//        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+//        if (geometry->node[iPoint]->GetDomain()) nLocalVertex_Surface++;
+//      }
+//
+//  /*--- Communicate the number of local vertices on each partition
+//   to the master node ---*/
+//
+//  Buffer_Send_nVertex[0] = nLocalVertex_Surface;
+//  if (rank == MASTER_NODE) Buffer_Recv_nVertex = new unsigned long [nProcessor];
+//
+//  SU2_MPI::Allreduce(&nLocalVertex_Surface, &MaxLocalVertex_Surface, 1, MPI_UNSIGNED_LONG, MPI_MAX, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(&Buffer_Send_nVertex, 1, MPI_UNSIGNED_LONG, Buffer_Recv_nVertex, 1, MPI_UNSIGNED_LONG, MASTER_NODE, MPI_COMM_WORLD);
+//
+//  /*--- Send and Recv buffers ---*/
+//
+//  su2double *Buffer_Send_Coord_x = new su2double [MaxLocalVertex_Surface];
+//  su2double *Buffer_Recv_Coord_x = NULL;
+//
+//  su2double *Buffer_Send_Coord_y = new su2double [MaxLocalVertex_Surface];
+//  su2double *Buffer_Recv_Coord_y = NULL;
+//
+//  su2double *Buffer_Send_Coord_z = new su2double [MaxLocalVertex_Surface];
+//  su2double *Buffer_Recv_Coord_z = NULL;
+//
+//  su2double *Buffer_Send_Press = new su2double [MaxLocalVertex_Surface];
+//  su2double *Buffer_Recv_Press = NULL;
+//
+//  su2double *Buffer_Send_CPress = new su2double [MaxLocalVertex_Surface];
+//  su2double *Buffer_Recv_CPress = NULL;
+//
+//  su2double *Buffer_Send_Mach = new su2double [MaxLocalVertex_Surface];
+//  su2double *Buffer_Recv_Mach = NULL;
+//
+//  su2double *Buffer_Send_SkinFriction_x = new su2double [MaxLocalVertex_Surface];
+//  su2double *Buffer_Recv_SkinFriction_x = NULL;
+//
+//  su2double *Buffer_Send_SkinFriction_y = new su2double [MaxLocalVertex_Surface];
+//  su2double *Buffer_Recv_SkinFriction_y = NULL;
+//
+//  su2double *Buffer_Send_SkinFriction_z = new su2double [MaxLocalVertex_Surface];
+//  su2double *Buffer_Recv_SkinFriction_z = NULL;
+//
+//  su2double *Buffer_Send_HeatTransfer = new su2double [MaxLocalVertex_Surface];
+//  su2double *Buffer_Recv_HeatTransfer = NULL;
+//
+//  unsigned long *Buffer_Send_GlobalIndex = new unsigned long [MaxLocalVertex_Surface];
+//  unsigned long *Buffer_Recv_GlobalIndex = NULL;
+//
+//  /*--- Prepare the receive buffers on the master node only. ---*/
+//
+//  if (rank == MASTER_NODE) {
+//    Buffer_Recv_Coord_x = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    Buffer_Recv_Coord_y = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    if (nDim == 3) Buffer_Recv_Coord_z = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    Buffer_Recv_Press   = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    Buffer_Recv_CPress  = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    Buffer_Recv_Mach    = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    Buffer_Recv_SkinFriction_x = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    Buffer_Recv_SkinFriction_y = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    if (nDim == 3) Buffer_Recv_SkinFriction_z = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    Buffer_Recv_HeatTransfer = new su2double [nProcessor*MaxLocalVertex_Surface];
+//    Buffer_Recv_GlobalIndex  = new unsigned long [nProcessor*MaxLocalVertex_Surface];
+//  }
+//
+//  /*--- Loop over all vertices in this partition and load the
+//   data of the specified type into the buffer to be sent to
+//   the master node. ---*/
+//
+//  nVertex_Surface = 0;
+//  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++)
+//    if (config->GetMarker_All_Plotting(iMarker) == YES)
+//      for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++) {
+//        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+//        if (geometry->node[iPoint]->GetDomain()) {
+//          Buffer_Send_Press[nVertex_Surface] = FlowSolver->node[iPoint]->GetPressure();
+//          Buffer_Send_CPress[nVertex_Surface] = FlowSolver->GetCPressure(iMarker, iVertex);
+//          Buffer_Send_Coord_x[nVertex_Surface] = geometry->node[iPoint]->GetCoord(0);
+//          Buffer_Send_Coord_y[nVertex_Surface] = geometry->node[iPoint]->GetCoord(1);
+//          if (nDim == 3) { Buffer_Send_Coord_z[nVertex_Surface] = geometry->node[iPoint]->GetCoord(2); }
+//
+//          /*--- If US system, the output should be in inches ---*/
+//
+//          if (config->GetSystemMeasurements() == US) {
+//            Buffer_Send_Coord_x[nVertex_Surface] *= 12.0;
+//            Buffer_Send_Coord_y[nVertex_Surface] *= 12.0;
+//            if (nDim == 3) Buffer_Send_Coord_z[nVertex_Surface] *= 12.0;
+//          }
+//
+//          Buffer_Send_GlobalIndex[nVertex_Surface] = geometry->node[iPoint]->GetGlobalIndex();
+//
+//          if (solver == EULER)
+//            Buffer_Send_Mach[nVertex_Surface] = sqrt(FlowSolver->node[iPoint]->GetVelocity2()) / FlowSolver->node[iPoint]->GetSoundSpeed();
+//          if ((solver == NAVIER_STOKES) || (solver == RANS)) {
+//            Buffer_Send_SkinFriction_x[nVertex_Surface] = FlowSolver->GetCSkinFriction(iMarker, iVertex, 0);
+//            Buffer_Send_SkinFriction_y[nVertex_Surface] = FlowSolver->GetCSkinFriction(iMarker, iVertex, 1);
+//            if (nDim == 3) Buffer_Send_SkinFriction_z[nVertex_Surface] = FlowSolver->GetCSkinFriction(iMarker, iVertex, 2);
+//          }
+//          nVertex_Surface++;
+//        }
+//      }
+//
+//  /*--- Send the information to the master node ---*/
+//
+//  SU2_MPI::Gather(Buffer_Send_Coord_x, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_Coord_x, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(Buffer_Send_Coord_y, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_Coord_y, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  if (nDim == 3) SU2_MPI::Gather(Buffer_Send_Coord_z, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_Coord_z, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(Buffer_Send_Press, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_Press, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  SU2_MPI::Gather(Buffer_Send_CPress, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_CPress, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  if (solver == EULER) SU2_MPI::Gather(Buffer_Send_Mach, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_Mach, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  if ((solver == NAVIER_STOKES) || (solver == RANS)) {
+//    SU2_MPI::Gather(Buffer_Send_SkinFriction_x, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_SkinFriction_x, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//    SU2_MPI::Gather(Buffer_Send_SkinFriction_y, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_SkinFriction_y, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//    if (nDim == 3) SU2_MPI::Gather(Buffer_Send_SkinFriction_z, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_SkinFriction_z, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+//  }
+//  SU2_MPI::Gather(Buffer_Send_GlobalIndex, MaxLocalVertex_Surface, MPI_UNSIGNED_LONG, Buffer_Recv_GlobalIndex, MaxLocalVertex_Surface, MPI_UNSIGNED_LONG, MASTER_NODE, MPI_COMM_WORLD);
+//
+//  /*--- The master node unpacks the data and writes the surface CSV file ---*/
+//
+//  if (rank == MASTER_NODE) {
+//
+//    /*--- Write file name with extension if unsteady ---*/
+//    char buffer[50];
+//    string filename = config->GetSurfFlowCoeff_FileName();
+//    ofstream SurfFlow_file;
+//
+//    /*--- Write file name with extension if unsteady ---*/
+//    strcpy (cstr, filename.c_str());
+//    if (config->GetUnsteady_Simulation() == HARMONIC_BALANCE) {
+//      SPRINTF (buffer, "_%d.csv", SU2_TYPE::Int(val_iZone));
+//
+//    } else if (config->GetUnsteady_Simulation() && config->GetWrt_Unsteady()) {
+//      if ((SU2_TYPE::Int(iExtIter) >= 0)    && (SU2_TYPE::Int(iExtIter) < 10))    SPRINTF (buffer, "_0000%d.csv", SU2_TYPE::Int(iExtIter));
+//      if ((SU2_TYPE::Int(iExtIter) >= 10)   && (SU2_TYPE::Int(iExtIter) < 100))   SPRINTF (buffer, "_000%d.csv",  SU2_TYPE::Int(iExtIter));
+//      if ((SU2_TYPE::Int(iExtIter) >= 100)  && (SU2_TYPE::Int(iExtIter) < 1000))  SPRINTF (buffer, "_00%d.csv",   SU2_TYPE::Int(iExtIter));
+//      if ((SU2_TYPE::Int(iExtIter) >= 1000) && (SU2_TYPE::Int(iExtIter) < 10000)) SPRINTF (buffer, "_0%d.csv",    SU2_TYPE::Int(iExtIter));
+//      if (SU2_TYPE::Int(iExtIter) >= 10000) SPRINTF (buffer, "_%d.csv", SU2_TYPE::Int(iExtIter));
+//    }
+//    else
+//      SPRINTF (buffer, ".csv");
+//
+//    strcat (cstr, buffer);
+//    SurfFlow_file.precision(15);
+//    SurfFlow_file.open(cstr, ios::out);
+//
+//    SurfFlow_file << "\"Global_Index\", \"x_coord\", \"y_coord\", ";
+//    if (nDim == 3) SurfFlow_file << "\"z_coord\", ";
+//    SurfFlow_file << "\"Pressure\", \"Pressure_Coefficient\", ";
+//
+//    switch (solver) {
+//      case EULER : SurfFlow_file <<  "\"Mach_Number\"" << "\n"; break;
+//      case NAVIER_STOKES: case RANS:
+//        if (nDim == 2) SurfFlow_file << "\"Skin_Friction_Coefficient_X\", \"Skin_Friction_Coefficient_Y\"" << "\n";
+//        if (nDim == 3) SurfFlow_file << "\"Skin_Friction_Coefficient_X\", \"Skin_Friction_Coefficient_Y\", \"Skin_Friction_Coefficient_Z\"" << "\n";
+//        break;
+//    }
+//
+//    /*--- Loop through all of the collected data and write each node's values ---*/
+//
+//    unsigned long Total_Index;
+//    for (iProcessor = 0; iProcessor < nProcessor; iProcessor++) {
+//      for (iVertex = 0; iVertex < Buffer_Recv_nVertex[iProcessor]; iVertex++) {
+//
+//        /*--- Current index position and global index ---*/
+//        Total_Index  = iProcessor*MaxLocalVertex_Surface+iVertex;
+//        Global_Index = Buffer_Recv_GlobalIndex[Total_Index];
+//
+//        /*--- Retrieve the merged data for this node ---*/
+//        xCoord = Buffer_Recv_Coord_x[Total_Index];
+//        yCoord = Buffer_Recv_Coord_y[Total_Index];
+//        if (nDim == 3) zCoord = Buffer_Recv_Coord_z[Total_Index];
+//        Pressure   = Buffer_Recv_Press[Total_Index];
+//        PressCoeff = Buffer_Recv_CPress[Total_Index];
+//
+//        /*--- Write the first part of the data ---*/
+//        SurfFlow_file << scientific << Global_Index << ", " << xCoord << ", " << yCoord << ", ";
+//        if (nDim == 3) SurfFlow_file << scientific << zCoord << ", ";
+//        SurfFlow_file << scientific << Pressure << ", " << PressCoeff << ", ";
+//
+//        /*--- Write the solver-dependent part of the data ---*/
+//        switch (solver) {
+//          case EULER :
+//            Mach = Buffer_Recv_Mach[Total_Index];
+//            SurfFlow_file << scientific << Mach << "\n";
+//            break;
+//          case NAVIER_STOKES: case RANS:
+//            SkinFrictionCoeff[0] = Buffer_Recv_SkinFriction_x[Total_Index];
+//            SkinFrictionCoeff[1] = Buffer_Recv_SkinFriction_y[Total_Index];
+//            if (nDim == 3) SkinFrictionCoeff[2] = Buffer_Recv_SkinFriction_z[Total_Index];
+//            if (nDim == 2) SurfFlow_file << scientific << SkinFrictionCoeff[0] << ", " << SkinFrictionCoeff[1] << "\n";
+//            if (nDim == 3) SurfFlow_file << scientific << SkinFrictionCoeff[0] << ", " << SkinFrictionCoeff[1] << ", " << SkinFrictionCoeff[2] << "\n";
+//            break;
+//        }
+//      }
+//    }
+//
+//    /*--- Close the CSV file ---*/
+//    SurfFlow_file.close();
+//
+//    /*--- Release the recv buffers on the master node ---*/
+//
+//    delete [] Buffer_Recv_Coord_x;
+//    delete [] Buffer_Recv_Coord_y;
+//    if (nDim == 3) delete [] Buffer_Recv_Coord_z;
+//    delete [] Buffer_Recv_Press;
+//    delete [] Buffer_Recv_CPress;
+//    delete [] Buffer_Recv_Mach;
+//    delete [] Buffer_Recv_SkinFriction_x;
+//    delete [] Buffer_Recv_SkinFriction_y;
+//    if (nDim == 3) delete [] Buffer_Recv_SkinFriction_z;
+//    delete [] Buffer_Recv_HeatTransfer;
+//    delete [] Buffer_Recv_GlobalIndex;
+//
+//    delete [] Buffer_Recv_nVertex;
+//
+//  }
+//
+//  /*--- Release the memory for the remaining buffers and exit ---*/
+//
+//  delete [] Buffer_Send_Coord_x;
+//  delete [] Buffer_Send_Coord_y;
+//  delete [] Buffer_Send_Coord_z;
+//  delete [] Buffer_Send_Press;
+//  delete [] Buffer_Send_CPress;
+//  delete [] Buffer_Send_Mach;
+//  delete [] Buffer_Send_SkinFriction_x;
+//  delete [] Buffer_Send_SkinFriction_y;
+//  delete [] Buffer_Send_SkinFriction_z;
+//  delete [] Buffer_Send_HeatTransfer;
+//  delete [] Buffer_Send_GlobalIndex;
+//
+//#endif
+
+}
+
 void COutput::SetSurfaceCSV_Adjoint(CConfig *config, CGeometry *geometry, CSolver *AdjSolver, CSolver *FlowSolution, unsigned long iExtIter, unsigned short val_iZone) {
   
 #ifndef HAVE_MPI
@@ -7703,7 +8034,11 @@ void COutput::SetResult_Files(CSolver ****solver_container, CGeometry ***geometr
 
       case EULER : case NAVIER_STOKES : case RANS :
         
-        if (Wrt_Csv) SetSurfaceCSV_Flow(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
+        if (Wrt_Csv){
+        	SetSurfaceCSV_Flow(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
+//        	if (config[iZone]->GetKind_Solver() == RANS)
+//        		SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
+        }
         break;
         
 
@@ -8883,6 +9218,145 @@ void COutput::SetCp_InverseDesign(CSolver *solver_container, CGeometry *geometry
   delete [] PointInDomain;
   
 }
+
+void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CConfig *config){
+
+	unsigned short icommas, iMarker, iDim;// Boundary, iDim;
+	unsigned long iVertex, iPoint, PointID, GlobalIndex, iPos, nPointLocal=0.0, nPointGlobal=0.0;
+	su2double x_coord, y_coord, z_coord, pressure, pressure_coeff;
+	string text_line, surfCp_filename;
+	char buffer[50], cstr[200];
+	ifstream Surface_file;
+
+	su2double RefVel2, RefDensity, RefPressure, factor, weight;
+	su2double dist, *Coord, Target, Computed, Buffer_ErrorFunc, Volume, Buffer_VolumeTot, AllBound_ErrorFunc;
+
+    nPointLocal = geometry->GetnPoint(); // Total number of mesh points on the decomposed geometry managed by a single processor
+
+#ifdef HAVE_MPI
+  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+#else
+  nPointGlobal = nPointLocal;
+#endif
+
+	Buffer_VolumeTot   = 0.0;
+	Buffer_ErrorFunc   = 0.0;
+	AllBound_ErrorFunc = 0.0;
+
+#ifdef HAVE_MPI
+  su2double MyAllBound_ErrorFunc, MyAllBound_VolumeTot;
+#endif
+
+    RefDensity  = solver_container->GetDensity_Inf();
+    RefPressure = solver_container->GetPressure_Inf();
+    RefVel2 = 0.0;
+    for (iDim = 0; iDim < geometry->GetnDim(); iDim++)
+	  RefVel2  += solver_container->GetVelocity_Inf(iDim)*solver_container->GetVelocity_Inf(iDim);
+
+    factor = 1.0 / (0.5*RefDensity*RefVel2);
+
+    if ( config->GetExtIter() == 0){
+
+      config->Initialize_ErrorFunc_Variables(nPointGlobal);
+
+      if (rank==MASTER_NODE){
+        cout << "Reading TargetCp.dat and storing the information."<< endl;
+//        if (config->GetBoolDiscrepancyTerm() && rank == MASTER_NODE){
+//    	    cout << "Tikhonov regularization of the OF implemented with lambda = 1e-4. (only for DISCREPANCY_DV)"<< endl;
+//        }
+      }
+
+	  /*--- Prepare to read the surface pressure files (CSV) ---*/
+	  surfCp_filename = "TargetCp";
+	  strcpy (cstr, surfCp_filename.c_str());
+	  SPRINTF (buffer, ".dat");
+	  strcat (cstr, buffer);
+
+	  /*--- Read the surface pressure file ---*/
+	  string::size_type position;
+
+	  Surface_file.open(cstr, ios::in);
+	  if (Surface_file.fail()) {
+	  cout << "There is no Target file for ERROR_FUNC!! " << surfCp_filename.data() << "."<< endl;
+	  exit(EXIT_FAILURE);
+	  }
+
+	  getline(Surface_file, text_line);
+	  istringstream point_line(text_line);
+
+	  while (getline(Surface_file, text_line)) {
+	    for (icommas = 0; icommas < 50; icommas++) {
+	      position = text_line.find( ",", 0 );
+	      if (position!=string::npos) text_line.erase (position,1);
+	    }
+
+	    stringstream  point_line(text_line);
+
+	    if (geometry->GetnDim() == 2) point_line >> PointID >> x_coord >> y_coord >> pressure >> pressure_coeff;
+	    if (geometry->GetnDim() == 3) point_line >> PointID >> x_coord >> y_coord >> z_coord >> pressure >> pressure_coeff;
+
+	    /*--- Loop over all points of a (partitioned) domain ---*/
+	    for (iPoint = 0; iPoint < nPointLocal; iPoint++) {
+
+	      /*--- Filter out the Halo nodes ---*/
+	      if (geometry->node[iPoint]->GetDomain()){
+
+	        /*--- Obtain coordinates of given point ---*/
+	  	    Coord = geometry->node[iPoint]->GetCoord();
+
+	  	    /*--- Compute distance of current point from Target file ---*/
+	  	    if (geometry->GetnDim() == 2) dist = sqrt( (Coord[0]-x_coord)*(Coord[0]-x_coord) + (Coord[1]-y_coord)*(Coord[1]-y_coord) );
+	  	    if (geometry->GetnDim() == 3) dist = sqrt( (Coord[0]-x_coord)*(Coord[0]-x_coord) + (Coord[1]-y_coord)*(Coord[1]-y_coord) + (Coord[2]-z_coord)*(Coord[2]-z_coord) );
+
+	  	    GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+	  	    su2double tolerance = 1e-6; //HARDCODED
+
+	  	    /*--- Save Point ID and Target quantity for quick retrieval ---*/
+	  	    if (dist < tolerance){
+	 		  config->SetTargetPointID(GlobalIndex);
+	 		  config->SetTargetQuantity(pressure_coeff, GlobalIndex);
+//	 		  cout << "GlobalIndex = " << GlobalIndex << ", X - x = " << Coord[0] - x_coord << ", Y - y = " << Coord[1] - y_coord << endl;
+	  	    }
+	      }
+	    }
+	  }
+	  Surface_file.close();
+    }
+
+    /*--- Loop over all points of a (partitioned) domain ---*/
+    unsigned long i = 0;
+    for (iPoint = 0; iPoint < nPointLocal; iPoint++){
+      /*--- Filter out the Halo nodes ---*/
+	  if (geometry->node[iPoint]->GetDomain()){
+		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+		if (config->GetTargetPointID(GlobalIndex) == true){
+		  weight = 1.0; //HARCODED
+		  Target = config->GetTargetQuantity(GlobalIndex);
+		  Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
+		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
+	    }
+		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
+//		if (config->GetBoolDiscrepancyTerm()){
+//			su2double lambda = 1e-4; //HARDCODED
+//			Buffer_ErrorFunc += lambda * (config->GetDiscrTerm(GlobalIndex) - 1.0) * (config->GetDiscrTerm(GlobalIndex) - 1.0);
+//		}
+	  }
+    }
+
+	AllBound_ErrorFunc += Buffer_ErrorFunc;
+
+#ifdef HAVE_MPI
+  /*--- Add AllBound information using all the nodes ---*/
+  MyAllBound_ErrorFunc	= AllBound_ErrorFunc;	AllBound_ErrorFunc = 0.0;
+  MyAllBound_VolumeTot	= Buffer_VolumeTot;	    Buffer_VolumeTot = 0.0;
+  SU2_MPI::Allreduce(&MyAllBound_ErrorFunc, &AllBound_ErrorFunc, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  SU2_MPI::Allreduce(&MyAllBound_VolumeTot, &Buffer_VolumeTot, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
+
+    solver_container->SetTotal_ErrorFunc(AllBound_ErrorFunc);
+
+}
+
 void COutput::SetHeatFlux_InverseDesign(CSolver *solver_container, CGeometry *geometry, CConfig *config, unsigned long iExtIter) {
   
   unsigned short iMarker, icommas, Boundary, iDim;
@@ -11494,8 +11968,12 @@ void COutput::SetResult_Files_Parallel(CSolver ****solver_container,
     
     switch (config[iZone]->GetKind_Solver()) {
       case EULER : case NAVIER_STOKES : case RANS :
-        if (Wrt_Csv) SetSurfaceCSV_Flow(config[iZone], geometry[iZone][MESH_0],
-                                        solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
+        if (Wrt_Csv) {
+        	SetSurfaceCSV_Flow(config[iZone], geometry[iZone][MESH_0],solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
+//        	if (config[iZone]->GetKind_Solver() == RANS)
+//        	    SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
+        }
+
         break;
       case ADJ_EULER : case ADJ_NAVIER_STOKES : case ADJ_RANS :
       case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:

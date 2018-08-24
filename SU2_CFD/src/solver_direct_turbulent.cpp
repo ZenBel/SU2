@@ -1582,6 +1582,9 @@ void CTurbSASolver::Source_Residual(CGeometry *geometry, CSolver **solver_contai
     
     numerics->ComputeResidual(Residual, Jacobian_i, NULL, config);
 
+    /*---Store all variables necessary for SetTurbulent_CSV ---*/
+    solver_container[TURB_SOL]->node[iPoint]->SetProductionDestruction(numerics->GetProduction(), numerics->GetDestruction());
+
     /*--- Store the intermittency ---*/
 
     if (transition_BC) {
