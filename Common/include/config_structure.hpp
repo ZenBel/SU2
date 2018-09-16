@@ -123,7 +123,6 @@ private:
   EquivArea,				/*!< \brief Flag to know if the code is going to compute and plot the equivalent area. */
   Engine,				/*!< \brief Flag to know if the code is going to compute a problem with engine. */
   InvDesign_Cp,				/*!< \brief Flag to know if the code is going to compute and plot the inverse design. */
-  DataAssimilation,
   InvDesign_HeatFlux,				/*!< \brief Flag to know if the code is going to compute and plot the inverse design. */
   Grid_Movement,			/*!< \brief Flag to know if there is grid movement. */
   Wind_Gust,              /*!< \brief Flag to know if there is a wind gust. */
@@ -974,6 +973,9 @@ private:
   bool Body_Force;            /*!< \brief Flag to know if a body force is included in the formulation. */
   su2double *Body_Force_Vector;  /*!< \brief Values of the prescribed body force vector. */
   su2double *FreeStreamTurboNormal; /*!< \brief Direction to initialize the flow in turbomachinery computation */
+
+  bool DataAssimilation;
+  su2double Regularization;
 
   /*--- all_options is a map containing all of the options. This is used during config file parsing
    to track the options which have not been set (so the default values can be used). Without this map
@@ -4634,7 +4636,9 @@ public:
    * \return <code>TRUE</code> or <code>FALSE</code>  depending if we are computing the equivalent area.
    */
   bool GetInvDesign_Cp(void);
+
   bool GetDataAssimilation(void);
+  su2double GetRegularization(void);
   
   /*!
    * \brief Information about computing and plotting the equivalent area distribution.

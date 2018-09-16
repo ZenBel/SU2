@@ -802,11 +802,13 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
   }
 
   /*--- Compute Quantities on each processor ---*/
-  su2double *Vorticity, rho, mu;
+  su2double *Vorticity, rho, mu, Volume;
 
   for (iPoint = 0; iPoint < nPointDomain; iPoint++ ){
 
     Global_Index = geometry->node[iPoint]->GetGlobalIndex();
+//    Volume = geometry->node[iPoint]->GetVolume();
+
     local_xCoord[Global_Index] = geometry->node[iPoint]->GetCoord(0);
     local_yCoord[Global_Index] = geometry->node[iPoint]->GetCoord(1);
     local_zCoord[Global_Index] = 0.0;
@@ -815,8 +817,9 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
     local_discrTerm[Global_Index] = config->GetDiscrTerm(Global_Index);
     local_dist_i_2[Global_Index] = geometry->node[iPoint]->GetWall_Distance();
 
-    Vorticity = FlowSolver->node[iPoint]->GetVorticity();
-    local_Omega[Global_Index] = sqrt(Vorticity[0]*Vorticity[0]+ Vorticity[1]*Vorticity[1]+ Vorticity[2]*Vorticity[2]);
+//    Vorticity = FlowSolver->node[iPoint]->GetVorticity();
+//    local_Omega[Global_Index] = sqrt(Vorticity[0]*Vorticity[0]+ Vorticity[1]*Vorticity[1]+ Vorticity[2]*Vorticity[2]);
+    local_Omega[Global_Index] = TurbSolver->node[iPoint]->GetOmegaTurb();
 
     rho = FlowSolver->node[iPoint]->GetDensity();
     mu  = FlowSolver->node[iPoint]->GetLaminarViscosity();
@@ -834,7 +837,25 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
 
     local_Production[Global_Index] = TurbSolver->node[iPoint]->GetProduction();
     local_Destruction[Global_Index] = TurbSolver->node[iPoint]->GetDestruction();
-    local_fd[Global_Index] = 0.0;
+
+    // Following snippet of code copied from SetDES_LengthScale()
+    su2double kinematicViscosityTurb, kinematicViscosity, uijuij, k2, wallDistance, r_d, **primVarGrad = NULL;
+    kinematicViscosityTurb = local_eddy_visc[Global_Index]/rho;
+    kinematicViscosity = local_nu[Global_Index];
+    k2 = pow(0.41, 2.0);
+    primVarGrad = FlowSolver->node[iPoint]->GetGradient_Primitive();
+    uijuij = 0.0;
+    for(iDim = 0; iDim < nDim; iDim++){
+      for(jDim = 0; jDim < nDim; jDim++){
+        uijuij += primVarGrad[1+iDim][jDim]*primVarGrad[1+iDim][jDim];
+      }
+    }
+    uijuij = sqrt(fabs(uijuij));
+    uijuij = max(uijuij,1e-10);
+    r_d = (kinematicViscosityTurb+kinematicViscosity)/(uijuij*k2*pow(wallDistance, 2.0));
+    local_fd[Global_Index] = 1.0-tanh(pow(8.0*r_d,3.0));
+
+    // end snippet of code DES
 
   }
 
@@ -9111,15 +9132,18 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 
     factor = 1.0 / (0.5*RefDensity*RefVel2);
 
+//    su2double lambda = 1e-3; //Tikhonov regularization factor (HARDCODED)
+    su2double lambda = config->GetRegularization(); //Tikhonov regularization factor
+
     if ( config->GetExtIter() == 0){
 
       config->Initialize_ErrorFunc_Variables(nPointGlobal);
 
       if (rank==MASTER_NODE){
         cout << "Reading TargetCp.dat and storing the information."<< endl;
-//        if (config->GetBoolDiscrepancyTerm() && rank == MASTER_NODE){
-//    	    cout << "Tikhonov regularization of the OF implemented with lambda = 1e-4. (only for DISCREPANCY_DV)"<< endl;
-//        }
+        if (config->GetBoolDiscrepancyTerm()){
+    	    cout << "Tikhonov regularization of the OF implemented with lambda = "<< lambda << ". (only for DISCREPANCY_DV)"<< endl;
+        }
       }
 
 	  /*--- Prepare to read the surface pressure files (CSV) ---*/
@@ -9192,10 +9216,9 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
 	    }
 		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
-//		if (config->GetBoolDiscrepancyTerm()){
-//			su2double lambda = 1e-4; //HARDCODED
-//			Buffer_ErrorFunc += lambda * (config->GetDiscrTerm(GlobalIndex) - 1.0) * (config->GetDiscrTerm(GlobalIndex) - 1.0);
-//		}
+		if (config->GetBoolDiscrepancyTerm()){
+			Buffer_ErrorFunc += lambda * (config->GetDiscrTerm(GlobalIndex) - 1.0) * (config->GetDiscrTerm(GlobalIndex) - 1.0);
+		}
 	  }
     }
 

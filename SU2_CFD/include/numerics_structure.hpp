@@ -1338,6 +1338,7 @@ public:
    * \param[in] val_production - Value of the Production.
    */
   virtual su2double GetProduction(void);
+  virtual su2double GetOmegaTurb(void);
   
   /*!
    * \brief Residual for source term integration.
@@ -4376,7 +4377,7 @@ public:
    * \brief ______________.
    */
   su2double GetProduction(void);
-
+  su2double GetOmegaTurb(void);
   /*!
    * \brief  Get the intermittency for the BC trans. model.
    * \return Value of the intermittency.

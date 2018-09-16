@@ -427,9 +427,7 @@ void CSourcePieceWise_TurbSA::ComputeResidual(su2double *val_residual, su2double
       Production = gamma_BC*cb1*Shat*TurbVar_i[0]*Volume;
     }
     else {
-//      cout << fixed << showpoint;
-//      cout << "discTerm = " << discrepancyTerm << endl;
-      Production = discrepancyTerm*cb1*Shat*TurbVar_i[0]*Volume;
+      Production = cb1*Shat*TurbVar_i[0]*Volume;
     }
     
     /*--- Destruction term ---*/
@@ -453,7 +451,17 @@ void CSourcePieceWise_TurbSA::ComputeResidual(su2double *val_residual, su2double
     
     CrossProduction = cb2_sigma*norm2_Grad*Volume;
     
-    val_residual[0] = Production - Destruction + CrossProduction;
+
+//    su2double f_1, f_2, f_5, f_6, beta;
+//    f_1 = Omega * dist_i_2 / (nu + TurbVar_i[0]);
+//    f_2 = Ji;
+//    f_5 = Production/(Destruction + 1e-15);
+//    f_6 = exp(-10*dist_i_2);
+//    beta = 6.46201711589e-07*f_2*f_2*f_6 + 0.000955883887177*f_2*f_6*f_6 - 0.000806124510015*f_2 + 1.0;
+    su2double beta = discrepancyTerm;
+
+    val_residual[0] = beta*Production - Destruction + CrossProduction;
+
     
     /*--- Implicit part, production term ---*/
     

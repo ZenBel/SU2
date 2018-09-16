@@ -311,8 +311,10 @@ inline su2double CVariable::GetThermalConductivity_ve(void) { return 0; }
 inline su2double* CVariable::GetVorticity(void) { return 0; }
 
 inline su2double CVariable::GetStrainMag(void) { return 0; }
+
 inline su2double CVariable::GetProduction(void) { return 0; }
 inline su2double CVariable::GetDestruction(void) { return 0;}
+inline su2double CVariable::GetOmegaTurb(void) { return 0;}
 
 inline void CVariable::SetForceProj_Vector(su2double *val_ForceProj_Vector) { }
 
@@ -457,7 +459,9 @@ inline void CVariable::SetSpecificHeatCp(su2double Cp) { }
 inline bool CVariable::SetVorticity(void) { return false; }
 
 inline bool CVariable::SetStrainMag(void) { return false; }
+
 inline void CVariable::SetProductionDestruction(su2double val_production, su2double val_destruction) { }
+inline void CVariable::SetOmegaTurb(su2double val_omega) { }
 
 inline void CVariable::SetGradient_PrimitiveZero(unsigned short val_primvar) { }
 
@@ -1307,9 +1311,14 @@ inline void CHeatVariable::SetSolution_Direct(su2double *val_solution_direct) { 
 
 inline su2double CTurbSAVariable::GetProduction(void) { return Production; }
 inline su2double CTurbSAVariable::GetDestruction(void) { return Destruction;}
+inline su2double CTurbSAVariable::GetOmegaTurb(void) { return OmegaTurb;}
+
 inline void CTurbSAVariable::SetProductionDestruction(su2double val_production, su2double val_destruction) { 
   Production = val_production;
   Destruction = val_destruction;
+}
+inline void CTurbSAVariable::SetOmegaTurb(su2double val_omega) { 
+  OmegaTurb = val_omega;
 }
 
 

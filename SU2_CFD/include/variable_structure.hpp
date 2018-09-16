@@ -1078,8 +1078,10 @@ public:
    * \return Value of the rate of strain magnitude.
    */
   virtual su2double GetStrainMag(void);
+
   virtual su2double GetProduction(void);
   virtual su2double GetDestruction(void);
+  virtual su2double GetOmegaTurb(void);
   
   /*!
    * \brief A virtual member.
@@ -1611,7 +1613,7 @@ public:
    */
   virtual bool SetStrainMag(void);
   virtual void SetProductionDestruction(su2double val_production, su2double val_destruction);
-  
+  virtual void SetOmegaTurb(su2double val_omega);
   /*!
    * \brief A virtual member.
    */
@@ -4272,6 +4274,7 @@ protected:
   su2double *HB_Source;          /*!< \brief Harmonic Balance source term. */
   
   su2double Production, Destruction;
+  su2double OmegaTurb;
 
 public:
   /*!
@@ -4392,6 +4395,8 @@ public:
   su2double GetProduction(void);
   su2double GetDestruction(void);
 
+  void SetOmegaTurb(su2double val_omega);
+  su2double GetOmegaTurb(void);
 };
 
 /*!
