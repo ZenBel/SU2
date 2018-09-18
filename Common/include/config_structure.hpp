@@ -4223,12 +4223,6 @@ public:
   bool GetBoolRiemann(void);
 
   /*!
-   * \brief Verify if there is Non-Uniform Boundary Condition option specified from config file.
-   * \return boolean.
-   */
-  bool GetBoolNonUniformBC(void);
-
-  /*!
    * \brief Get the input file name of the NonUniform boundary condition.
    * \param[in] val_marker - Index corresponding to the NonUniform boundary.
    * \return NonUniform_FileName

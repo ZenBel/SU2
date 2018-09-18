@@ -13325,15 +13325,11 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 			//TODO Setting quantities possibly needed for optimization
         }
 
-//      /*---Storing the values of the external state (to be used in solver_adjoint_mean.cpp) ---*/
-//	  node[iPoint]->SetDensity_e(Density_e);
-//	  node[iPoint]->SetEnergy_e(Energy_e);
-//	  node[iPoint]->SetVelMag_e(VelMag_e);
-//	  node[iPoint]->SetFlowDirX_e(Flow_Dir[0]);
-//	  node[iPoint]->SetFlowDirY_e(Flow_Dir[1]);
-//	  node[iPoint]->SetFlowDirZ_e(Flow_Dir[2]);
-//	  node[iPoint]->SetPressure_e(Pressure_e);
-//	  node[iPoint]->SetPtot_nubc(P_Total);
+      /*---Storing the values of the external state (to be used in solver_adjoint_mean.cpp) ---*/
+	  node[iPoint]->SetPtot_nubc(P_Total);
+	  node[iPoint]->SetTtot_nubc(T_Total);
+	  node[iPoint]->SetAlpha_nubc(alpha);
+	  node[iPoint]->SetPstatic_nubc(Pressure_e);
 
       /*--- Compute P (matrix of right eigenvectors) ---*/
       conv_numerics->GetPMatrix(&Density_i, Velocity_i, &SoundSpeed_i, &Enthalpy_i, &Chi_i, &Kappa_i, UnitNormal, P_Tensor);

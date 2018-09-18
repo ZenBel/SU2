@@ -923,7 +923,7 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
 	  SurfFlow_file.open(cstr, ios::out);
 
 	  SurfFlow_file << "\"Global_Index\", \"x_coord\", \"y_coord\", \"z_coord\", ";
-	  SurfFlow_file << "\"discrTerm\", \"Omega\", \"dist_i_2\", \"nu\", \"nu_hat\", \"Ji\", ";
+	  SurfFlow_file << "\"discrTerm\", \"Omega\", \"dist_i\", \"nu\", \"nu_hat\", \"Ji\", ";
 	  SurfFlow_file << "\"Strain_Mag\", \"Production\", \"Destruction\", \"fd\", ";
 	  SurfFlow_file << "\"dudx\", \"dudy\", \"dudz\", \"dvdx\", \"dvdy\", \"dvdz\", \"dwdx\", \"dwdy\", \"dwdz\""<< "\n";
 
@@ -9132,7 +9132,6 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 
     factor = 1.0 / (0.5*RefDensity*RefVel2);
 
-//    su2double lambda = 1e-3; //Tikhonov regularization factor (HARDCODED)
     su2double lambda = config->GetRegularization(); //Tikhonov regularization factor
 
     if ( config->GetExtIter() == 0){
@@ -9157,8 +9156,8 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 
 	  Surface_file.open(cstr, ios::in);
 	  if (Surface_file.fail()) {
-	  cout << "There is no Target file for ERROR_FUNC!! " << surfCp_filename.data() << "."<< endl;
-	  exit(EXIT_FAILURE);
+	    cout << "There is no Target file for ERROR_FUNC!! " << surfCp_filename.data() << "."<< endl;
+	    exit(EXIT_FAILURE);
 	  }
 
 	  getline(Surface_file, text_line);
@@ -9195,7 +9194,6 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	  	    if (dist < tolerance){
 	 		  config->SetTargetPointID(GlobalIndex);
 	 		  config->SetTargetQuantity(pressure_coeff, GlobalIndex);
-//	 		  cout << "GlobalIndex = " << GlobalIndex << ", X - x = " << Coord[0] - x_coord << ", Y - y = " << Coord[1] - y_coord << endl;
 	  	    }
 	      }
 	    }
@@ -9204,7 +9202,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
     }
 
     /*--- Loop over all points of a (partitioned) domain ---*/
-    unsigned long i = 0;
+
     for (iPoint = 0; iPoint < nPointLocal; iPoint++){
       /*--- Filter out the Halo nodes ---*/
 	  if (geometry->node[iPoint]->GetDomain()){
@@ -9221,6 +9219,23 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 		}
 	  }
     }
+
+    unsigned long iPos, InputPoints;
+    unsigned short nMarker_NonUniform = config->GetnMarkerNonUniform();
+    unsigned short count;
+
+	if( (config->GetBoolNonUniform()) && (rank = MASTER_NODE) ){ //need to account only once for spline nodes values.
+	  for (iMarker = 0; iMarker < nMarker_NonUniform; iMarker++){
+	    InputPoints = config->GetNUBC_nPoints(count);
+	    string spaceVar = config->GetNUBC_spaceVar(count);
+	    for (iPos=0; iPos<InputPoints; iPos++){
+			Buffer_ErrorFunc += lambda * (config->GetNUBC_Var1(iPos, count) - 101300.0) * (config->GetNUBC_Var1(iPos, count) - 101300.0);
+			Buffer_ErrorFunc += lambda * (config->GetNUBC_Var2(iPos, count) - 288.15) * (config->GetNUBC_Var2(iPos, count) - 288.15);
+			Buffer_ErrorFunc += lambda * (config->GetNUBC_Var3(iPos, count) - 84000.0) * (config->GetNUBC_Var3(iPos, count) - 84000.0);
+			Buffer_ErrorFunc += lambda * (config->GetNUBC_Var4(iPos, count) - 0.0) * (config->GetNUBC_Var4(iPos, count) - 0.0);
+	    }
+	  }
+	}
 
 	AllBound_ErrorFunc += Buffer_ErrorFunc;
 
