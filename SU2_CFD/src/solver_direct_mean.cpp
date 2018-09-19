@@ -10237,7 +10237,7 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
 }
 
 void CEulerSolver::PreprocessBC_Giles(CGeometry *geometry, CConfig *config, CNumerics *conv_numerics, unsigned short marker_flag) {
-  /* Implementation of Fuorier Transformations for non-regfelcting BC will come soon */
+  /* Implementation of Fourier Transformations for non-refelcting BC will come soon */
   su2double cj_inf,cj_out1, cj_out2, Density_i, Pressure_i, *turboNormal, *turboVelocity, *Velocity_i, AverageSoundSpeed;
   su2double *deltaprim, *cj, TwoPiThetaFreq_Pitch, pitch, theta, deltaTheta;
   unsigned short iMarker, iSpan, iMarkerTP, iDim;
@@ -12986,7 +12986,7 @@ void CEulerSolver::SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config,
   	exit(EXIT_FAILURE);
   }
 
-  su2double *CoordIn, Var1In, Var2In, Var3In, Alpha, Beta;
+  su2double *CoordIn, Var1In, Var2In, Var3In, Alpha, Beta, switchLoc;
   su2double dVar1_1, dVar1_N, dVar2_1, dVar2_N, dVar3_1, dVar3_N, dAlpha_1, dAlpha_N, dBeta_1, dBeta_N;
   vector<su2double> InputCoord, InputVar1, InputVar2, InputVar3, InputAlpha, InputBeta;
   vector<su2double> InputCoord_, InputVar1_, InputVar2_, InputVar3_, InputFlowDir_x_, InputFlowDir_y_, InputFlowDir_z_;
@@ -12998,7 +12998,9 @@ void CEulerSolver::SetBC_NonUniform_Spline(CGeometry *geometry, CConfig *config,
   /*--- Read head of the file for allocation ---*/
   getline (input_file, text_line);
   istringstream point_line(text_line);
-  point_line >> InputPoints >> spaceVar;
+  point_line >> InputPoints >> spaceVar >> switchLoc;
+
+  cout << "Switch location for " << NUBC_InputFile << " is at " << spaceVar << " = " << switchLoc << "." << endl;
 
   while (getline (input_file, text_line)) {
 	istringstream point_line(text_line);
@@ -13194,14 +13196,20 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 	  Coord[2] = 0.0;
 	  if (nDim == 3) {Coord[2] = geometry->node[iPoint]->GetCoord(nDim);}
 
-	  su2double coord;
+	  su2double coord, switchLoc;
 
 	  if (spaceVar == "x"){ coord = Coord[0];}
 	  else if (spaceVar == "y"){ coord = Coord[1];}
 	  else {cout << "Cannot recognize Marker " << Marker_Tag << " as a Non-Uniform marker." << endl; break;}
 
+	  switchLoc = config->GetNUBC_switchLoc(count);
+
       /*--- Build the external state u_e from boundary data and internal node ---*/
-      if (ProjVelocity_i < 0.0) {
+	  if (coord > switchLoc) { //inflow for all points whose coord > switchLoc
+//      if (ProjVelocity_i < 0.0) {
+		  if (ProjVelocity_i > 0.0){
+			  cout << "coord = " << coord << " and ProjVelocity = "<< ProjVelocity_i << ": inflow is forced at this point." << endl;
+		  }
 
 		  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
 
@@ -13281,8 +13289,12 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 //			  Pressure_e = FluidModel->GetPressure();
 		  }
         }
+	  else if  (coord < switchLoc) {
+//        else if (ProjVelocity_i > 0.0) {
+		  if (ProjVelocity_i < 0.0){
+			  cout << "coord = " << coord << " and ProjVelocity = "<< ProjVelocity_i << ": outflow is forced at this point." << endl;
+		  }
 
-        else if (ProjVelocity_i > 0.0) {
           /*--- Retrieve the staic pressure for this boundary. ---*/
 
           Pressure_e = config->GetSpline(InputCoord, InputVar3, NUBC_d2Var3, InputPoints, coord);
@@ -13325,11 +13337,11 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 			//TODO Setting quantities possibly needed for optimization
         }
 
-      /*---Storing the values of the external state (to be used in solver_adjoint_mean.cpp) ---*/
-	  node[iPoint]->SetPtot_nubc(P_Total);
-	  node[iPoint]->SetTtot_nubc(T_Total);
-	  node[iPoint]->SetAlpha_nubc(alpha);
-	  node[iPoint]->SetPstatic_nubc(Pressure_e);
+//      /*---Storing the values of the external state (to be used in solver_adjoint_mean.cpp) ---*/
+//	  node[iPoint]->SetPtot_nubc(P_Total);
+//	  node[iPoint]->SetTtot_nubc(T_Total);
+//	  node[iPoint]->SetAlpha_nubc(alpha);
+//	  node[iPoint]->SetPstatic_nubc(Pressure_e);
 
       /*--- Compute P (matrix of right eigenvectors) ---*/
       conv_numerics->GetPMatrix(&Density_i, Velocity_i, &SoundSpeed_i, &Enthalpy_i, &Chi_i, &Kappa_i, UnitNormal, P_Tensor);

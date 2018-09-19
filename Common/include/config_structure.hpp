@@ -283,6 +283,7 @@ private:
 
   string    *NonUniform_spaceVar;
   unsigned long *NonUniform_InputPoints;
+  su2double *NonUniform_switchLoc;
 
   su2double **NonUniform_d2Var1, **NonUniform_d2Var2, **NonUniform_d2Var3,
             **NonUniform_d2Var4, **NonUniform_d2Var5, **NonUniform_d2Var6;
@@ -6041,6 +6042,7 @@ public:
   void Initialize_NonUniformVar(unsigned short n_nubc_marker, string *nubc_input_file);
   unsigned long GetNUBC_nPoints(unsigned short val_marker);
   string GetNUBC_spaceVar(unsigned short val_marker);
+  su2double GetNUBC_switchLoc(unsigned short val_marker);
 
   /*!
    * \brief Get the Flowdir at Riemann boundary.

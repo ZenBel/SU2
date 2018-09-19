@@ -7063,6 +7063,10 @@ string CConfig::GetNUBC_spaceVar(unsigned short val_marker) {
   return NonUniform_spaceVar[val_marker];
 }
 
+su2double CConfig::GetNUBC_switchLoc(unsigned short val_marker) {
+  return NonUniform_switchLoc[val_marker];
+}
+
 void CConfig::Initialize_NonUniformVar( unsigned short n_nubc_marker, string *nubc_input_file) {
 
   unsigned short iMarker;
@@ -7070,9 +7074,11 @@ void CConfig::Initialize_NonUniformVar( unsigned short n_nubc_marker, string *nu
   string text_line, input_filename;
   string spaceVar;
   ifstream input_file;
+  su2double switchLoc;
 
   NonUniform_InputPoints = new unsigned long[n_nubc_marker];
   NonUniform_spaceVar = new string[n_nubc_marker];
+  NonUniform_switchLoc = new su2double[n_nubc_marker];
 
   NonUniform_Coord = new su2double*[n_nubc_marker];
   NonUniform_Var1 = new su2double*[n_nubc_marker];
@@ -7103,10 +7109,11 @@ void CConfig::Initialize_NonUniformVar( unsigned short n_nubc_marker, string *nu
     /*--- Read head of the file for allocation ---*/
     getline (input_file, text_line);
     istringstream point_line(text_line);
-    point_line >> InputPoints >> spaceVar;
+    point_line >> InputPoints >> spaceVar >> switchLoc;
 
     NonUniform_InputPoints[iMarker] = InputPoints;
     NonUniform_spaceVar[iMarker] = spaceVar;
+    NonUniform_switchLoc[iMarker] = switchLoc;
 
     NonUniform_Coord[iMarker] = new su2double[InputPoints];
     NonUniform_Var1[iMarker] = new su2double[InputPoints];
