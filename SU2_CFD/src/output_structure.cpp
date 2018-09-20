@@ -7913,7 +7913,7 @@ void COutput::SetResult_Files(CSolver ****solver_container, CGeometry ***geometr
         if (Wrt_Csv){
         	SetSurfaceCSV_Flow(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
         	if (config[iZone]->GetKind_Solver() == RANS){
-        		SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
+//        		SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
         	}
         }
         break;
@@ -9220,7 +9220,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	  }
     }
 
-    unsigned long iPos, InputPoints;
+    unsigned long InputPoints;
     unsigned short nMarker_NonUniform = config->GetnMarkerNonUniform();
     unsigned short count;
 
@@ -11865,7 +11865,7 @@ void COutput::SetResult_Files_Parallel(CSolver ****solver_container,
         if (Wrt_Csv) {
         	SetSurfaceCSV_Flow(config[iZone], geometry[iZone][MESH_0],solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
         	if (config[iZone]->GetKind_Solver() == RANS){
-        	    SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
+//        	    SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
         	}
         }
 

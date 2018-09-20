@@ -570,6 +570,8 @@ void CTransfer_MixingPlaneInterface::GetDonor_Variable(CSolver *donor_solution, 
   bool turbulent = ((donor_config->GetKind_Solver() == RANS) || (donor_config->GetKind_Solver() == DISC_ADJ_RANS));
 
 
+  cout << "cccc"<< endl;
+
 
   Donor_Variable[0] = donor_solution->GetAverageDensity(Marker_Donor, iSpan);
   Donor_Variable[1]	= donor_solution->GetAveragePressure(Marker_Donor, iSpan);

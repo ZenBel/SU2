@@ -100,6 +100,7 @@ void CIntegration::Space_Integration(CGeometry *geometry,
   /*--- Compute Fourier Transformations for markers where NRBC_BOUNDARY is applied---*/
 
   if (config->GetBoolGiles() && config->GetSpatialFourier()){
+	cout << "aaaa" << endl;
     solver_container[MainSolver]->PreprocessBC_Giles(geometry, config, numerics[CONV_BOUND_TERM], INFLOW);
 
     solver_container[MainSolver]->PreprocessBC_Giles(geometry, config, numerics[CONV_BOUND_TERM], OUTFLOW);

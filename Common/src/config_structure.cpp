@@ -2443,9 +2443,9 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
 
   /*--- Check if Giles are used with turbo markers ---*/
 
-  if (nMarker_Giles > 0 && !GetBoolTurbomachinery()){
-    SU2_MPI::Error("Giles Boundary conditions can only be used with turbomachinery markers", CURRENT_FUNCTION);
-  }
+//  if (nMarker_Giles > 0 && !GetBoolTurbomachinery()){
+//    SU2_MPI::Error("Giles Boundary conditions can only be used with turbomachinery markers", CURRENT_FUNCTION);
+//  }
 
   /*--- Check for Boundary condition available for NICFD ---*/
   

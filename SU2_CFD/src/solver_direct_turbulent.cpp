@@ -4166,6 +4166,7 @@ void CTurbSSTSolver::BC_Inlet_Turbo(CGeometry *geometry, CSolver **solver_contai
 
   string Marker_Tag = config->GetMarker_All_TagBound(val_marker);
 
+  cout << "bbbb"<< endl;
 
   for (iSpan= 0; iSpan < nSpanWiseSections ; iSpan++){
 

@@ -10245,6 +10245,8 @@ void CEulerSolver::PreprocessBC_Giles(CGeometry *geometry, CConfig *config, CNum
   long iVertex, freq;
   unsigned short  iZone     = config->GetiZone();
   unsigned short nSpanWiseSections = geometry->GetnSpanWiseSections(marker_flag);
+
+
   turboNormal 	= new su2double[nDim];
   turboVelocity = new su2double[nDim];
   Velocity_i 		= new su2double[nDim];
@@ -10258,6 +10260,10 @@ void CEulerSolver::PreprocessBC_Giles(CGeometry *geometry, CConfig *config, CNum
 #endif
 
   kend_max = geometry->GetnFreqSpanMax(marker_flag);
+
+  cout << "nSpanWiseSections = " << nSpanWiseSections << endl;
+  cout << "kend_max = " << kend_max << endl;
+
   for (iSpan= 0; iSpan < nSpanWiseSections ; iSpan++){
     for(k=0; k < 2*kend_max+1; k++){
       freq = k - kend_max;
