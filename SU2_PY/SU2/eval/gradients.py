@@ -285,6 +285,8 @@ def adjoint( func_name, config, state=None ):
             pull.append(files['TARGET_CP'])
         if ('DISCREPANCY_FILE' in files ):
             pull.append(files['DISCREPANCY_FILE'])
+        if ('MACH_AOA_FILE' in files ):
+            pull.append(files['MACH_AOA_FILE'])
         
     if (config.has_key('MARKER_NONUNIFORM')):
         path_nubc  = os.getcwd()

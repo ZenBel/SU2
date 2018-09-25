@@ -1485,6 +1485,13 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 		  }
 	  }
 
+	  /* Write sensitivities w.r.t. Mach nbr and Aoa */
+	  SensNUBC_file <<  "\"Mach Aoa\"";
+	  SensNUBC_file << "\n";
+	  SensNUBC_file << AdjSolver->GetTotal_Sens_Mach() << "\n";
+	  SensNUBC_file << AdjSolver->GetTotal_Sens_AoA() * PI_NUMBER / 180.0;
+	  SensNUBC_file << "\n";
+
 	  SensNUBC_file.close();
 
   }
@@ -7913,7 +7920,7 @@ void COutput::SetResult_Files(CSolver ****solver_container, CGeometry ***geometr
         if (Wrt_Csv){
         	SetSurfaceCSV_Flow(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
         	if (config[iZone]->GetKind_Solver() == RANS){
-        		SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
+//        		SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
         	}
         }
         break;
@@ -9100,13 +9107,13 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 
 	unsigned short icommas, iMarker, iDim;// Boundary, iDim;
 	unsigned long iVertex, iPoint, PointID, GlobalIndex, iPos, nPointLocal=0.0, nPointGlobal=0.0;
-	su2double x_coord, y_coord, z_coord, pressure, pressure_coeff;
+	su2double x_coord, y_coord, z_coord, pressure, pressure_coeff, Mach;
 	string text_line, surfCp_filename;
 	char buffer[50], cstr[200];
 	ifstream Surface_file;
 
 	su2double RefVel2, RefDensity, RefPressure, factor, weight;
-	su2double dist, *Coord, Target, Computed, Buffer_ErrorFunc, Volume, Buffer_VolumeTot, AllBound_ErrorFunc;
+	su2double dist, *Coord, Target, Computed, Buffer_ErrorFunc, Buffer_Regularization, Volume, Buffer_VolumeTot, AllBound_ErrorFunc;
 
     nPointLocal = geometry->GetnPoint(); // Total number of mesh points on the decomposed geometry managed by a single processor
 
@@ -9116,12 +9123,12 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
   nPointGlobal = nPointLocal;
 #endif
 
-	Buffer_VolumeTot   = 0.0;
 	Buffer_ErrorFunc   = 0.0;
+	Buffer_Regularization = 0.0;
 	AllBound_ErrorFunc = 0.0;
 
 #ifdef HAVE_MPI
-  su2double MyAllBound_ErrorFunc, MyAllBound_VolumeTot;
+  su2double MyAllBound_ErrorFunc;
 #endif
 
     RefDensity  = solver_container->GetDensity_Inf();
@@ -9140,6 +9147,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 
       if (rank==MASTER_NODE){
         cout << "Reading TargetCp.dat and storing the information."<< endl;
+        cout << "NOTE: The Cp is used as Target quantity!!!" << endl;
         if (config->GetBoolDiscrepancyTerm()){
     	    cout << "Tikhonov regularization of the OF implemented with lambda = "<< lambda << ". (only for DISCREPANCY_DV)"<< endl;
         }
@@ -9171,7 +9179,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 
 	    stringstream  point_line(text_line);
 
-	    if (geometry->GetnDim() == 2) point_line >> PointID >> x_coord >> y_coord >> pressure >> pressure_coeff;
+	    if (geometry->GetnDim() == 2) point_line >> PointID >> x_coord >> y_coord >> pressure >> pressure_coeff >> Mach;
 	    if (geometry->GetnDim() == 3) point_line >> PointID >> x_coord >> y_coord >> z_coord >> pressure >> pressure_coeff;
 
 	    /*--- Loop over all points of a (partitioned) domain ---*/
@@ -9194,6 +9202,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	  	    if (dist < tolerance){
 	 		  config->SetTargetPointID(GlobalIndex);
 	 		  config->SetTargetQuantity(pressure_coeff, GlobalIndex);
+//	 		  config->SetTargetQuantity(Mach, GlobalIndex);
 	  	    }
 	      }
 	    }
@@ -9211,11 +9220,12 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 		  weight = 1.0; //HARCODED
 		  Target = config->GetTargetQuantity(GlobalIndex);
 		  Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
+//		  Computed = Mach = sqrt(solver_container->node[iPoint]->GetVelocity2()) / solver_container->node[iPoint]->GetSoundSpeed();
 		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
 	    }
 		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
 		if (config->GetBoolDiscrepancyTerm()){
-			Buffer_ErrorFunc += lambda * (config->GetDiscrTerm(GlobalIndex) - 1.0) * (config->GetDiscrTerm(GlobalIndex) - 1.0);
+			Buffer_Regularization += lambda * (config->GetDiscrTerm(GlobalIndex) - 1.0) * (config->GetDiscrTerm(GlobalIndex) - 1.0);
 		}
 	  }
     }
@@ -9237,14 +9247,14 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 //	  }
 //	}
 
-	AllBound_ErrorFunc += Buffer_ErrorFunc;
+	AllBound_ErrorFunc += Buffer_ErrorFunc + Buffer_Regularization;
+
+//	cout << "ErrorFunc = " << Buffer_ErrorFunc << ", Regularization = " << Buffer_Regularization << endl;
 
 #ifdef HAVE_MPI
   /*--- Add AllBound information using all the nodes ---*/
-  MyAllBound_ErrorFunc	= AllBound_ErrorFunc;	AllBound_ErrorFunc = 0.0;
-  MyAllBound_VolumeTot	= Buffer_VolumeTot;	    Buffer_VolumeTot = 0.0;
+  MyAllBound_ErrorFunc	= AllBound_ErrorFunc;
   SU2_MPI::Allreduce(&MyAllBound_ErrorFunc, &AllBound_ErrorFunc, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  SU2_MPI::Allreduce(&MyAllBound_VolumeTot, &Buffer_VolumeTot, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
     solver_container->SetTotal_ErrorFunc(AllBound_ErrorFunc);
@@ -11865,7 +11875,7 @@ void COutput::SetResult_Files_Parallel(CSolver ****solver_container,
         if (Wrt_Csv) {
         	SetSurfaceCSV_Flow(config[iZone], geometry[iZone][MESH_0],solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
         	if (config[iZone]->GetKind_Solver() == RANS){
-        	    SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
+//        	    SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
         	}
         }
 

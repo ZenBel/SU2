@@ -13205,11 +13205,10 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 	  switchLoc = config->GetNUBC_switchLoc(count);
 
       /*--- Build the external state u_e from boundary data and internal node ---*/
-	  if (coord > switchLoc) { //inflow for all points whose coord > switchLoc
-//      if (ProjVelocity_i < 0.0) {
-		  if (ProjVelocity_i > 0.0){
-			  cout << "coord = " << coord << " and ProjVelocity = "<< ProjVelocity_i << ": inflow is forced at this point." << endl;
-		  }
+	  if (ProjVelocity_i < 0.0) {
+//	  if (coord > switchLoc) { //inflow for all points whose coord > switchLoc
+//		  if (ProjVelocity_i > 0.0)
+//			  cout << "coord = " << coord << " and ProjVelocity = "<< ProjVelocity_i << ": inflow is forced at this point." << endl;
 
 		  if (config->GetKind_Data_NonUniform(Marker_Tag) == TOTAL_CONDITIONS_PT){
 
@@ -13254,46 +13253,38 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
 		  else if (config->GetKind_Data_NonUniform(Marker_Tag) == DENSITY_VELOCITY){
 
-//			  Density_e = config->GetNUBC_Var1(PointID);
-//			  VelMag_e = config->GetNUBC_Var2(PointID);
-//
-//			  alpha = config->GetNUBC_Var4(PointID);
-//			  beta = 0.0;
-//			  if (nDim == 3 ) {beta  = config->GetNUBC_Var5(PointID);}
+			  Density_e = config->GetSpline(InputCoord, InputVar1, NUBC_d2Var1, InputPoints, coord);
+			  VelMag_e = config->GetSpline(InputCoord, InputVar2, NUBC_d2Var2, InputPoints, coord);
+			  alpha   = config->GetSpline(InputCoord, InputAlpha, NUBC_d2Var4, InputPoints, coord);
+			  beta    = 0.0;
+			  if (nDim == 3 ) { beta = config->GetSpline(InputCoord, InputBeta, NUBC_d2Var5, InputPoints, coord);}
 
-//			  Density_e = config->GetSpline(InputCoord, InputVar1, NUBC_d2Var1, InputPoints, Coord[1]);
-//			  VelMag_e  = config->GetSpline(InputCoord, InputVar2, NUBC_d2Var2, InputPoints, Coord[1]);
-//			  alpha     = config->GetSpline(InputCoord, InputAlpha, NUBC_d2Var4, InputPoints, Coord[1]);
-//			  beta      = 0.0;
-//			  if (nDim == 3 ) { beta   = config->GetSpline(InputCoord, InputBeta, NUBC_d2Var5, InputPoints, Coord[1]);}
-//
-//			  Flow_Dir_norm[0] = cos(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
-//			  Flow_Dir_norm[1] = sin(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
-//			  if (nDim == 3 ) {Flow_Dir_norm[2] = cos(alpha*PI_NUMBER/180.0)*sin(beta*PI_NUMBER/180.0);}
-//
-//			  /*--- Non-dim. the inputs if necessary. ---*/
-//			  Density_e /= config->GetDensity_Ref();
-//			  VelMag_e /= config->GetVelocity_Ref();
-//
-//			  Energy_e = Energy_i;
-//			  Velocity2_e = 0;
-//			  for (iDim = 0; iDim < nDim; iDim++){
-//				  Velocity_e[iDim] = VelMag_e*Flow_Dir_norm[iDim];
-//				  Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
-//			  }
-//
-//			  StaticEnergy_e = Energy_i - 0.5*Velocity2_e;
-//			  //cout << Energy_e << ", " << 0.5*(Velocity_e[0]*Velocity_e[0] + Velocity_e[1]*Velocity_e[1]) << ", "<< StaticEnergy_e <<endl;
-//
-//			  FluidModel->SetTDState_rhoe(Density_e, StaticEnergy_e);
-//			  Pressure_e = FluidModel->GetPressure();
+			  Flow_Dir_norm[0] = cos(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
+			  Flow_Dir_norm[1] = sin(alpha*PI_NUMBER/180.0)*cos(beta*PI_NUMBER/180.0);
+			  if (nDim == 3 ) {Flow_Dir_norm[2] = cos(alpha*PI_NUMBER/180.0)*sin(beta*PI_NUMBER/180.0);}
+
+			  /*--- Non-dim. the inputs if necessary. ---*/
+			  Density_e /= config->GetDensity_Ref();
+			  VelMag_e /= config->GetVelocity_Ref();
+
+			  Energy_e = Energy_i;
+			  Velocity2_e = 0;
+			  for (iDim = 0; iDim < nDim; iDim++){
+				  Velocity_e[iDim] = VelMag_e*Flow_Dir_norm[iDim];
+				  Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
+			  }
+
+			  StaticEnergy_e = Energy_i - 0.5*Velocity2_e;
+			  //cout << Energy_e << ", " << 0.5*(Velocity_e[0]*Velocity_e[0] + Velocity_e[1]*Velocity_e[1]) << ", "<< StaticEnergy_e <<endl;
+
+			  FluidModel->SetTDState_rhoe(Density_e, StaticEnergy_e);
+			  Pressure_e = FluidModel->GetPressure();
 		  }
         }
-	  else if  (coord < switchLoc) {
-//        else if (ProjVelocity_i > 0.0) {
-		  if (ProjVelocity_i < 0.0){
-			  cout << "coord = " << coord << " and ProjVelocity = "<< ProjVelocity_i << ": outflow is forced at this point." << endl;
-		  }
+	  else if (ProjVelocity_i > 0.0) {
+//	  else if  (coord < switchLoc) {
+//		  if (ProjVelocity_i < 0.0)
+//			  cout << "coord = " << coord << " and ProjVelocity = "<< ProjVelocity_i << ": outflow is forced at this point." << endl;
 
           /*--- Retrieve the staic pressure for this boundary. ---*/
 
@@ -13412,12 +13403,6 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
       Kappa_b = FluidModel->GetdPde_rho() / Density_b;
       Chi_b = FluidModel->GetdPdrho_e() - Kappa_b * StaticEnergy_b;
 
-//      cout << "rho_i = " << Density_i << ", rho_e = " << Density_e << ", rho_b = "<<  Density_b << endl;
-//      cout << "v1_i = " << Velocity_i[0] << ", v1_e = " << Velocity_e[0] << ", v1_b = "<<  Velocity_b[0] << endl;
-//      cout << "v2_i = " << Velocity_i[1] << ", v2_e = " << Velocity_e[1] << ", v2_b = "<<  Velocity_b[1] << endl;
-//      cout << "T_i = " << "n.a." << ", T_e = " << V_domain[0] << ", T_b = "<< Temperature_b << endl;
-//      cout << "p_i = " << Pressure_i << ", p_e = " << Pressure_e << ", p_b = "<<  Pressure_b << endl;
-//      cout << "E_i = " << Energy_i << ", E_e = " << Energy_e << ", E_b = "<<  Energy_b << endl;
 
       /*--- Primitive variables, using the derived quantities ---*/
 	  V_boundary[0] = Temperature_b;
@@ -15967,6 +15952,19 @@ CNSSolver::CNSSolver(CGeometry *geometry, CConfig *config, unsigned short iMesh)
   /*--- Set up inlet profiles, if necessary ---*/
 
   SetInlet(config);
+
+  /*--- Initialize the Non-uniform boundary condition ---*/
+  if (config->GetBoolNonUniform()){
+    unsigned short nMarkerNonUniform = config->GetnMarkerNonUniform();
+    string *NUBC_InputFiles	 = new string[nMarkerNonUniform];
+    for (iMarker = 0; iMarker < nMarkerNonUniform; iMarker++)
+	  NUBC_InputFiles[iMarker] = config->GetNonUniform_file(iMarker);
+
+    config->Initialize_NonUniformVar(nMarkerNonUniform, NUBC_InputFiles);
+
+    for (iMarker = 0; iMarker < nMarkerNonUniform; iMarker++)
+	  SetBC_NonUniform_Spline(geometry, config, iMarker, NUBC_InputFiles[iMarker]);
+  }
 
   /*--- Inviscid force definition and coefficient in all the markers ---*/
   

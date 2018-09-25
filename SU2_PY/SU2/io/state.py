@@ -235,6 +235,7 @@ class State(ordered_bunch):
         targetcp_name = 'TargetCp.dat'
         targetheatflux_name = 'TargetHeatFlux.dat'
         discrepancyTerm_name = 'discrepancyTerm.dat'
+        mach_aoa_name = 'Mach_Aoa.dat'
                 
         # files: Non-Uniform boundary (.bc) files           
         if (config.has_key('MARKER_NONUNIFORM')):
@@ -308,6 +309,9 @@ class State(ordered_bunch):
                 assert config['DEFINITION_DV']['KIND'][-1] == 'DISCREPANCY_DV', 'DISCREPANCY_DV must be defined only once as the last design variable.'
                 assert discrepancyTerm_name in os.listdir(os.getcwd()), 'discrepancyTerm.dat not found. Note that it should be defined for optimizations.'
                 register_file('DISCREPANCY_FILE', discrepancyTerm_name)
+            if 'MACH_AOA_INF' in config['DEFINITION_DV']['KIND']:
+                assert mach_aoa_name in os.listdir(os.getcwd()), 'Mach_Aoa.dat not found. Note that it should be defined for optimizations.'
+                register_file('MACH_AOA_FILE', mach_aoa_name)
         
         if (config.has_key('MARKER_NONUNIFORM')):
             for i in range(len(nubc_filenames)):

@@ -252,6 +252,8 @@ def aerodynamics( config, state=None ):
             pull.append(files['TARGET_CP'])
         if ('DISCREPANCY_FILE' in files ):
             pull.append(files['DISCREPANCY_FILE'])
+        if ('MACH_AOA_FILE' in files ):
+            pull.append(files['MACH_AOA_FILE'])
         
     if (config.has_key('MARKER_NONUNIFORM')):
         path_nubc  = os.getcwd()
@@ -286,8 +288,14 @@ def aerodynamics( config, state=None ):
     nubc_new = config['DV_VALUE_NEW']
     if 'DISCREPANCY_FILE' in files:
         buf = numpy.loadtxt(state['FILES']['DISCREPANCY_FILE'], skiprows=1)
-        buf[:,1:] = numpy.matrix(nubc_new).T
+        buf[:,1:] = numpy.matrix(nubc_new).T    #possible bug here when different DVs are used
         numpy.savetxt(state['FILES']['DISCREPANCY_FILE'], buf, fmt='%i\t %.16f\t', comments='', header=str(buf.shape[0]))  
+        
+    ### Update Mach_Aoa file
+    dv_new = config['DV_VALUE_NEW']
+    if 'MACH_AOA_FILE' in files:
+        buf = numpy.matrix(dv_new).T
+        numpy.savetxt(state['FILES']['MACH_AOA_FILE'], buf, fmt='%.16f')
         
   
     # output redirection

@@ -1419,7 +1419,8 @@ enum ENUM_PARAM {
   ANGLE_OF_ATTACK = 101,	   /*!< \brief Angle of attack for airfoils. */
   FFD_ANGLE_OF_ATTACK = 102,	 /*!< \brief Angle of attack for FFD problem. */
   NUBC_DV = 35,
-  DISCREPANCY_DV = 36
+  DISCREPANCY_DV = 36,
+  MACH_AOA_INF = 37
 };
 static const map<string, ENUM_PARAM> Param_Map = CCreateMap<string, ENUM_PARAM>
 ("FFD_SETTING", FFD_SETTING)
@@ -1456,6 +1457,7 @@ static const map<string, ENUM_PARAM> Param_Map = CCreateMap<string, ENUM_PARAM>
 ("DEAD_WEIGHT", DV_RHO_DL)
 ("NUBC_DV", NUBC_DV)
 ("DISCREPANCY_DV", DISCREPANCY_DV)
+("MACH_AOA_INF", MACH_AOA_INF)
 ;
 
 
@@ -2461,7 +2463,8 @@ public:
         case DV_RHO:               nParamDV = 0; break;
         case DV_RHO_DL:            nParamDV = 0; break;
         case NUBC_DV:			   nParamDV = 1; break;
-        case DISCREPANCY_DV:			   nParamDV = 1; break;
+        case DISCREPANCY_DV:	   nParamDV = 1; break;
+        case MACH_AOA_INF:		   nParamDV = 1; break;
         default : {
           string newstring;
           newstring.append(this->name);

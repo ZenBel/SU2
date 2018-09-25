@@ -492,7 +492,9 @@ void SetProjection_FD(CGeometry *geometry, CConfig *config, CSurfaceMovement *su
     
     /*--- Non-Uniform design variable ---*/
 
-    else if ((config->GetDesign_Variable(iDV) == NUBC_DV) || (config->GetDesign_Variable(iDV) == DISCREPANCY_DV)){
+    else if ((config->GetDesign_Variable(iDV) == NUBC_DV) ||
+    		 (config->GetDesign_Variable(iDV) == DISCREPANCY_DV) ||
+			 (config->GetDesign_Variable(iDV) == MACH_AOA_INF)){
     	if (rank == MASTER_NODE)
      	  cout <<"Non-Geometric DV: this design variable will be used in an external script" << endl;
     }

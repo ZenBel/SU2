@@ -170,20 +170,31 @@ def shape_optimization( filename                           ,
             for elem in buf.flatten():
                 x_0.append(elem)
                  
-    # Update initial design in case DISCREPANCY_TERM is used
-    i=0; 
+    # Update initial design in case DISCREPANCY_TERM is used 
     if 'DISCREPANCY_FILE' in state['FILES']:
         buf = numpy.loadtxt(state['FILES']['DISCREPANCY_FILE'], skiprows=1, usecols=(1))
+        config['MACH'] = buf[0]
+        config['AOA']  = buf[1]
         for elem in buf.flatten():
             x_0.append(elem)
+            
+    # Udate initial design (and variables) in case MACH_AOA_INF is used
+    if 'MACH_AOA_FILE' in state['FILES']:
+        buf = numpy.loadtxt(state['FILES']['MACH_AOA_FILE'])
+        for elem in buf.flatten():
+            x_0.append(elem)        
     
     ### Alter the original DVs only if the custom DVs are present
-    if 'DISCREPANCY_FILE' in state['FILES'] or 'NUBC_FILE_1' in state['FILES']:
+    if 'DISCREPANCY_FILE' in state['FILES'] or 'NUBC_FILE_1' in state['FILES'] or 'MACH_AOA_FILE' in state['FILES']:
         x0     = x_0
         xb_low = [float(bound_lower)/float(relax_factor)]*len(x_0)
         xb_up  = [float(bound_upper)/float(relax_factor)]*len(x_0)
-        xb     = list(zip(xb_low, xb_up))    
-        
+        if 'MACH_AOA_FILE' in state['FILES']:
+            xb_low[-2] = 1e-4 #Mach number lower limit
+            xb_low[-1] = -45.0  #AoA lower limit
+            xb_up[-2] = 2.0 
+            xb_up[-1] = 45.0
+        xb = list(zip(xb_low, xb_up))    
     
          
     # Optimize
@@ -195,6 +206,9 @@ def shape_optimization( filename                           ,
         SU2.opt.BFGS(project,x0,xb,its,accu)
     if optimization == 'POWELL':
         SU2.opt.POWELL(project,x0,xb,its,accu)
+    if optimization == 'SD':
+        SU2.opt.SD(project,x0,xb,its,accu)
+    
 
 
     # rename project file

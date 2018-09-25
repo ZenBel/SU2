@@ -683,6 +683,7 @@ def get_dvMap():
                20  : "FFD_TWIST_2D"          ,
                35  : "NUBC_DV"               ,
                36  : "DISCREPANCY_DV"        ,
+               37  : "MACH_AOA_INF"          ,
                50  : "CUSTOM"                ,
                51  : "CST"                   ,
                101 : "ANGLE_OF_ATTACK"       ,
@@ -822,6 +823,7 @@ def get_gradFileFormat(grad_type,plot_format,kindID,special_cases=[]):
     elif kindID == "FFD_ANGLE_OF_ATTACK"  : pass
     elif kindID == "NUBC_DV"              : pass
     elif kindID == "DISCREPANCY_DV"       : pass
+    elif kindID == "MACH_AOA_INF"         : pass
     
     # otherwise...
     else: raise Exception('Unrecognized Design Variable Kind') 

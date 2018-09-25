@@ -796,7 +796,8 @@ int main(int argc, char *argv[]) {
       /*--- Non-Uniform design variable ---*/
 
       else if ( (config_container[ZONE_0]->GetDesign_Variable(iDV) == NUBC_DV) ||
-    		    (config_container[ZONE_0]->GetDesign_Variable(iDV) == DISCREPANCY_DV)){
+    		    (config_container[ZONE_0]->GetDesign_Variable(iDV) == DISCREPANCY_DV) ||
+				(config_container[ZONE_0]->GetDesign_Variable(iDV) == MACH_AOA_INF)){
     	  if (rank == MASTER_NODE)
     		  cout <<"Non-Geometric design variable will be used in an external script" << endl;
       }

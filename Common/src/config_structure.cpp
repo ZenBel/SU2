@@ -4449,7 +4449,8 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
           (Design_Variable[iDV] != FFD_SETTING) &&
           (Design_Variable[iDV] != SURFACE_FILE) &&
 		  (Design_Variable[iDV] != NUBC_DV) &&
-		  (Design_Variable[iDV] != DISCREPANCY_DV)) {
+		  (Design_Variable[iDV] != DISCREPANCY_DV) &&
+		  (Design_Variable[iDV] != MACH_AOA_INF)) {
         
         if (iDV == 0)
           cout << "Design variables definition (markers <-> value <-> param):" << endl;
@@ -4496,7 +4497,8 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
             (Design_Variable[iDV] == FFD_SETTING) ||
             (Design_Variable[iDV] == SCALE) ||
 			(Design_Variable[iDV] == NUBC_DV) ||
-			(Design_Variable[iDV] == DISCREPANCY_DV)) nParamDV = 1;
+			(Design_Variable[iDV] == DISCREPANCY_DV) ||
+			(Design_Variable[iDV] == MACH_AOA_INF)) nParamDV = 1;
         if (Design_Variable[iDV] == ANGLE_OF_ATTACK) nParamDV = 1;
         if ((Design_Variable[iDV] == FFD_CAMBER_2D) ||
             (Design_Variable[iDV] == FFD_THICKNESS_2D) ||
@@ -4561,6 +4563,10 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
             cout << "Discrepancy field in the entire domain specified as DVs." << endl;
             ii += 1;}
     	else {break;}
+      }
+
+      else if (Design_Variable[iDV] == MACH_AOA_INF) {
+    	  cout << "Mach number and Angle of attack specified as DVs" << endl;
       }
 
       else if (Design_Variable[iDV] == FFD_SETTING) {

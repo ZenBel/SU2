@@ -362,7 +362,7 @@ def read_config(filename):
                     else:
                         this_dvFFDTag = []
 
-                    if not data_dict["DV_KIND"][0] in ['NO_DEFORMATION', 'NUBC_DV', 'DISCREPANCY_DV']:
+                    if not data_dict["DV_KIND"][0] in ['NO_DEFORMATION', 'NUBC_DV', 'DISCREPANCY_DV', 'MACH_AOA_INF']:
                         this_dvParam = [ float(x) for x in this_dvParam ]
 
                     if data_dict["DV_KIND"][0] in ['FFD_CONTROL_POINT_2D']:
@@ -720,7 +720,7 @@ def read_config(filename):
     if 'GRAD_OBJFUNC_FILENAME' not in data_dict:
         data_dict['GRAD_OBJFUNC_FILENAME'] = 'of_grad.dat'
         
-            
+    nDV=0;        
     # modify number of DVs if DISCREPANCY_DV is present
     if 'DISCREPANCY_DV' in data_dict['DEFINITION_DV']['KIND']:
         assert data_dict['DEFINITION_DV']['KIND'].count('DISCREPANCY_DV') == 1, 'DISCREPANCY_DV should be declared only once in DEFINITION_DV'
@@ -729,12 +729,20 @@ def read_config(filename):
             for line in search:
                 if 'NPOIN' in line:
                     mesh_points = int(line.split('=')[1].strip())
-        data_dict['DEFINITION_DV']['SIZE'] += [data_dict['DEFINITION_DV']['SIZE'][-1]]*(mesh_points-1)
-        data_dict['DEFINITION_DV']['KIND'] += [data_dict['DEFINITION_DV']['KIND'][-1]]*(mesh_points-1)
-        data_dict['DEFINITION_DV']['SCALE'] += [data_dict['DEFINITION_DV']['SCALE'][-1]]*(mesh_points-1)
-        data_dict['DEFINITION_DV']['PARAM'] += [data_dict['DEFINITION_DV']['PARAM'][-1]]*(mesh_points-1)
-        data_dict['DEFINITION_DV']['MARKER'] += [data_dict['DEFINITION_DV']['MARKER'][-1]]*(mesh_points-1)
-        data_dict['DEFINITION_DV']['FFDTAG'] += [data_dict['DEFINITION_DV']['FFDTAG'][-1]]*(mesh_points-1)
+        nDV = mesh_points-1
+    
+    # modify number of DVs if MACH_AOA_INF is present
+    if 'MACH_AOA_INF' in data_dict['DEFINITION_DV']['KIND']:
+        nDV += 2-1
+        
+    data_dict['DEFINITION_DV']['SIZE'] += [data_dict['DEFINITION_DV']['SIZE'][-1]]*(nDV)
+    data_dict['DEFINITION_DV']['KIND'] += [data_dict['DEFINITION_DV']['KIND'][-1]]*(nDV)
+    data_dict['DEFINITION_DV']['SCALE'] += [data_dict['DEFINITION_DV']['SCALE'][-1]]*(nDV)
+    data_dict['DEFINITION_DV']['PARAM'] += [data_dict['DEFINITION_DV']['PARAM'][-1]]*(nDV)
+    data_dict['DEFINITION_DV']['MARKER'] += [data_dict['DEFINITION_DV']['MARKER'][-1]]*(nDV)
+    data_dict['DEFINITION_DV']['FFDTAG'] += [data_dict['DEFINITION_DV']['FFDTAG'][-1]]*(nDV)
+        
+        
  
     return data_dict
     
