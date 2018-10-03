@@ -111,6 +111,16 @@ def projection( config, state={}, step = 1e-3 ):
     
     info = su2io.State()   
     
+    
+    if ('MACH_AOA_INF' in konfig.DV_KIND ):
+        import external_gradient
+        chaingrad = external_gradient.mach_aoa_gradient(konfig, state)
+        mach_aoa_dv = 0
+        for idv in range(n_DV):
+            if (konfig.DV_KIND[idv] == 'MACH_AOA_INF'):
+                raw_gradients[idv] = chaingrad[mach_aoa_dv]
+                mach_aoa_dv += 1
+    
     # If NUBC_DV, read gradients from SensNUBC.csv file
     if ('NUBC_DV' in konfig.DV_KIND):
        import external_gradient # Must be defined in run folder
@@ -127,18 +137,11 @@ def projection( config, state={}, step = 1e-3 ):
         chaingrad = external_gradient.discrepancy_gradient(konfig, state)
         discrepancy_dv = 0
         for idv in range(n_DV):
+            if (konfig.DV_KIND[idv] != 'DISCREPANCY_DV'):
+                print 'ccc', idv
             if (konfig.DV_KIND[idv] == 'DISCREPANCY_DV'):
                 raw_gradients[idv] = chaingrad[discrepancy_dv]
                 discrepancy_dv += 1
-                
-    if ('MACH_AOA_INF' in konfig.DV_KIND ):
-        import external_gradient
-        chaingrad = external_gradient.mach_aoa_gradient(konfig, state)
-        mach_aoa_dv = 0
-        for idv in range(n_DV):
-            if (konfig.DV_KIND[idv] == 'MACH_AOA_INF'):
-                raw_gradients[idv] = chaingrad[mach_aoa_dv]
-                mach_aoa_dv += 1
                     
     # Write Gradients
     data_plot = su2util.ordered_bunch()

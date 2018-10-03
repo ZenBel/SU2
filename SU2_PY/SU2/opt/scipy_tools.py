@@ -90,7 +90,7 @@ def scipy_slsqp(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
             
     # number of design variables
     dv_size = project.config['DEFINITION_DV']['SIZE']
-    n_dv = sum( dv_size)
+    n_dv = sum(dv_size)
     project.n_dv = n_dv          
     
     # Initial guess
@@ -212,8 +212,20 @@ def scipy_cg(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
     sys.stdout.write('Objective function scaling factor: ' + str(obj_scale) + '\n')
     sys.stdout.write('Maximum number of iterations: ' + str(its) + '\n')
     sys.stdout.write('Requested accuracy: ' + str(accu) + '\n')
-    sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0) + '\n')
-    sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n\n')
+    if 'DISCREPANCY_DV' in project.config['DEFINITION_DV']['KIND']:
+        sys.stdout.write('Data assimilation involving a discrepancy term. \n')
+        sys.stdout.write('Initial guess for ALL the DISCREPANCY_DV variable(s): ' + str(x0[-1]) + '\n')
+        sys.stdout.write('Lower and upper bound for each DISCREPANCY_DV variable: ' + str(xb[-1]) + '\n')
+    if 'MACH_AOA_INF' in project.config['DEFINITION_DV']['KIND']:
+        sys.stdout.write('Initial guess for the Mach number DV: ' + str(x0[0]) + '\n')
+        sys.stdout.write('Lower and upper bound for Mach number DV: ' + str(xb[0]) + '\n')  
+        sys.stdout.write('Initial guess for the AoA DV: ' + str(x0[1]) + '\n')
+        sys.stdout.write('Lower and upper bound for AoA DV: ' + str(xb[1]) + '\n')
+        sys.stdout.write('NOTE:Change python scripts to change upper and lower limits.\n\n')
+    else:
+        sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0) + '\n')
+        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n')  
+    sys.stdout.write('\n')  
 
     # Evaluate the objective function (only 1st iteration)
     obj_f(x0,project)
@@ -278,9 +290,12 @@ def scipy_bfgs(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
     # Initial guess
     if not x0: x0 = [0.0]*n_dv
 
-    # prescale x0
+    # prescale x0 (but not for MACH_AOA_INF 
     dv_scales = project.config['DEFINITION_DV']['SCALE']
-    x0 = [ x0[i]/dv_scl for i,dv_scl in enumerate(dv_scales) ]
+    for i,dv_scl in enumerate(dv_scales):
+        if project.config['DEFINITION_DV']['KIND'] == 'MACH_AOA_INF':
+            dv_scl = 1.0
+        x0[i] = x0[i]/dv_scl
 
     # scale accuracy
     obj = project.config['OPT_OBJECTIVE']
@@ -298,11 +313,18 @@ def scipy_bfgs(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
     sys.stdout.write('Requested accuracy: ' + str(accu) + '\n')
     if 'DISCREPANCY_DV' in project.config['DEFINITION_DV']['KIND']:
         sys.stdout.write('Data assimilation involving a discrepancy term. \n')
-        sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0[0]) + '\n')
-        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb[0]) + '\n\n')
+        sys.stdout.write('Initial guess for ALL the DISCREPANCY_DV variable(s): ' + str(x0[-1]) + '\n')
+        sys.stdout.write('Lower and upper bound for each DISCREPANCY_DV variable: ' + str(xb[-1]) + '\n')
+    if 'MACH_AOA_INF' in project.config['DEFINITION_DV']['KIND']:
+        sys.stdout.write('Initial guess for the Mach number DV: ' + str(x0[0]) + '\n')
+        sys.stdout.write('Lower and upper bound for Mach number DV: ' + str(xb[0]) + '\n')  
+        sys.stdout.write('Initial guess for the AoA DV: ' + str(x0[1]) + '\n')
+        sys.stdout.write('Lower and upper bound for AoA DV: ' + str(xb[1]) + '\n')
+        sys.stdout.write('NOTE:Change python scripts to change upper and lower limits.\n\n')
     else:
         sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0) + '\n')
-        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n\n')  
+        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n')  
+    sys.stdout.write('\n')     
 
     # Evaluate the objective function (only 1st iteration)
     obj_f(x0,project)
@@ -310,6 +332,7 @@ def scipy_bfgs(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
     # Run Optimizer
     outputs = fmin_bfgs( x0             = x0             ,
                          f              = func           ,
+                         xb             = xb             ,
                          fprime         = fprime         ,
                          args           = (project,)     ,
                          gtol           = accu           ,
@@ -317,7 +340,108 @@ def scipy_bfgs(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
                          maxiter        = its            ,
                          full_output    = True           ,
                          disp           = True           ,
-                         retall         = True           )
+                         retall         = True           ,
+                         callback       = None   )
+
+    # Done
+    return outputs
+
+# -------------------------------------------------------------------
+#  Scipy L-BFGS-B
+# -------------------------------------------------------------------
+
+def scipy_lbfgsb(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
+    """ result = scipy_lbfgsb(project,x0=[],xb=[],its=100,accu=1e-10)
+    
+        Runs the Scipy implementation of L-BFGS-B with 
+        an SU2 project
+        
+        Inputs:
+            project - an SU2 project
+            x0      - optional, initial guess
+            xb      - optional, design variable bounds
+            its     - max outer iterations, default 100
+            accu    - accuracy, default 1e-10
+        
+        Outputs:
+           result - the outputs from scipy.fmin_slsqp
+    """         
+                                                          
+    # import scipy optimizer
+    from scipy.optimize import fmin_l_bfgs_b
+    
+    # handle input cases
+    if x0 is None: x0 = []
+    if xb is None: xb = []
+    
+    # function handles
+    func           = obj_f
+    
+    # gradient handles
+    if project.config.get('GRADIENT_METHOD','NONE') == 'NONE': 
+        fprime         = None
+    else:
+        fprime         = obj_df   
+            
+    # number of design variables
+    n_dv = len( project.config['DEFINITION_DV']['KIND'] )
+    project.n_dv = n_dv    
+    
+    # Initial guess
+    if not x0: x0 = [0.0]*n_dv
+    
+    # prescale x0 (but not for MACH_AOA_INF 
+    dv_scales = project.config['DEFINITION_DV']['SCALE']
+    for i,dv_scl in enumerate(dv_scales):
+        if project.config['DEFINITION_DV']['KIND'] == 'MACH_AOA_INF':
+            dv_scl = 1.0
+        x0[i] = x0[i]/dv_scl
+
+    # scale accuracy
+    obj = project.config['OPT_OBJECTIVE']
+    obj_scale = obj[obj.keys()[0]]['SCALE']
+    accu = accu*obj_scale
+
+    # scale accuracy
+    eps = 1.0e-04    
+
+    # optimizer summary
+    sys.stdout.write('Limited-Memory Broyden-Fletcher-Goldfarb-Shanno with bound constraints (L-BFGS_B) parameters:\n')
+    sys.stdout.write('Number of design variables: ' + str(n_dv) + '\n')
+    sys.stdout.write('Objective function scaling factor: ' + str(obj_scale) + '\n')
+    sys.stdout.write('Maximum number of iterations: ' + str(its) + '\n')
+    sys.stdout.write('Requested accuracy: ' + str(accu) + '\n')
+    if 'DISCREPANCY_DV' in project.config['DEFINITION_DV']['KIND']:
+        sys.stdout.write('Data assimilation involving a discrepancy term. \n')
+        sys.stdout.write('Initial guess for ALL the DISCREPANCY_DV variable(s): ' + str(x0[-1]) + '\n')
+        sys.stdout.write('Lower and upper bound for each DISCREPANCY_DV variable: ' + str(xb[-1]) + '\n')
+    if 'MACH_AOA_INF' in project.config['DEFINITION_DV']['KIND']:
+        sys.stdout.write('Initial guess for the Mach number DV: ' + str(x0[0]) + '\n')
+        sys.stdout.write('Lower and upper bound for Mach number DV: ' + str(xb[0]) + '\n')  
+        sys.stdout.write('Initial guess for the AoA DV: ' + str(x0[1]) + '\n')
+        sys.stdout.write('Lower and upper bound for AoA DV: ' + str(xb[1]) + '\n')
+        sys.stdout.write('NOTE:Change python scripts to change upper and lower limits.\n\n')
+    else:
+        sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0) + '\n')
+        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n')  
+    sys.stdout.write('\n')         
+
+    # Run Optimizer
+    outputs = fmin_l_bfgs_b(x0             = x0             ,
+                            func           = func           , 
+                            fprime         = fprime         ,
+                            args           = (project,)     , 
+                            bounds         = xb             ,
+                            m              = 10             , #default
+                            factr          = 1e10           ,
+                            pgtol          = accu           , 
+                            epsilon        = eps            ,
+                            iprint         = 1              ,
+                            maxfun         = its            ,
+                            maxiter        = its            ,
+                            maxls          = 5              ,
+                            disp           = None           ,
+                            callback       = None           )
 
     # Done
     return outputs

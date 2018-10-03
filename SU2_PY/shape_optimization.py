@@ -157,10 +157,22 @@ def shape_optimization( filename                           ,
         project = SU2.io.load_data(projectname)
         project.config = config
     else:
-        project = SU2.opt.Project(config,state)  
+        project = SU2.opt.Project(config,state)
+        
+        
+    ### Remember that MACH_AOA_INF DVs must be specified before NUBC_DV
+    ### and NUBC_DV must be spefied before DISCREPANCY_DV
+        
+    x_0=[]    
+        
+    # Udate initial design (and variables) in case MACH_AOA_INF is used
+    if 'MACH_AOA_FILE' in state['FILES']:
+        buf = numpy.loadtxt(state['FILES']['MACH_AOA_FILE'])
+        for elem in buf.flatten():
+            x_0.append(elem)          
         
     # Update initial design in case NUBC are used (MAYBE CAN BE DONE IN CONFIG.PY)
-    i=0; x_0=[]
+    i=0; 
     for file in state['FILES']:
         if 'NUBC' in file:
             i+=1
@@ -173,16 +185,8 @@ def shape_optimization( filename                           ,
     # Update initial design in case DISCREPANCY_TERM is used 
     if 'DISCREPANCY_FILE' in state['FILES']:
         buf = numpy.loadtxt(state['FILES']['DISCREPANCY_FILE'], skiprows=1, usecols=(1))
-        config['MACH'] = buf[0]
-        config['AOA']  = buf[1]
         for elem in buf.flatten():
-            x_0.append(elem)
-            
-    # Udate initial design (and variables) in case MACH_AOA_INF is used
-    if 'MACH_AOA_FILE' in state['FILES']:
-        buf = numpy.loadtxt(state['FILES']['MACH_AOA_FILE'])
-        for elem in buf.flatten():
-            x_0.append(elem)        
+            x_0.append(elem)    
     
     ### Alter the original DVs only if the custom DVs are present
     if 'DISCREPANCY_FILE' in state['FILES'] or 'NUBC_FILE_1' in state['FILES'] or 'MACH_AOA_FILE' in state['FILES']:
@@ -190,10 +194,10 @@ def shape_optimization( filename                           ,
         xb_low = [float(bound_lower)/float(relax_factor)]*len(x_0)
         xb_up  = [float(bound_upper)/float(relax_factor)]*len(x_0)
         if 'MACH_AOA_FILE' in state['FILES']:
-            xb_low[-2] = 1e-4 #Mach number lower limit
-            xb_low[-1] = -45.0  #AoA lower limit
-            xb_up[-2] = 2.0 
-            xb_up[-1] = 45.0
+            xb_low[0] = 1e-4 #Mach number lower limit
+            xb_low[1] = -45.0  #AoA lower limit
+            xb_up[0] = 2.0 
+            xb_up[1] = 45.0
         xb = list(zip(xb_low, xb_up))    
     
          
@@ -208,6 +212,8 @@ def shape_optimization( filename                           ,
         SU2.opt.POWELL(project,x0,xb,its,accu)
     if optimization == 'SD':
         SU2.opt.SD(project,x0,xb,its,accu)
+    if optimization == 'LBFGSB':
+        SU2.opt.LBFGSB(project,x0,xb,its,accu)
     
 
 

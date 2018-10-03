@@ -720,7 +720,9 @@ def read_config(filename):
     if 'GRAD_OBJFUNC_FILENAME' not in data_dict:
         data_dict['GRAD_OBJFUNC_FILENAME'] = 'of_grad.dat'
         
-    nDV=0;        
+        
+           
+              
     # modify number of DVs if DISCREPANCY_DV is present
     if 'DISCREPANCY_DV' in data_dict['DEFINITION_DV']['KIND']:
         assert data_dict['DEFINITION_DV']['KIND'].count('DISCREPANCY_DV') == 1, 'DISCREPANCY_DV should be declared only once in DEFINITION_DV'
@@ -729,19 +731,21 @@ def read_config(filename):
             for line in search:
                 if 'NPOIN' in line:
                     mesh_points = int(line.split('=')[1].strip())
-        nDV = mesh_points-1
+               
     
-    # modify number of DVs if MACH_AOA_INF is present
-    if 'MACH_AOA_INF' in data_dict['DEFINITION_DV']['KIND']:
-        nDV += 2-1
-        
-    data_dict['DEFINITION_DV']['SIZE'] += [data_dict['DEFINITION_DV']['SIZE'][-1]]*(nDV)
-    data_dict['DEFINITION_DV']['KIND'] += [data_dict['DEFINITION_DV']['KIND'][-1]]*(nDV)
-    data_dict['DEFINITION_DV']['SCALE'] += [data_dict['DEFINITION_DV']['SCALE'][-1]]*(nDV)
-    data_dict['DEFINITION_DV']['PARAM'] += [data_dict['DEFINITION_DV']['PARAM'][-1]]*(nDV)
-    data_dict['DEFINITION_DV']['MARKER'] += [data_dict['DEFINITION_DV']['MARKER'][-1]]*(nDV)
-    data_dict['DEFINITION_DV']['FFDTAG'] += [data_dict['DEFINITION_DV']['FFDTAG'][-1]]*(nDV)
-        
+    values =  data_dict['DEFINITION_DV'].values()  
+    
+    if 'MACH_AOA_INF' in data_dict['DEFINITION_DV']['KIND']:                               
+        idx = data_dict['DEFINITION_DV']['KIND'].index('MACH_AOA_INF')
+        for j, key in enumerate(data_dict['DEFINITION_DV'].keys()):
+            data_dict['DEFINITION_DV'][key].insert(idx, values[j][idx])
+    
+    if 'DISCREPANCY_DV' in data_dict['DEFINITION_DV']['KIND']:
+        idx = data_dict['DEFINITION_DV']['KIND'].index('DISCREPANCY_DV')
+        for i in range(mesh_points-1):
+            for j, key in enumerate(data_dict['DEFINITION_DV'].keys()):
+                data_dict['DEFINITION_DV'][key].insert(idx, values[j][idx])
+
         
  
     return data_dict

@@ -327,7 +327,8 @@ def obj_df(dvs,config,state=None):
      
     dv_scales = config['DEFINITION_DV']['SCALE']
     dv_size   = config['DEFINITION_DV']['SIZE']
-       
+    dv_kind   = config['DEFINITION_DV']['KIND']
+           
     # evaluate each objective
     vals_out = []
     if (combine_obj and n_obj>1):
@@ -381,9 +382,10 @@ def obj_df(dvs,config,state=None):
              
             # scaling and sign
             k = 0
+            
+            import numpy as np
             for i_dv,dv_scl in enumerate(dv_scales):
                 for i_grd in range(dv_size[i_dv]):
-                    #grad[k] = grad[k] * sign * scale * global_factor / dv_scl
                     grad[k] = grad[k] * sign * scale * global_factor * dv_scl   #modfication to account NUBC scaling
                     k = k + 1
             

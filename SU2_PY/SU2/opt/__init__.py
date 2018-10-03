@@ -6,3 +6,4 @@ from .scipy_tools import scipy_cg as CG
 from .scipy_tools import scipy_bfgs as BFGS
 from .scipy_tools import scipy_powell as POWELL
 from .scipy_tools import scipy_steepest_descent as SD
+from .scipy_tools import scipy_lbfgsb as LBFGSB

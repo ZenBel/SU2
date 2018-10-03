@@ -264,9 +264,21 @@ def aerodynamics( config, state=None ):
         for i in range(len(nubc_filenames)):
             pull.append( files['NUBC_FILE_%s'%(i+1)])
             
+    ### The following lines of code assume that  MACH_AOA_INF Dvs are ALWAYS defined before NUBC_DV which
+    ### in turn are ALWAYS defined before DISCREPANCY_DV 
+           
+    dv_new = config['DV_VALUE_NEW']        
+            
+    ### Update Mach_Aoa file
+    if 'MACH_AOA_FILE' in files:
+        buf = numpy.matrix(dv_new[:2]).T
+        dv_new = dv_new[2:] #remove DVs you just wrote to file.
+        numpy.savetxt(state['FILES']['MACH_AOA_FILE'], buf, fmt='%.16f')
+        config['MACH_NUMBER'] = float(buf[0])
+        config['AOA'] = float(buf[1])
+            
     ### Update nubc file(s)
     i=0;
-    nubc_new = config['DV_VALUE_NEW']
     for file in state['FILES']:
         if 'NUBC' in file:
             nubc_f = 'NUBC_FILE_%i'%(i+1)
@@ -275,28 +287,24 @@ def aerodynamics( config, state=None ):
                 spaceVar = header[1]
                 switchLoc = float(header[2])   
             buf = numpy.loadtxt(state['FILES'][nubc_f], skiprows=1)
-            #nubc_new = config['DV_VALUE_NEW'][i*5*len(buf):(i+1)*5*len(buf)]
-            nubc_new_ = nubc_new[:len(buf)*5]
-            nubc_new  = nubc_new[len(buf)*5:] #delete elements of nubc_new already used
-            nubc_new_ = numpy.array(nubc_new_).reshape((buf.shape[0],5))
-            buf[:,3:] = nubc_new_ #valid when DVs are specified at each cell node
+            dv_new_ = dv_new[:len(buf)*5]
+            dv_new_ = numpy.array(dv_new_).reshape((buf.shape[0],5))
+            buf[:,3:] = dv_new_ 
+            dv_new  = dv_new[len(buf)*5:] #remove DVs you just wrote to file.
             numpy.savetxt(state['FILES'][nubc_f], buf, fmt='%.4f\t %.4f\t %.4f\t %.15f\t %.15f\t %.15f\t %.15f\t %.15f\t', 
                           comments='', header='%s\t%s\t%s'%(str(buf.shape[0]),spaceVar, str(switchLoc)))  
             i+=1
             
-    ### Update discrepancy file
-    nubc_new = config['DV_VALUE_NEW']
+    ### Update discrepancy file (remember that DISCREPANCY_DV must always be defined as the last DV)
     if 'DISCREPANCY_FILE' in files:
         buf = numpy.loadtxt(state['FILES']['DISCREPANCY_FILE'], skiprows=1)
-        buf[:,1:] = numpy.matrix(nubc_new).T    #possible bug here when different DVs are used
+        nPoint = len(buf) # same as number of mesh points
+        assert len(buf) == len(dv_new), 'length of design variable vector is different from number of DVs in discrepancyTerm.dat'
+        buf[:,1:] = numpy.matrix(dv_new).T
         numpy.savetxt(state['FILES']['DISCREPANCY_FILE'], buf, fmt='%i\t %.16f\t', comments='', header=str(buf.shape[0]))  
-        
-    ### Update Mach_Aoa file
-    dv_new = config['DV_VALUE_NEW']
-    if 'MACH_AOA_FILE' in files:
-        buf = numpy.matrix(dv_new).T
-        numpy.savetxt(state['FILES']['MACH_AOA_FILE'], buf, fmt='%.16f')
-        
+       
+    ###  
+    ### 
   
     # output redirection
     with redirect_folder( 'DIRECT', pull, link ) as push:
