@@ -1528,15 +1528,6 @@ void CTurbSASolver::Source_Residual(CGeometry *geometry, CSolver **solver_contai
   bool transition    = (config->GetKind_Trans_Model() == LM);
   bool transition_BC = (config->GetKind_Trans_Model() == BC);
 
-//  su2double *wss;
-//  unsigned long nPointGlobal = geometry->GetGlobal_nPointDomain();
-//  unsigned long GlobalIndex;
-//  wss = new su2double[nPointGlobal];
-//  for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
-//	  GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-//	  wss[GlobalIndex] = solver_container[FLOW_SOL]->Get_wss(GlobalIndex);
-//  }
-
   for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
     
     /*--- Conservative variables w/o reconstruction ---*/
@@ -1586,18 +1577,6 @@ void CTurbSASolver::Source_Residual(CGeometry *geometry, CSolver **solver_contai
       numerics->SetDistance(node[iPoint]->GetDES_LengthScale(), 0.0);
       
     }
-
-//    /*--- Set wall shear stress everywhere in the domain ---*/
-//    unsigned long pointID_nearestWall = geometry->node[iPoint]->GetWall_Distance_pointID();
-////    cout << "(x,y) = (" << geometry->node[pointID_nearestWall]->GetCoord(nDim-2) << ", " << geometry->node[pointID_nearestWall]->GetCoord(nDim-1)
-////    	 << ") is the closest surface point to P = (" <<  geometry->node[iPoint]->GetCoord(nDim-2) << ", "<< geometry->node[iPoint]->GetCoord(nDim-1)
-////		 << ")" << endl;
-//    unsigned long GlobalIndex_nearestWall = geometry->node[pointID_nearestWall]->GetGlobalIndex();
-////    if (wss[GlobalIndex_nearestWall] == 0.0)
-////    	cout << "pIDnn = " << pointID_nearestWall << endl;
-//
-////    cout << "(x,y) = (" << geometry->node[iPoint]->GetCoord(nDim-2) << ", "<< geometry->node[iPoint]->GetCoord(nDim-1) << ")" << endl;
-//    numerics->Set_wss_everywhere(wss[GlobalIndex_nearestWall]);
 
     /*--- Compute the source term ---*/
     

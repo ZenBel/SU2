@@ -315,10 +315,6 @@ inline void CNumerics::SetDistance(su2double val_dist_i, su2double val_dist_j) {
   dist_j = val_dist_j;
 }
 
-inline void CNumerics::Set_wss_everywhere(su2double val_wss) {
-wss_turb = val_wss;
-}
-
 inline void CNumerics::SetAdjointVar(su2double *val_psi_i, su2double *val_psi_j) {
   Psi_i = val_psi_i;
   Psi_j = val_psi_j;

@@ -9527,7 +9527,6 @@ void CPhysicalGeometry::ComputeWall_Distance(CConfig *config) {
       WallADT.DetermineNearestNode(node[iPoint]->GetCoord(), dist,
                                    pointID, rankID);
       node[iPoint]->SetWall_Distance(dist);
-//      node[iPoint]->SetWall_Distance_PointID(pointID);
     }
   }
   

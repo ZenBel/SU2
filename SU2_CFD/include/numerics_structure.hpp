@@ -208,9 +208,6 @@ public:
 
   su2double discrepancyTerm;
 
-  su2double wss_turb;
-
-
   /*!
    * \brief Constructor of the class.
    */
@@ -514,7 +511,7 @@ public:
    * \param[in] val_dist_j - Value of of the distance from point j to the nearest wall.
    */
   void SetDistance(su2double val_dist_i, su2double val_dist_j);
-  void Set_wss_everywhere(su2double val_wss);
+
   /*!
    * \brief Set coordinates of the points.
    * \param[in] val_coord_i - Coordinates of the point i.
