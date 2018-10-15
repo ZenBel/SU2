@@ -452,12 +452,55 @@ void CSourcePieceWise_TurbSA::ComputeResidual(su2double *val_residual, su2double
     CrossProduction = cb2_sigma*norm2_Grad*Volume;
     
 
-//    su2double f_1, f_2, f_5, f_6, beta;
-//    f_1 = Omega * dist_i_2 / (nu + TurbVar_i[0]);
+//    su2double fv1, mut, f_2, f_4, f_6, beta, mag_aij=0, wss_new, **primVarGrad = NULL, trace_Sij=0.0;
+//    su2double **Sij, **aij;
+//    unsigned short jDim;
+//    Sij=new su2double*[nDim];
+//    aij=new su2double*[nDim];
+//    for (iDim=0; iDim<nDim; iDim++){
+//    	Sij[iDim]=new su2double[nDim];
+//    	aij[iDim]=new su2double[nDim];
+//    }
+//
+//    for (iDim=0; iDim<nDim; iDim++){ trace_Sij += PrimVar_Grad_i[iDim+1][iDim];}
+//    for (iDim=0; iDim<nDim; iDim++){
+//    	for (jDim=0; jDim<nDim; jDim++){
+//    		Sij[iDim][jDim] = 0.5*(PrimVar_Grad_i[iDim+1][jDim] + PrimVar_Grad_i[jDim+1][iDim]);
+//    	}
+//    }
+//    for (iDim=0; iDim<nDim; iDim++){ Sij[iDim][iDim] += -1.0/3.0*trace_Sij;}
+//
+//    fv1 = (Ji*Ji*Ji)/(Ji*Ji*Ji + 7.1*7.1*7.1);
+//    mut = Density_i*fv1*TurbVar_i[0];
+//    for (iDim=0; iDim<nDim; iDim++){
+//    	for (jDim=0; jDim<nDim; jDim++){
+//    		aij[iDim][jDim] = 2.0*mut*Sij[iDim][jDim];
+////    		if (aij[iDim][jDim] > 1e-2)
+////    			cout << "mut = " << mut << "; Sij[" << iDim << "][" << jDim << "] = " << Sij[iDim][jDim]<< endl;
+//    	}
+//    }
+//
+//    for (iDim=0; iDim<nDim; iDim++){
+//    	for (jDim=0; jDim<nDim; jDim++){
+//    		mag_aij += aij[iDim][jDim]*aij[iDim][jDim];
+////    		 if (aij[iDim][jDim] > 1e-2)
+////    		    cout << "aij[" << iDim << "][" << jDim << "] = " << aij[iDim][jDim]<< endl;
+//
+//    	}
+//    }
+//    mag_aij = sqrt(mag_aij);
+//
+//    wss_new = wss_turb;
+//
 //    f_2 = Ji;
-//    f_5 = Production/(Destruction + 1e-15);
-//    f_6 = exp(-10*dist_i_2);
-//    beta = 6.46201711589e-07*f_2*f_2*f_6 + 0.000955883887177*f_2*f_6*f_6 - 0.000806124510015*f_2 + 1.0;
+//    f_4 = mag_aij/wss_new;
+//    f_6 = exp(-10.0*dist_i);
+//
+////    cout << "mag_aij/wss_new = " << f_4 << endl;
+////    cout << "mag_aij = " << mag_aij << ", wss_new = " << wss_new << endl;
+////    cout << "" << endl;
+//    beta = -3.55992888079e-08*f_2*f_2*f_4*f_6 + 1.0;
+
     su2double beta = discrepancyTerm;
 
     val_residual[0] = beta*Production - Destruction + CrossProduction;
@@ -484,7 +527,7 @@ void CSourcePieceWise_TurbSA::ComputeResidual(su2double *val_residual, su2double
     dg = dr*(1.+cw2*(6.0*pow(r,5.0)-1.0));
     dfw = dg*glim*(1.-g_6/(g_6+cw3_6));
     val_Jacobian_i[0][0] -= cw1*(dfw*TurbVar_i[0] +  2.0*fw)*TurbVar_i[0]/dist_i_2*Volume;
-    
+
   }
 
 //  AD::SetPreaccOut(val_residual[0]);

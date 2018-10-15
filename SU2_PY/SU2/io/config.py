@@ -730,15 +730,21 @@ def read_config(filename):
         with open(data_dict['MESH_FILENAME']) as search:
             for line in search:
                 if 'NPOIN' in line:
-                    mesh_points = int(line.split('=')[1].strip())
-               
+                    mesh_points = int(line.split('=')[1].strip())        
     
     values =  data_dict['DEFINITION_DV'].values()  
-    
+       
     if 'MACH_AOA_INF' in data_dict['DEFINITION_DV']['KIND']:                               
         idx = data_dict['DEFINITION_DV']['KIND'].index('MACH_AOA_INF')
         for j, key in enumerate(data_dict['DEFINITION_DV'].keys()):
             data_dict['DEFINITION_DV'][key].insert(idx, values[j][idx])
+    
+    for idx in range(len(data_dict['DEFINITION_DV']['KIND'])):        
+        if 'NUBC_DV' in data_dict['DEFINITION_DV']['KIND'][idx]:
+            for i in range(4): #add 4 more NUBC_DV
+                for j, key in enumerate(data_dict['DEFINITION_DV'].keys()):
+                    data_dict['DEFINITION_DV'][key].insert(idx, values[j][idx])
+                       
     
     if 'DISCREPANCY_DV' in data_dict['DEFINITION_DV']['KIND']:
         idx = data_dict['DEFINITION_DV']['KIND'].index('DISCREPANCY_DV')

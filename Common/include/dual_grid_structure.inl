@@ -220,12 +220,14 @@ inline void CPoint::SetDomain(bool val_domain) { Domain = val_domain; }
 inline bool CPoint::GetDomain(void) { return Domain; }
 
 inline void CPoint::SetWall_Distance(su2double val_distance) { Wall_Distance = val_distance; }
+inline void CPoint::SetWall_Distance_PointID(unsigned long val_pointID){Wall_Distance_pointID = val_pointID;}
 
 inline void CPoint::SetCurvature(su2double val_curvature) { Curvature = val_curvature; }
 
 inline void CPoint::SetSharpEdge_Distance(su2double val_distance) { SharpEdge_Distance = val_distance; }
 
 inline su2double CPoint::GetWall_Distance(void) { return Wall_Distance; }
+inline unsigned long CPoint::GetWall_Distance_pointID(void) { return Wall_Distance_pointID; }
 
 inline su2double CPoint::GetCurvature(void) { return Curvature; }
 

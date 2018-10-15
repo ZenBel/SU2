@@ -923,7 +923,7 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
 	  SurfFlow_file.open(cstr, ios::out);
 
 	  SurfFlow_file << "\"Global_Index\", \"x_coord\", \"y_coord\", \"z_coord\", ";
-	  SurfFlow_file << "\"discrTerm\", \"Omega\", \"dist_i\", \"nu\", \"nu_hat\", \"Ji\", ";
+	  SurfFlow_file << "\"discrTerm\", \"Omega\", \"dist_i_2\", \"nu\", \"nu_hat\", \"Ji\", ";
 	  SurfFlow_file << "\"Strain_Mag\", \"Production\", \"Destruction\", \"fd\", ";
 	  SurfFlow_file << "\"dudx\", \"dudy\", \"dudz\", \"dvdx\", \"dvdy\", \"dvdz\", \"dwdx\", \"dwdy\", \"dwdz\""<< "\n";
 
@@ -7920,7 +7920,7 @@ void COutput::SetResult_Files(CSolver ****solver_container, CGeometry ***geometr
         if (Wrt_Csv){
         	SetSurfaceCSV_Flow(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
         	if (config[iZone]->GetKind_Solver() == RANS){
-//        		SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
+        		SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
         	}
         }
         break;
@@ -9225,7 +9225,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	    }
 		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
 		if (config->GetBoolDiscrepancyTerm()){
-			Buffer_Regularization += lambda * (config->GetDiscrTerm(GlobalIndex) - 1.0) * (config->GetDiscrTerm(GlobalIndex) - 1.0);
+			Buffer_Regularization += (config->GetDiscrTerm(GlobalIndex) - 1.0) * (config->GetDiscrTerm(GlobalIndex) - 1.0);
 		}
 	  }
     }
@@ -9247,7 +9247,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 //	  }
 //	}
 
-	AllBound_ErrorFunc += Buffer_ErrorFunc + Buffer_Regularization;
+	AllBound_ErrorFunc += Buffer_ErrorFunc + lambda * Buffer_Regularization;
 
 //	cout << "ErrorFunc = " << Buffer_ErrorFunc << ", Regularization = " << Buffer_Regularization << endl;
 
@@ -11875,7 +11875,7 @@ void COutput::SetResult_Files_Parallel(CSolver ****solver_container,
         if (Wrt_Csv) {
         	SetSurfaceCSV_Flow(config[iZone], geometry[iZone][MESH_0],solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
         	if (config[iZone]->GetKind_Solver() == RANS){
-//        	    SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
+        	    SetTurbulent_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
         	}
         }
 

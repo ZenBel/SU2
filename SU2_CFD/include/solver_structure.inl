@@ -185,6 +185,7 @@ inline su2double CSolver::GetSurface_CMy_Inv(unsigned short val_marker) { return
 inline su2double CSolver::GetSurface_CMz_Inv(unsigned short val_marker) { return 0; }
 
 inline su2double CSolver::GetSurface_CL_Visc(unsigned short val_marker) { return 0; }
+inline su2double CSolver::Get_wss(unsigned long val_global_index) { return 0; }
 
 inline su2double CSolver::GetSurface_CD_Visc(unsigned short val_marker) { return 0; }
 
@@ -1634,6 +1635,7 @@ inline su2double CNSSolver::GetAllBound_CFy_Visc() { return AllBound_CFy_Visc; }
 inline su2double CNSSolver::GetAllBound_CFz_Visc() { return AllBound_CFz_Visc; }
 
 inline su2double CNSSolver::GetSurface_CL_Visc(unsigned short val_marker) { return Surface_CL_Visc[val_marker]; }
+inline su2double CNSSolver::Get_wss(unsigned long val_global_index) { return wss[val_global_index]; }
 
 inline su2double CNSSolver::GetSurface_CD_Visc(unsigned short val_marker) { return Surface_CD_Visc[val_marker]; }
 

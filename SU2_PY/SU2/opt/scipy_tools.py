@@ -125,11 +125,18 @@ def scipy_slsqp(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
     sys.stdout.write('Requested accuracy: ' + str(accu) + '\n')
     if 'DISCREPANCY_DV' in project.config['DEFINITION_DV']['KIND']:
         sys.stdout.write('Data assimilation involving a discrepancy term. \n')
-        sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0[0]) + '\n')
-        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb[0]) + '\n\n')
+        sys.stdout.write('Initial guess for ALL the DISCREPANCY_DV variable(s): ' + str(x0[-1]) + '\n')
+        sys.stdout.write('Lower and upper bound for each DISCREPANCY_DV variable: ' + str(xb[-1]) + '\n')
+    if 'MACH_AOA_INF' in project.config['DEFINITION_DV']['KIND']:
+        sys.stdout.write('Initial guess for the Mach number DV: ' + str(x0[0]) + '\n')
+        sys.stdout.write('Lower and upper bound for Mach number DV: ' + str(xb[0]) + '\n')  
+        sys.stdout.write('Initial guess for the AoA DV: ' + str(x0[1]) + '\n')
+        sys.stdout.write('Lower and upper bound for AoA DV: ' + str(xb[1]) + '\n')
+        sys.stdout.write('NOTE:Change python scripts to change upper and lower limits.\n\n')
     else:
         sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0) + '\n')
-        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n\n')        
+        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n')  
+    sys.stdout.write('\n')         
 
     # Run Optimizer
     outputs = fmin_slsqp( x0             = x0             ,
@@ -424,7 +431,7 @@ def scipy_lbfgsb(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
     else:
         sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0) + '\n')
         sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n')  
-    sys.stdout.write('\n')         
+    sys.stdout.write('\n')          
 
     # Run Optimizer
     outputs = fmin_l_bfgs_b(x0             = x0             ,
@@ -579,11 +586,18 @@ def scipy_steepest_descent(project,x0=None,xb=None,its=100,accu=1e-10,grads=True
     sys.stdout.write('Requested accuracy: ' + str(accu) + '\n')
     if 'DISCREPANCY_DV' in project.config['DEFINITION_DV']['KIND']:
         sys.stdout.write('Data assimilation involving a discrepancy term. \n')
-        sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0[0]) + '\n')
-        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb[0]) + '\n\n')
+        sys.stdout.write('Initial guess for ALL the DISCREPANCY_DV variable(s): ' + str(x0[-1]) + '\n')
+        sys.stdout.write('Lower and upper bound for each DISCREPANCY_DV variable: ' + str(xb[-1]) + '\n')
+    if 'MACH_AOA_INF' in project.config['DEFINITION_DV']['KIND']:
+        sys.stdout.write('Initial guess for the Mach number DV: ' + str(x0[0]) + '\n')
+        sys.stdout.write('Lower and upper bound for Mach number DV: ' + str(xb[0]) + '\n')  
+        sys.stdout.write('Initial guess for the AoA DV: ' + str(x0[1]) + '\n')
+        sys.stdout.write('Lower and upper bound for AoA DV: ' + str(xb[1]) + '\n')
+        sys.stdout.write('NOTE:Change python scripts to change upper and lower limits.\n\n')
     else:
         sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0) + '\n')
-        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n\n')  
+        sys.stdout.write('Lower and upper bound for each independent variable: ' + str(xb) + '\n')  
+    sys.stdout.write('\n')   
 
     # Evaluate the objective function (only 1st iteration)
     obj_f(x0,project)

@@ -1779,6 +1779,7 @@ public:
    * \return Value of the lift coefficient on the surface <i>val_marker</i>.
    */
   virtual su2double GetSurface_CL_Visc(unsigned short val_marker);
+  virtual su2double Get_wss(unsigned long val_global_index);
   
   /*!
    * \brief A virtual member.
@@ -7890,6 +7891,7 @@ private:
   AllBound_HF_Visc,    /*!< \brief Heat load (viscous contribution) for all the boundaries. */
   AllBound_MaxHF_Visc; /*!< \brief Maximum heat flux (viscous contribution) for all boundaries. */
   su2double StrainMag_Max, Omega_Max; /*!< \brief Maximum Strain Rate magnitude and Omega. */
+  su2double *wss;
   
 public:
   
@@ -7916,6 +7918,7 @@ public:
    * \return Value of the lift coefficient on the surface <i>val_marker</i>.
    */
   su2double GetSurface_CL_Visc(unsigned short val_marker);
+  su2double Get_wss(unsigned long val_global_index);
   
   /*!
    * \brief Provide the non dimensional drag coefficient.
