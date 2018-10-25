@@ -766,7 +766,7 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
 
   unsigned short iMarker, iDim, jDim;
   unsigned long iPoint, jPoint, iVertex, Global_Index, nPointDomain, nPointGlobal;
-  su2double *local_xCoord, *local_yCoord, *local_zCoord, *local_discrTerm, *local_dist_i_2,
+  su2double *local_xCoord, *local_yCoord, *local_zCoord, *local_discrTerm, *local_dist_i,
             *local_nu, *local_nu_hat, *local_Omega, *local_eddy_visc, *local_Ji,
 			*local_Strain_Mag, *local_Production, *local_Destruction, *local_fd, ***local_Grad_Vel;
   char cstr[200];
@@ -780,7 +780,7 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
 
   /*--- Initialize all vectors ---*/
   local_xCoord = new su2double[nPointGlobal]; local_yCoord = new su2double[nPointGlobal]; local_zCoord = new su2double[nPointGlobal];
-  local_discrTerm = new su2double[nPointGlobal]; local_dist_i_2 = new su2double[nPointGlobal]; local_nu = new su2double[nPointGlobal];
+  local_discrTerm = new su2double[nPointGlobal]; local_dist_i = new su2double[nPointGlobal]; local_nu = new su2double[nPointGlobal];
   local_nu_hat = new su2double[nPointGlobal]; local_eddy_visc = new su2double[nPointGlobal]; local_Ji = new su2double[nPointGlobal];
   local_Strain_Mag = new su2double[nPointGlobal]; local_Production = new su2double[nPointGlobal]; local_Destruction = new su2double[nPointGlobal];
   local_fd = new su2double[nPointGlobal]; local_Grad_Vel = new su2double**[nPointGlobal]; local_Omega = new su2double[nPointGlobal];
@@ -788,7 +788,7 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
   for (iPoint=0; iPoint< nPointGlobal; iPoint++){
 
 	  local_xCoord[iPoint] = 0.0; local_yCoord[iPoint] = 0.0; local_zCoord[iPoint] = 0.0;
-	  local_discrTerm[iPoint] = 0.0; local_dist_i_2[iPoint] = 0.0; local_nu[iPoint] = 0.0; local_nu_hat[iPoint] = 0.0;
+	  local_discrTerm[iPoint] = 0.0; local_dist_i[iPoint] = 0.0; local_nu[iPoint] = 0.0; local_nu_hat[iPoint] = 0.0;
 	  local_eddy_visc[iPoint] = 0.0; local_Ji[iPoint] = 0.0; local_Strain_Mag[iPoint] = 0.0; local_Production[iPoint] = 0.0;
 	  local_Destruction[iPoint] = 0.0; local_fd[iPoint] = 0.0; local_Omega[iPoint] = 0.0;
 
@@ -815,7 +815,7 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
     if (nDim == 3) local_zCoord[Global_Index] = geometry->node[iPoint]->GetCoord(2);
 
     local_discrTerm[Global_Index] = config->GetDiscrTerm(Global_Index);
-    local_dist_i_2[Global_Index] = geometry->node[iPoint]->GetWall_Distance();
+    local_dist_i[Global_Index] = geometry->node[iPoint]->GetWall_Distance();
 
 //    Vorticity = FlowSolver->node[iPoint]->GetVorticity();
 //    local_Omega[Global_Index] = sqrt(Vorticity[0]*Vorticity[0]+ Vorticity[1]*Vorticity[1]+ Vorticity[2]*Vorticity[2]);
@@ -860,12 +860,12 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
   }
 
   /*---Initialize Global quantities ---*/
-  su2double *xCoord, *yCoord, *zCoord, *discrTerm, *dist_i_2,
+  su2double *xCoord, *yCoord, *zCoord, *discrTerm, *dist_i,
             *nu, *nu_hat, *Omega, *eddy_visc, *Ji,
 			*Strain_Mag, *Production, *Destruction, *fd, ***Grad_Vel;
 
   xCoord = new su2double[nPointGlobal]; yCoord = new su2double[nPointGlobal]; zCoord = new su2double[nPointGlobal];
-  discrTerm = new su2double[nPointGlobal]; dist_i_2 = new su2double[nPointGlobal]; nu = new su2double[nPointGlobal];
+  discrTerm = new su2double[nPointGlobal]; dist_i = new su2double[nPointGlobal]; nu = new su2double[nPointGlobal];
   nu_hat = new su2double[nPointGlobal]; eddy_visc = new su2double[nPointGlobal]; Ji = new su2double[nPointGlobal];
   Strain_Mag = new su2double[nPointGlobal]; Production = new su2double[nPointGlobal]; Destruction = new su2double[nPointGlobal];
   fd = new su2double[nPointGlobal]; Grad_Vel = new su2double**[nPointGlobal]; Omega = new su2double[nPointGlobal];
@@ -873,7 +873,7 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
   for (iPoint=0; iPoint< nPointGlobal; iPoint++){
 
 	  xCoord[iPoint] = 0.0; yCoord[iPoint] = 0.0; zCoord[iPoint] = 0.0;
-	  discrTerm[iPoint] = 0.0; dist_i_2[iPoint] = 0.0; nu[iPoint] = 0.0; nu_hat[iPoint] = 0.0; eddy_visc[iPoint] = 0.0; Ji[iPoint] = 0.0;
+	  discrTerm[iPoint] = 0.0; dist_i[iPoint] = 0.0; nu[iPoint] = 0.0; nu_hat[iPoint] = 0.0; eddy_visc[iPoint] = 0.0; Ji[iPoint] = 0.0;
 	  Strain_Mag[iPoint] = 0.0; Production[iPoint] = 0.0; Destruction[iPoint] = 0.0; fd[iPoint] = 0.0; Omega[iPoint] = 0.0;
 
 	  Grad_Vel[iPoint] = new su2double*[3];
@@ -890,7 +890,7 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
   SU2_MPI::Allreduce(local_yCoord, yCoord, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(local_zCoord, zCoord, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(local_discrTerm, discrTerm, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  SU2_MPI::Allreduce(local_dist_i_2, dist_i_2, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  SU2_MPI::Allreduce(local_dist_i, dist_i, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(local_nu, nu, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(local_nu_hat, nu_hat, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(local_eddy_visc, eddy_visc, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -907,7 +907,7 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
   }
 #else
   xCoord = local_xCoord; yCoord = local_yCoord; zCoord = local_zCoord;
-  discrTerm = local_discrTerm; dist_i_2 = local_dist_i_2; nu = local_nu;
+  discrTerm = local_discrTerm; dist_i = local_dist_i; nu = local_nu;
   nu_hat= local_nu_hat;  eddy_visc = local_eddy_visc; Ji = local_Ji;
   Strain_Mag = local_Strain_Mag; Production = local_Production; Destruction = local_Destruction;
   fd = local_fd; Omega = local_Omega; Grad_Vel = local_Grad_Vel;
@@ -923,14 +923,14 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
 	  SurfFlow_file.open(cstr, ios::out);
 
 	  SurfFlow_file << "\"Global_Index\", \"x_coord\", \"y_coord\", \"z_coord\", ";
-	  SurfFlow_file << "\"discrTerm\", \"Omega\", \"dist_i_2\", \"nu\", \"nu_hat\", \"Ji\", ";
+	  SurfFlow_file << "\"discrTerm\", \"Omega\", \"dist_i\", \"nu\", \"nu_hat\", \"Ji\", ";
 	  SurfFlow_file << "\"Strain_Mag\", \"Production\", \"Destruction\", \"fd\", ";
 	  SurfFlow_file << "\"dudx\", \"dudy\", \"dudz\", \"dvdx\", \"dvdy\", \"dvdz\", \"dwdx\", \"dwdy\", \"dwdz\""<< "\n";
 
 	  for (Global_Index = 0; Global_Index < nPointGlobal; Global_Index++ ){
 
 		  SurfFlow_file << scientific << Global_Index << ", " << xCoord[Global_Index] << ", " << yCoord[Global_Index] << ", " << zCoord[Global_Index] << ", ";
-		  SurfFlow_file << scientific << discrTerm[Global_Index] << ", " << Omega[Global_Index] << ", " << dist_i_2[Global_Index] << ", " << nu[Global_Index] << ", ";
+		  SurfFlow_file << scientific << discrTerm[Global_Index] << ", " << Omega[Global_Index] << ", " << dist_i[Global_Index] << ", " << nu[Global_Index] << ", ";
 		  SurfFlow_file	<< nu_hat[Global_Index] << ", " << Ji[Global_Index] << ", " << Strain_Mag[Global_Index] << ", ";
 		  SurfFlow_file	<< Production[Global_Index] << ", " << Destruction[Global_Index] << ", " << fd[Global_Index] << ", ";
 		  SurfFlow_file	<< Grad_Vel[Global_Index][0][0]<< ", " << Grad_Vel[Global_Index][0][1] << ", " << Grad_Vel[Global_Index][0][2] << ", ";
@@ -943,13 +943,13 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
 
   /*---Release Memory---*/
   delete [] local_xCoord; delete [] local_yCoord; delete [] local_zCoord;
-  delete [] local_discrTerm; delete [] local_dist_i_2; delete [] local_nu;
+  delete [] local_discrTerm; delete [] local_dist_i; delete [] local_nu;
   delete [] local_nu_hat; delete [] local_eddy_visc; delete [] local_Ji;
   delete [] local_Strain_Mag; delete [] local_Production; delete [] local_Destruction;
   delete [] local_fd; delete [] local_Omega;
 
   delete [] xCoord; delete [] yCoord; delete [] zCoord;
-  delete [] discrTerm; delete [] dist_i_2; delete [] nu;
+  delete [] discrTerm; delete [] dist_i; delete [] nu;
   delete [] nu_hat; delete [] eddy_visc; delete [] Ji;
   delete [] Strain_Mag; delete [] Production; delete [] Destruction;
   delete [] fd; delete [] Omega;
