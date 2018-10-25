@@ -1780,6 +1780,7 @@ public:
    */
   virtual su2double GetSurface_CL_Visc(unsigned short val_marker);
   virtual su2double Get_wss(unsigned long val_global_index);
+  virtual void Delete_wss(void);
   
   /*!
    * \brief A virtual member.
@@ -7919,6 +7920,7 @@ public:
    */
   su2double GetSurface_CL_Visc(unsigned short val_marker);
   su2double Get_wss(unsigned long val_global_index);
+  void Delete_wss(void);
   
   /*!
    * \brief Provide the non dimensional drag coefficient.

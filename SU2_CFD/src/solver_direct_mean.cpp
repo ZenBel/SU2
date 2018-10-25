@@ -16358,6 +16358,7 @@ CNSSolver::~CNSSolver(void) {
     delete [] CSkinFriction;
   }
   
+
 }
 
 void CNSSolver::Preprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config, unsigned short iMesh, unsigned short iRKStep, unsigned short RunTime_EqSystem, bool Output) {
@@ -16824,15 +16825,15 @@ void CNSSolver::Friction_Forces(CGeometry *geometry, CConfig *config) {
   bool QCR                  = config->GetQCR();
   bool axisymmetric         = config->GetAxisymmetric();
 
-//  // initialize wall shear stress vector everywhere in the domain
-//  su2double *local_wss;
-//  unsigned long nPointGlobal = geometry->GetGlobal_nPointDomain();
-//  local_wss = new su2double[nPointGlobal];
-//  wss = new su2double[nPointGlobal];
-//  for (iPoint=0; iPoint< nPointGlobal; iPoint++){
-//	  local_wss[iPoint] = 0.0;
-//	  wss[iPoint] = 0.0;
-//  }
+  // initialize wall shear stress vector everywhere in the domain
+  su2double *local_wss;
+  unsigned long nPointGlobal = geometry->GetGlobal_nPointDomain();
+  local_wss = new su2double[nPointGlobal];
+  wss = new su2double[nPointGlobal];
+  for (iPoint=0; iPoint< nPointGlobal; iPoint++){
+	  local_wss[iPoint] = 0.0;
+	  wss[iPoint] = 0.0;
+  }
 
   /*--- Evaluate reference values for non-dimensionalization.
    For dynamic meshes, use the motion Mach number as a reference value
@@ -16994,9 +16995,9 @@ void CNSSolver::Friction_Forces(CGeometry *geometry, CConfig *config) {
         }
         WallShearStress = sqrt(WallShearStress);
 
-//        // Assign value of wss to corresponding point on surface
-//        unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-//        local_wss[GlobalIndex] = WallShearStress;
+        // Assign value of wss to corresponding point on surface
+        unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+        local_wss[GlobalIndex] = WallShearStress;
         
         for (iDim = 0; iDim < nDim; iDim++) WallDist[iDim] = (Coord[iDim] - Coord_Normal[iDim]);
         WallDistMod = 0.0; for (iDim = 0; iDim < nDim; iDim++) WallDistMod += WallDist[iDim]*WallDist[iDim]; WallDistMod = sqrt(WallDistMod);
@@ -17243,16 +17244,20 @@ void CNSSolver::Friction_Forces(CGeometry *geometry, CConfig *config) {
   SU2_MPI::Allreduce(MySurface_HF_Visc, Surface_HF_Visc, config->GetnMarker_Monitoring(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(MySurface_MaxHF_Visc, Surface_MaxHF_Visc, config->GetnMarker_Monitoring(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   
-//  SU2_MPI::Allreduce(local_wss, wss, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  SU2_MPI::Allreduce(local_wss, wss, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
   delete [] MySurface_CL_Visc; delete [] MySurface_CD_Visc; delete [] MySurface_CSF_Visc;
   delete [] MySurface_CEff_Visc;  delete [] MySurface_CFx_Visc;   delete [] MySurface_CFy_Visc;
   delete [] MySurface_CFz_Visc;   delete [] MySurface_CMx_Visc;   delete [] MySurface_CMy_Visc;
   delete [] MySurface_CMz_Visc;   delete [] MySurface_HF_Visc; delete [] MySurface_MaxHF_Visc;
+  delete [] local_wss;
   
-//#else
-//  wss = local_wss;
+#else
+  wss = local_wss;
+  delete [] local_wss;
 #endif
+
+
   
   /*--- Update the total coefficients (note that all the nodes have the same value)---*/
   

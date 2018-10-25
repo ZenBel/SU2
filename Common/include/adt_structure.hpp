@@ -212,6 +212,8 @@ private:
                                                    of the points in the ADT. */
   vector<unsigned long> localPointIDs; /*!< \brief Vector, which contains the local point ID's
                                                    of the points in the ADT. */
+  vector<unsigned long> GlobalIndexIDs;
+
   vector<int>           ranksOfPoints; /*!< \brief Vector, which contains the ranks
                                                    of the points in the ADT. */
 public:

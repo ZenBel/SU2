@@ -1092,11 +1092,10 @@ void CDriver::Solver_Postprocessing(CSolver ***solver_container, CGeometry **geo
     }
     
     /*--- DeAllocate solution for direct problem ---*/
-    
     if (euler || ns) {
       delete solver_container[iMGlevel][FLOW_SOL];
     }
-    
+
     if (turbulent) {
       if (spalart_allmaras || neg_spalart_allmaras || menter_sst || e_spalart_allmaras || comp_spalart_allmaras || e_comp_spalart_allmaras) {
         delete solver_container[iMGlevel][TURB_SOL];
@@ -1105,6 +1104,7 @@ void CDriver::Solver_Postprocessing(CSolver ***solver_container, CGeometry **geo
         delete solver_container[iMGlevel][TRANS_SOL];
       }
     }
+
     if (poisson) {
       delete solver_container[iMGlevel][POISSON_SOL];
     }

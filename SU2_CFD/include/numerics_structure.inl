@@ -301,6 +301,8 @@ inline su2double CNumerics::GetDestruction(void) { return 0; }
 
 inline su2double CNumerics::GetOmegaTurb(void) { return 0; }
 
+inline su2double CNumerics::GetBeta(void) { return 0; }
+
 inline su2double CNumerics::GetCrossProduction(void) { return 0; }
 
 inline su2double CNumerics::GetGammaBC(void) { return 0.0; }
@@ -506,6 +508,8 @@ inline void CSourcePieceWise_TurbSA::SetCrossProduction(su2double val_crossprodu
 inline su2double CSourcePieceWise_TurbSA::GetProduction(void) { return Production; }
 
 inline su2double CSourcePieceWise_TurbSA::GetOmegaTurb(void) { return Omega; }
+
+inline su2double CSourcePieceWise_TurbSA::GetBeta(void) { return BETA; }
 
 inline su2double CSourcePieceWise_TurbSA::GetGammaBC(void) { return gamma_BC; }
 

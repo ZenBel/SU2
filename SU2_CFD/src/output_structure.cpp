@@ -814,7 +814,8 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
     local_zCoord[Global_Index] = 0.0;
     if (nDim == 3) local_zCoord[Global_Index] = geometry->node[iPoint]->GetCoord(2);
 
-    local_discrTerm[Global_Index] = config->GetDiscrTerm(Global_Index);
+//    local_discrTerm[Global_Index] = config->GetDiscrTerm(Global_Index);
+    local_discrTerm[Global_Index] = TurbSolver->node[iPoint]->GetBeta();
     local_dist_i_2[Global_Index] = geometry->node[iPoint]->GetWall_Distance();
 
 //    Vorticity = FlowSolver->node[iPoint]->GetVorticity();
@@ -923,7 +924,7 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
 	  SurfFlow_file.open(cstr, ios::out);
 
 	  SurfFlow_file << "\"Global_Index\", \"x_coord\", \"y_coord\", \"z_coord\", ";
-	  SurfFlow_file << "\"discrTerm\", \"Omega\", \"dist_i_2\", \"nu\", \"nu_hat\", \"Ji\", ";
+	  SurfFlow_file << "\"discrTerm\", \"Omega\", \"dist_i\", \"nu\", \"nu_hat\", \"Ji\", ";
 	  SurfFlow_file << "\"Strain_Mag\", \"Production\", \"Destruction\", \"fd\", ";
 	  SurfFlow_file << "\"dudx\", \"dudy\", \"dudz\", \"dvdx\", \"dvdy\", \"dvdz\", \"dwdx\", \"dwdy\", \"dwdz\""<< "\n";
 

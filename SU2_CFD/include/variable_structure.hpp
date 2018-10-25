@@ -1074,6 +1074,7 @@ public:
   virtual su2double GetProduction(void);
   virtual su2double GetDestruction(void);
   virtual su2double GetOmegaTurb(void);
+  virtual su2double GetBeta(void);
   
   /*!
    * \brief A virtual member.
@@ -1606,6 +1607,8 @@ public:
   virtual bool SetStrainMag(void);
   virtual void SetProductionDestruction(su2double val_production, su2double val_destruction);
   virtual void SetOmegaTurb(su2double val_omega);
+  virtual void SetBeta(su2double val_beta);
+
   /*!
    * \brief A virtual member.
    */
@@ -4191,6 +4194,7 @@ protected:
   
   su2double Production, Destruction;
   su2double OmegaTurb;
+  su2double BetaTurb;
 
 public:
   /*!
@@ -4313,6 +4317,10 @@ public:
 
   void SetOmegaTurb(su2double val_omega);
   su2double GetOmegaTurb(void);
+
+  void SetBeta(su2double val_beta);
+  su2double GetBeta(void);
+
 };
 
 /*!

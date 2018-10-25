@@ -9484,17 +9484,20 @@ void CPhysicalGeometry::ComputeWall_Distance(CConfig *config) {
 
   vector<su2double>     Coord_bound(nDim*nVertex_SolidWall);
   vector<unsigned long> PointIDs(nVertex_SolidWall);
+  vector<unsigned long> GlobalIDxs(nVertex_SolidWall);
 
   /*--- Retrieve and store the coordinates of the no-slip boundary nodes
    and their local point IDs. ---*/
 
   ii = 0; jj = 0;
+  unsigned long kk=0;
   for (iMarker=0; iMarker<config->GetnMarker_All(); ++iMarker) {
     if ( (config->GetMarker_All_KindBC(iMarker) == HEAT_FLUX)  ||
        (config->GetMarker_All_KindBC(iMarker) == ISOTHERMAL) ) {
       for (iVertex=0; iVertex<GetnVertex(iMarker); ++iVertex) {
         iPoint = vertex[iMarker][iVertex]->GetNode();
         PointIDs[jj++] = iPoint;
+        GlobalIDxs[kk++] = node[iPoint]->GetGlobalIndex();
         for (iDim=0; iDim<nDim; ++iDim)
           Coord_bound[ii++] = node[iPoint]->GetCoord(iDim);
       }
@@ -9502,8 +9505,8 @@ void CPhysicalGeometry::ComputeWall_Distance(CConfig *config) {
   }
 
   /*--- Build the ADT of the boundary nodes. ---*/
-
-  su2_adtPointsOnlyClass WallADT(nDim, nVertex_SolidWall, Coord_bound.data(), PointIDs.data());
+//  su2_adtPointsOnlyClass WallADT(nDim, nVertex_SolidWall, Coord_bound.data(), PointIDs.data());
+  su2_adtPointsOnlyClass WallADT(nDim, nVertex_SolidWall, Coord_bound.data(), GlobalIDxs.data());
 
   /*--- Loop over all interior mesh nodes and compute the distances to each
    of the no-slip boundary nodes. Store the minimum distance to the wall
@@ -9521,13 +9524,14 @@ void CPhysicalGeometry::ComputeWall_Distance(CConfig *config) {
 
     /*--- Solid wall boundary nodes are present. Compute the wall
      distance for all nodes. ---*/
-    
+    cout << "GetnPoint() = " << GetnPoint() << endl;
     for (iPoint=0; iPoint<GetnPoint(); ++iPoint) {
       
       WallADT.DetermineNearestNode(node[iPoint]->GetCoord(), dist,
                                    pointID, rankID);
       node[iPoint]->SetWall_Distance(dist);
-//      node[iPoint]->SetWall_Distance_PointID(pointID);
+      node[iPoint]->SetWall_Distance_PointID(pointID);
+
     }
   }
   

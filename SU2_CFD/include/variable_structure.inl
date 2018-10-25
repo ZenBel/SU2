@@ -315,6 +315,7 @@ inline su2double CVariable::GetStrainMag(void) { return 0; }
 inline su2double CVariable::GetProduction(void) { return 0; }
 inline su2double CVariable::GetDestruction(void) { return 0;}
 inline su2double CVariable::GetOmegaTurb(void) { return 0;}
+inline su2double CVariable::GetBeta(void) { return 0;}
 
 inline void CVariable::SetForceProj_Vector(su2double *val_ForceProj_Vector) { }
 
@@ -462,6 +463,7 @@ inline bool CVariable::SetStrainMag(void) { return false; }
 
 inline void CVariable::SetProductionDestruction(su2double val_production, su2double val_destruction) { }
 inline void CVariable::SetOmegaTurb(su2double val_omega) { }
+inline void CVariable::SetBeta(su2double val_beta) { }
 
 inline void CVariable::SetGradient_PrimitiveZero(unsigned short val_primvar) { }
 
@@ -1296,6 +1298,7 @@ inline void CHeatVariable::SetSolution_Direct(su2double *val_solution_direct) { 
 inline su2double CTurbSAVariable::GetProduction(void) { return Production; }
 inline su2double CTurbSAVariable::GetDestruction(void) { return Destruction;}
 inline su2double CTurbSAVariable::GetOmegaTurb(void) { return OmegaTurb;}
+inline su2double CTurbSAVariable::GetBeta(void) { return BetaTurb;}
 
 inline void CTurbSAVariable::SetProductionDestruction(su2double val_production, su2double val_destruction) { 
   Production = val_production;
@@ -1305,6 +1308,9 @@ inline void CTurbSAVariable::SetOmegaTurb(su2double val_omega) {
   OmegaTurb = val_omega;
 }
 
+inline void CTurbSAVariable::SetBeta(su2double val_beta) { 
+  BetaTurb = val_beta;
+}
 
 inline void CTurbSAVariable::SetHarmonicBalance_Source(unsigned short val_var, su2double val_source) { HB_Source[val_var] = val_source; }
 

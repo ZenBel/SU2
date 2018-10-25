@@ -284,7 +284,7 @@ su2_adtPointsOnlyClass::su2_adtPointsOnlyClass(unsigned short nDim,
 
   coorPoints.resize(nDim*sizeGlobal);
   SU2_MPI::Allgatherv(coor, nDim*sizeLocal, MPI_DOUBLE, coorPoints.data(),
-                      recvCounts.data(), displs.data(), MPI_DOUBLE, MPI_COMM_WORLD); 
+                      recvCounts.data(), displs.data(), MPI_DOUBLE, MPI_COMM_WORLD);
 #else
 
   /*--- Sequential mode. Copy the coordinates and point IDs and

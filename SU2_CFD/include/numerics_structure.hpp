@@ -207,6 +207,7 @@ public:
   su2double *l, *m;
 
   su2double discrepancyTerm;
+  su2double BETA;
 
   su2double wss_turb;
 
@@ -1342,6 +1343,7 @@ public:
    */
   virtual su2double GetProduction(void);
   virtual su2double GetOmegaTurb(void);
+  virtual su2double GetBeta(void);
   
   /*!
    * \brief Residual for source term integration.
@@ -4381,6 +4383,8 @@ public:
    */
   su2double GetProduction(void);
   su2double GetOmegaTurb(void);
+  su2double GetBeta(void);
+
   /*!
    * \brief  Get the intermittency for the BC trans. model.
    * \return Value of the intermittency.
