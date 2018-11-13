@@ -451,60 +451,63 @@ void CSourcePieceWise_TurbSA::ComputeResidual(su2double *val_residual, su2double
     
     CrossProduction = cb2_sigma*norm2_Grad*Volume;
     
+//    if (dist_i < 3e-2) {
+//		su2double fv1, mut, f_2, f_3, f_4, f_6, mag_aij=0, wss_new, trace_Sij=0.0;
+//		su2double **Sij, **aij;
+//		unsigned short jDim;
+//		Sij=new su2double*[nDim];
+//		aij=new su2double*[nDim];
+//		for (iDim=0; iDim<nDim; iDim++){
+//			Sij[iDim]=new su2double[nDim];
+//			aij[iDim]=new su2double[nDim];
+//		}
+//
+//		for (iDim=0; iDim<nDim; iDim++){ trace_Sij += PrimVar_Grad_i[iDim+1][iDim];}
+//		for (iDim=0; iDim<nDim; iDim++){
+//			for (jDim=0; jDim<nDim; jDim++){
+//				Sij[iDim][jDim] = 0.5*(PrimVar_Grad_i[iDim+1][jDim] + PrimVar_Grad_i[jDim+1][iDim]);
+//			}
+//		}
+//		for (iDim=0; iDim<nDim; iDim++){ Sij[iDim][iDim] += -1.0/3.0*trace_Sij;}
+//
+//		fv1 = (Ji*Ji*Ji)/(Ji*Ji*Ji + 7.1*7.1*7.1);
+//		mut = Density_i*fv1*TurbVar_i[0];
+//		for (iDim=0; iDim<nDim; iDim++){
+//			for (jDim=0; jDim<nDim; jDim++){
+//				aij[iDim][jDim] = 2.0*mut*Sij[iDim][jDim];
+//			}
+//		}
+//
+//		for (iDim=0; iDim<nDim; iDim++){
+//			for (jDim=0; jDim<nDim; jDim++){
+//				mag_aij += aij[iDim][jDim]*aij[iDim][jDim];
+//			}
+//		}
+//		mag_aij = sqrt(mag_aij);
+//
+//		wss_new = wss_turb;
+//
+//		f_2 = Ji;
+//		f_3 = StrainMag_i/(Omega+1e-15);
+//		f_4 = mag_aij/wss_new;
+//		f_6 = exp(-10.0*dist_i);
+//
+//		su2double ramp = 1.0;
+//		BETA =  -2.66205075982e-08*f_2*f_2*f_4*f_6 - 5.63101551568e-08*f_2*f_2 + 1.0;
+//
+//	    // Deallocate memory
+//	    for(iDim=0; iDim<nDim; iDim++){
+//	      delete [] Sij[iDim];
+//	      delete [] aij[iDim];
+//	    }
+//	    delete [] Sij;
+//	    delete [] aij;
+//    }
+//    else{
+//    	BETA = 1.0;
+//    }
 
-    su2double fv1, mut, f_2, f_4, f_6, mag_aij=0, wss_new, trace_Sij=0.0;
-    su2double **Sij, **aij;
-    unsigned short jDim;
-    Sij=new su2double*[nDim];
-    aij=new su2double*[nDim];
-    for (iDim=0; iDim<nDim; iDim++){
-    	Sij[iDim]=new su2double[nDim];
-    	aij[iDim]=new su2double[nDim];
-    }
-
-    for (iDim=0; iDim<nDim; iDim++){ trace_Sij += PrimVar_Grad_i[iDim+1][iDim];}
-    for (iDim=0; iDim<nDim; iDim++){
-    	for (jDim=0; jDim<nDim; jDim++){
-    		Sij[iDim][jDim] = 0.5*(PrimVar_Grad_i[iDim+1][jDim] + PrimVar_Grad_i[jDim+1][iDim]);
-    	}
-    }
-    for (iDim=0; iDim<nDim; iDim++){ Sij[iDim][iDim] += -1.0/3.0*trace_Sij;}
-
-    fv1 = (Ji*Ji*Ji)/(Ji*Ji*Ji + 7.1*7.1*7.1);
-    mut = Density_i*fv1*TurbVar_i[0];
-    for (iDim=0; iDim<nDim; iDim++){
-    	for (jDim=0; jDim<nDim; jDim++){
-    		aij[iDim][jDim] = 2.0*mut*Sij[iDim][jDim];
-    	}
-    }
-
-    for (iDim=0; iDim<nDim; iDim++){
-    	for (jDim=0; jDim<nDim; jDim++){
-    		mag_aij += aij[iDim][jDim]*aij[iDim][jDim];
-    	}
-    }
-    mag_aij = sqrt(mag_aij);
-
-    wss_new = wss_turb;
-
-    f_2 = Ji;
-    f_4 = mag_aij/wss_new;
-    f_6 = exp(-10.0*dist_i);
-
-    BETA = -3.55992888079e-08*f_2*f_2*f_4*f_6 + 1.0;
-//    BETA = -2.66205075982e-08*f_2*f_2*f_4*f_6 - 5.63101551568e-08*f_2*f_2 + 1.0;
-//    BETA = -2.25040606023e-08*f_2*f_4*f_4*f_4 - 1.48909463122e-08*f_2*f_2*f_4*f_6 - 8.93263956937e-08*f_2*f_2 + 1.0;
-
-
-    // Deallocate memory
-    for(iDim=0; iDim<nDim; iDim++){
-      delete [] Sij[iDim];
-      delete [] aij[iDim];
-    }
-    delete [] Sij;
-    delete [] aij;
-
-//    BETA = discrepancyTerm;
+    BETA = discrepancyTerm;
 
     val_residual[0] = BETA*Production - Destruction + CrossProduction;
 

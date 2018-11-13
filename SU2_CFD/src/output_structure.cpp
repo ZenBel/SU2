@@ -840,7 +840,7 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
     local_Destruction[Global_Index] = TurbSolver->node[iPoint]->GetDestruction();
 
     // Following snippet of code copied from SetDES_LengthScale()
-    su2double kinematicViscosityTurb, kinematicViscosity, uijuij, k2, wallDistance, r_d, **primVarGrad = NULL;
+    su2double kinematicViscosityTurb, kinematicViscosity, uijuij, k2, r_d, **primVarGrad = NULL;
     kinematicViscosityTurb = local_eddy_visc[Global_Index]/rho;
     kinematicViscosity = local_nu[Global_Index];
     k2 = pow(0.41, 2.0);
@@ -853,7 +853,7 @@ void COutput::SetTurbulent_CSV(CConfig *config, CGeometry *geometry,
     }
     uijuij = sqrt(fabs(uijuij));
     uijuij = max(uijuij,1e-10);
-    r_d = (kinematicViscosityTurb+kinematicViscosity)/(uijuij*k2*pow(wallDistance, 2.0));
+    r_d = (kinematicViscosityTurb+kinematicViscosity)/(uijuij*k2*pow(geometry->node[iPoint]->GetWall_Distance(), 2.0));
     local_fd[Global_Index] = 1.0-tanh(pow(8.0*r_d,3.0));
 
     // end snippet of code DES
