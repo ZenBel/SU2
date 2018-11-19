@@ -1140,6 +1140,8 @@ public:
    */
   virtual void ComputeResidual(su2double *val_residual, CConfig *config);
   
+  virtual void ComputeResidual(su2double *val_residual, CConfig *config, unsigned long global_index);
+
   /*!
    * \overload
    * \param[out] val_residual_i - Pointer to the total residual at point i.
@@ -4980,6 +4982,8 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   void ComputeResidual(su2double *val_residual, CConfig *config);
+
+  void ComputeResidual(su2double *val_residual, CConfig *config, unsigned long global_index);
 
 };
 

@@ -1451,6 +1451,13 @@ inline bool CConfig::GetBody_Force(void) { return Body_Force; }
 
 inline su2double* CConfig::GetBody_Force_Vector(void) { return Body_Force_Vector; }
 
+inline su2double CConfig::GetVariable_Body_Force_Vector(unsigned long global_index, unsigned short idim) { 
+  
+  return Variable_Body_Force_Vector[global_index][idim]; 
+}
+
+inline string CConfig::GetBody_Force_File(void) { return Body_Force_File; }
+
 inline bool CConfig::GetSmoothNumGrid(void) { return SmoothNumGrid; }
 
 inline void CConfig::SetSmoothNumGrid(bool val_smoothnumgrid) { SmoothNumGrid = val_smoothnumgrid; }

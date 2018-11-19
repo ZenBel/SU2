@@ -5000,12 +5000,16 @@ CSourceBodyForce::CSourceBodyForce(unsigned short val_nDim, unsigned short val_n
 
   /*--- Store the pointer to the constant body force vector. ---*/
 
-  Body_Force_Vector = new su2double[nDim];
-  for (unsigned short iDim = 0; iDim < nDim; iDim++)
-    Body_Force_Vector[iDim] = config->GetBody_Force_Vector()[iDim];
+  if (config->GetBody_Force_File() == "no_body_force.dat"){
+    Body_Force_Vector = new su2double[nDim];
+    for (unsigned short iDim = 0; iDim < nDim; iDim++)
+      Body_Force_Vector[iDim] = config->GetBody_Force_Vector()[iDim];
+  }
+  else{
+    config->Set_Variable_Body_Force_Vector();
+  }
 
   /*--- Check for compressibility ---*/
-
   compressible = (config->GetKind_Regime() == COMPRESSIBLE);
 
 }
@@ -5039,6 +5043,40 @@ void CSourceBodyForce::ComputeResidual(su2double *val_residual, CConfig *config)
       val_residual[nDim+1] += -Volume * U_i[iDim+1] * Body_Force_Vector[iDim] / Force_Ref;
 
   }
+
+}
+
+void CSourceBodyForce::ComputeResidual(su2double *val_residual, CConfig *config, unsigned long global_index) {
+
+  unsigned short iDim;
+  su2double Force_Ref = config->GetForce_Ref(); // equals one unless a-dimensionalization is imposed
+  su2double Ustar, Body_Force, scale, gain=10.0;
+  su2double Reynolds_Length = config->GetLength_Reynolds();
+  if (nDim == 2) {scale = pow(Volume, 1.0/2.0)/Volume;}
+  if (nDim == 3) {scale = pow(Volume, 2.0/3.0)/Volume;}
+
+//  if (compressible) {
+
+    /*--- Zero the continuity contribution ---*/
+    val_residual[0] = 0.0;
+
+    /*--- Momentum contribution ---*/
+    for (iDim = 0; iDim < nDim; iDim++){
+      Ustar = config->GetVariable_Body_Force_Vector(global_index, iDim);
+      Body_Force = gain * (Ustar - U_i[iDim+1]/U_i[0])*fabs(Ustar - U_i[iDim+1]/U_i[0]) * scale;
+//      cout << "vel = " <<  U_i[iDim+1]/U_i[0] << ", area = " << Area << ", vol = " << Volume << endl;
+      val_residual[iDim+1] = -Volume * U_i[0] * Body_Force / Force_Ref;
+    }
+
+    /*--- Energy contribution ---*/
+    val_residual[nDim+1] = 0.0;
+    for (iDim = 0; iDim < nDim; iDim++){
+      Ustar = config->GetVariable_Body_Force_Vector(global_index, iDim);
+      Body_Force = gain * (Ustar - U_i[iDim+1]/U_i[0])*fabs(Ustar - U_i[iDim+1]/U_i[0]) * scale;
+      val_residual[nDim+1] += -Volume * U_i[iDim+1] * Body_Force / Force_Ref;
+    }
+
+//  }
 
 }
 

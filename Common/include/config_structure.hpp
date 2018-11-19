@@ -973,6 +973,8 @@ private:
   su2double *ExtraRelFacGiles; /*!< \brief coefficient for extra relaxation factor for Giles BC*/
   bool Body_Force;            /*!< \brief Flag to know if a body force is included in the formulation. */
   su2double *Body_Force_Vector;  /*!< \brief Values of the prescribed body force vector. */
+  su2double **Variable_Body_Force_Vector;  /*!< \brief Values of the prescribed body force vector. */
+  string Body_Force_File;
   su2double *FreeStreamTurboNormal; /*!< \brief Direction to initialize the flow in turbomachinery computation */
 
   bool DataAssimilation;
@@ -5318,6 +5320,10 @@ public:
    */
   su2double* GetBody_Force_Vector(void);
 
+  su2double GetVariable_Body_Force_Vector(unsigned long global_index, unsigned short idim);
+
+  string GetBody_Force_File(void);
+
   /*!
    * \brief Get information about the rotational frame.
    * \return <code>TRUE</code> if there is a rotational frame; otherwise <code>FALSE</code>.
@@ -6043,6 +6049,8 @@ public:
   unsigned long GetNUBC_nPoints(unsigned short val_marker);
   string GetNUBC_spaceVar(unsigned short val_marker);
   su2double GetNUBC_switchLoc(unsigned short val_marker);
+
+  void Set_Variable_Body_Force_Vector(void);
 
   /*!
    * \brief Get the Flowdir at Riemann boundary.

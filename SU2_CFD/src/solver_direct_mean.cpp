@@ -4919,7 +4919,7 @@ void CEulerSolver::Source_Residual(CGeometry *geometry, CSolver **solver_contain
                                    CConfig *config, unsigned short iMesh) {
   
   unsigned short iVar;
-  unsigned long iPoint;
+  unsigned long iPoint, iEdge, jPoint;
   bool implicit         = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
   bool rotating_frame   = config->GetRotating_Frame();
   bool axisymmetric     = config->GetAxisymmetric();
@@ -4935,6 +4935,7 @@ void CEulerSolver::Source_Residual(CGeometry *geometry, CSolver **solver_contain
   if (body_force) {
 
     /*--- Loop over all points ---*/
+
     for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
 
       /*--- Load the conservative variables ---*/
@@ -4944,8 +4945,15 @@ void CEulerSolver::Source_Residual(CGeometry *geometry, CSolver **solver_contain
       /*--- Load the volume of the dual mesh cell ---*/
       numerics->SetVolume(geometry->node[iPoint]->GetVolume());
 
+
       /*--- Compute the rotating frame source residual ---*/
-      numerics->ComputeResidual(Residual, config);
+      if (config->GetBody_Force_File() == "no_body_force.dat"){
+        numerics->ComputeResidual(Residual, config);
+      }
+      else {
+    	  unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+    	  numerics->ComputeResidual(Residual, config, GlobalIndex);
+      }
 
       /*--- Add the source residual to the total ---*/
       LinSysRes.AddBlock(iPoint, Residual);

@@ -154,6 +154,8 @@ inline void CFEM_NonlinearElasticity::Compute_Stress_Tensor(CElement *element_co
 
 inline void CNumerics::ComputeResidual(su2double *val_residual, CConfig *config) { }
 
+inline void CNumerics::ComputeResidual(su2double *val_residual, CConfig *config, unsigned long global_index) { }
+
 inline void CNumerics::ComputeResidual(su2double *val_residual_i, su2double *val_residual_j) { }
 
 inline void CNumerics::ComputeResidual(su2double *val_residual_i, su2double *val_residual_j, CConfig *config) { }

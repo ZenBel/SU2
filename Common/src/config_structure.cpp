@@ -601,6 +601,8 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   default_body_force[0] = 0.0; default_body_force[1] = 0.0; default_body_force[2] = 0.0;
   /* DESCRIPTION: Vector of body force values (BodyForce_X, BodyForce_Y, BodyForce_Z) */
   addDoubleArrayOption("BODY_FORCE_VECTOR", 3, Body_Force_Vector, default_body_force);
+  /*!\brief VARYING_BODY_FORCE option \n DESCRIPTION: Varying Body Force input file \n DEFAULT: solution_flow.dat \ingroup Config */
+  addStringOption("BODY_FORCE_FILE", Body_Force_File, string("no_body_force.dat"));
   /*!\brief RESTART_SOL \n DESCRIPTION: Restart solution from native solution file \n Options: NO, YES \ingroup Config */
   addBoolOption("RESTART_SOL", Restart, false);
   /*!\brief BINARY_RESTART \n DESCRIPTION: Read / write binary SU2 native restart files. \n Options: YES, NO \ingroup Config */
@@ -7071,6 +7073,46 @@ string CConfig::GetNUBC_spaceVar(unsigned short val_marker) {
 
 su2double CConfig::GetNUBC_switchLoc(unsigned short val_marker) {
   return NonUniform_switchLoc[val_marker];
+}
+
+void CConfig::Set_Variable_Body_Force_Vector(void) {
+
+	/*--- Initialize NonUniform Boundary condition from external input file ---*/
+	  string text_line;
+	  ifstream input_file;
+	  string input_filename = Body_Force_File;
+
+	  input_file.open(input_filename.data(), ios::in);
+	  if (input_file.fail()) {
+	  	cout << "There is no input file!! " << input_filename.data() << "."<< endl;
+	  	exit(EXIT_FAILURE);
+	  }
+
+	  unsigned long globalID;
+	  su2double force_x, force_y, force_z;
+	  vector<su2double> GlobalID, Force_x, Force_y, Force_z;
+	  unsigned long InputPoints;
+	  unsigned long iPos, jPos;
+
+	  /*--- Read head of the file for allocation ---*/
+	  getline (input_file, text_line);
+	  istringstream point_line(text_line);
+	  point_line >> InputPoints;
+
+	  Variable_Body_Force_Vector = new su2double*[InputPoints];
+	  for (iPos = 0; iPos < InputPoints; iPos++) {
+		  Variable_Body_Force_Vector[iPos] = new su2double[3];
+	  }
+
+	  while (getline (input_file, text_line)) {
+		istringstream point_line(text_line);
+		point_line >> globalID >> force_x >> force_y >> force_z;
+		Variable_Body_Force_Vector[globalID][0] = force_x;
+		Variable_Body_Force_Vector[globalID][1] = force_y;
+		Variable_Body_Force_Vector[globalID][2] = force_z;
+	  }
+	  input_file.close();
+
 }
 
 void CConfig::Initialize_NonUniformVar( unsigned short n_nubc_marker, string *nubc_input_file) {
