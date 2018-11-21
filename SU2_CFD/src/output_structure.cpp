@@ -9217,9 +9217,10 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	  if (geometry->node[iPoint]->GetDomain()){
 		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 		if (config->GetTargetPointID(GlobalIndex) == true){
-		  weight = 1.0; //HARCODED
+		  weight = 1.0; //HARDCODED
 		  Target = config->GetTargetQuantity(GlobalIndex);
-		  Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
+		  //Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
+		  Computed = solver_container->node[iPoint]->GetVelocity(0) / solver_container
 //		  Computed = Mach = sqrt(solver_container->node[iPoint]->GetVelocity2()) / solver_container->node[iPoint]->GetSoundSpeed();
 		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
 	    }
@@ -9260,6 +9261,150 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
     solver_container->SetTotal_ErrorFunc(AllBound_ErrorFunc);
 
 }
+
+//void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CConfig *config){
+//
+//	unsigned short icommas, iMarker, iDim;// Boundary, iDim;
+//	unsigned long iVertex, iPoint, PointID, GlobalIndex, iPos, nPointLocal=0.0, nPointGlobal=0.0;
+//	su2double x_coord, y_coord, z_coord, pressure, pressure_coeff, Mach;
+//	string text_line, surfCp_filename;
+//	char buffer[50], cstr[200];
+//	ifstream Surface_file;
+//
+//	su2double RefVel2, RefDensity, RefPressure, factor, weight;
+//	su2double dist, *Coord, Target, Computed, Buffer_ErrorFunc, Buffer_Regularization, Volume, Buffer_VolumeTot, AllBound_ErrorFunc;
+//
+//    nPointLocal = geometry->GetnPoint(); // Total number of mesh points on the decomposed geometry managed by a single processor
+//
+//#ifdef HAVE_MPI
+//  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+//#else
+//  nPointGlobal = nPointLocal;
+//#endif
+//
+//	Buffer_ErrorFunc   = 0.0;
+//	Buffer_Regularization = 0.0;
+//	AllBound_ErrorFunc = 0.0;
+//
+//#ifdef HAVE_MPI
+//  su2double MyAllBound_ErrorFunc;
+//#endif
+//
+//    RefDensity  = solver_container->GetDensity_Inf();
+//    RefPressure = solver_container->GetPressure_Inf();
+//    RefVel2 = 0.0;
+//    for (iDim = 0; iDim < geometry->GetnDim(); iDim++)
+//	  RefVel2  += solver_container->GetVelocity_Inf(iDim)*solver_container->GetVelocity_Inf(iDim);
+//
+//    factor = 1.0 / (0.5*RefDensity*RefVel2);
+//
+//    su2double lambda = config->GetRegularization(); //Tikhonov regularization factor
+//
+//    if ( config->GetExtIter() == 0){
+//
+//      su2double yMax = 0.0;
+//
+//      config->Initialize_ErrorFunc_Variables(nPointGlobal);
+//
+//      if (rank==MASTER_NODE){
+//        cout << "Reading TargetCp.dat and storing the information."<< endl;
+//        cout << "NOTE: The Cp is used as Target quantity!!!" << endl;
+//        if (config->GetBoolDiscrepancyTerm()){
+//    	    cout << "Tikhonov regularization of the OF implemented with lambda = "<< lambda << ". (only for DISCREPANCY_DV)"<< endl;
+//        }
+//      }
+//
+//	  /*--- Prepare to read the surface pressure files (CSV) ---*/
+//	  surfCp_filename = "TargetCp";
+//	  strcpy (cstr, surfCp_filename.c_str());
+//	  SPRINTF (buffer, ".dat");
+//	  strcat (cstr, buffer);
+//
+//	  /*--- Read the surface pressure file ---*/
+//	  string::size_type position;
+//
+//	  Surface_file.open(cstr, ios::in);
+//	  if (Surface_file.fail()) {
+//	    cout << "There is no Target file for ERROR_FUNC!! " << surfCp_filename.data() << "."<< endl;
+//	    exit(EXIT_FAILURE);
+//	  }
+//
+//	  getline(Surface_file, text_line);
+//	  istringstream point_line(text_line);
+//
+//	  while (getline(Surface_file, text_line)) {
+//	    for (icommas = 0; icommas < 50; icommas++) {
+//	      position = text_line.find( ",", 0 );
+//	      if (position!=string::npos) text_line.erase (position,1);
+//	    }
+//
+//	    stringstream  point_line(text_line);
+//
+//	    if (geometry->GetnDim() == 2) point_line >> PointID >> x_coord >> y_coord >> pressure >> pressure_coeff >> Mach;
+//	    if (geometry->GetnDim() == 3) point_line >> PointID >> x_coord >> y_coord >> z_coord >> pressure >> pressure_coeff;
+//
+//	    /*--- Loop over all points of a (partitioned) domain ---*/
+//	    for (iPoint = 0; iPoint < nPointLocal; iPoint++) {
+//
+//	      /*--- Filter out the Halo nodes ---*/
+//	      if (geometry->node[iPoint]->GetDomain()){
+//
+//	        /*--- Obtain coordinates of given point ---*/
+//	  	    Coord = geometry->node[iPoint]->GetCoord();
+//
+//	  	    /*--- Compute distance of current point from Target file ---*/
+//	  	    if (geometry->GetnDim() == 2) dist = sqrt( (Coord[0]-x_coord)*(Coord[0]-x_coord) + (Coord[1]-y_coord)*(Coord[1]-y_coord) );
+//	  	    if (geometry->GetnDim() == 3) dist = sqrt( (Coord[0]-x_coord)*(Coord[0]-x_coord) + (Coord[1]-y_coord)*(Coord[1]-y_coord) + (Coord[2]-z_coord)*(Coord[2]-z_coord) );
+//
+//	  	    GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+//	  	    su2double tolerance = 1e-6; //HARDCODED
+//
+//	  	    /*--- Save Point ID and Target quantity for quick retrieval ---*/
+//	  	    if (dist < tolerance){
+//	 		  config->SetTargetPointID(GlobalIndex);
+//	 		  config->SetTargetQuantity(pressure_coeff, GlobalIndex);
+//	 		  if (Coord[1] > yMax){
+//	 			  yMax = Coord[1];
+//	 			  iPoint_yMax = iPoint;
+//	 		  }
+//	  	    }
+//	      }
+//	    }
+//	  }
+//	  Surface_file.close();
+//	  cout << "yMax = " << yMax << endl;
+//    }
+//
+//    /*--- Loop over all points of a (partitioned) domain ---*/
+//    for (iPoint = 0; iPoint < nPointLocal; iPoint++){
+//      /*--- Filter out the Halo nodes ---*/
+//	  if (geometry->node[iPoint]->GetDomain()){
+//		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+//		if (config->GetTargetPointID(GlobalIndex) == true){
+//		  weight = 1.0; //HARDCODED
+//		  Target = config->GetTargetQuantity(GlobalIndex);
+//		  Computed = solver_container->node[iPoint]->GetVelocity(0) / solver_container->node[iPoint_yMax]->GetVelocity(0);
+//		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
+//		  cout << "(u/U)* = " << Target << ", u/U = " << Computed << ", y = " << geometry->node[iPoint]->GetCoord(1) << endl;
+//	    }
+//		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
+//		if (config->GetBoolDiscrepancyTerm()){
+//			Buffer_Regularization += (config->GetDiscrTerm(GlobalIndex) - 1.0) * (config->GetDiscrTerm(GlobalIndex) - 1.0);
+//		}
+//	  }
+//    }
+//
+//	AllBound_ErrorFunc += Buffer_ErrorFunc + lambda * Buffer_Regularization;
+//
+//#ifdef HAVE_MPI
+//  /*--- Add AllBound information using all the nodes ---*/
+//  MyAllBound_ErrorFunc	= AllBound_ErrorFunc;
+//  SU2_MPI::Allreduce(&MyAllBound_ErrorFunc, &AllBound_ErrorFunc, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+//#endif
+//
+//    solver_container->SetTotal_ErrorFunc(AllBound_ErrorFunc);
+//
+//}
 
 void COutput::SetHeatFlux_InverseDesign(CSolver *solver_container, CGeometry *geometry, CConfig *config, unsigned long iExtIter) {
   
