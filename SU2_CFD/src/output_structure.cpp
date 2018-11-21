@@ -9219,8 +9219,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 		if (config->GetTargetPointID(GlobalIndex) == true){
 		  weight = 1.0; //HARDCODED
 		  Target = config->GetTargetQuantity(GlobalIndex);
-		  //Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
-		  Computed = solver_container->node[iPoint]->GetVelocity(0) / solver_container
+		  Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
 //		  Computed = Mach = sqrt(solver_container->node[iPoint]->GetVelocity2()) / solver_container->node[iPoint]->GetSoundSpeed();
 		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
 	    }
