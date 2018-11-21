@@ -194,10 +194,10 @@ def shape_optimization( filename                           ,
         xb_low = [float(bound_lower)/float(relax_factor)]*len(x_0)
         xb_up  = [float(bound_upper)/float(relax_factor)]*len(x_0)
         if 'MACH_AOA_FILE' in state['FILES']:
-            xb_low[0] = 0.725  #Mach number lower limit
-            xb_low[1] = 2.5  #AoA lower limit
-            xb_up[0] = 0.775 
-            xb_up[1] = 3.9
+            xb_low[0] = 0.15 #Mach number lower limit
+            xb_low[1] = 13.5  #AoA lower limit
+            xb_up[0] = 0.25 
+            xb_up[1] = 15.0
         xb = list(zip(xb_low, xb_up))    
     
          

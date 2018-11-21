@@ -409,6 +409,8 @@ def scipy_lbfgsb(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
     obj_scale = obj[obj.keys()[0]]['SCALE']
     accu = accu*obj_scale
 
+    sys.stdout.write('accu = pgtol = ' + str(accu) + '\n')
+
     # scale accuracy
     eps = 1.0e-04    
 
@@ -439,14 +441,14 @@ def scipy_lbfgsb(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
                             fprime         = fprime         ,
                             args           = (project,)     , 
                             bounds         = xb             ,
-                            m              = 10             , #default
-                            factr          = 1e10           ,
+                            m              = 10             , 
+                            factr          = 10.0           ,
                             pgtol          = accu           , 
                             epsilon        = eps            ,
                             iprint         = 1              ,
                             maxfun         = its            ,
                             maxiter        = its            ,
-                            maxls          = 5              ,
+                            maxls          = 20             ,
                             disp           = None           ,
                             callback       = None           )
 

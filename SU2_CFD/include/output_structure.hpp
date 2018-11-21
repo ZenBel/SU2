@@ -186,8 +186,6 @@ class COutput {
         **NuFactorIn,
         **NuFactorOut;
 
-  unsigned long iPoint_yMax;
-
 protected:
 
   int rank, 	/*!< \brief MPI Rank. */
