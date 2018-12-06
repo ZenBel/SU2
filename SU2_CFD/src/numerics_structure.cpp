@@ -1671,8 +1671,11 @@ void CNumerics::GetAdjViscousFlux_Jac(su2double Pressure_i, su2double Pressure_j
  
 }
 
-void CNumerics::GetViscousFlux(su2double *val_primvar, su2double **val_gradprimvar,
-    su2double val_laminar_viscosity, su2double val_eddy_viscosity, su2double val_mach_inf) {
+void CNumerics::GetViscousFlux(su2double *val_primvar,
+		                       su2double **val_gradprimvar,
+                               su2double val_laminar_viscosity,
+							   su2double val_eddy_viscosity,
+							   su2double val_mach_inf) {
 
   su2double total_viscosity = val_laminar_viscosity + val_eddy_viscosity;
   su2double Cp = (Gamma / Gamma_Minus_One) * Gas_Constant;
@@ -1751,8 +1754,8 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
   for (iDim = 0 ; iDim < nDim; iDim++)
     for (jDim = 0 ; jDim < nDim; jDim++)
       tau[iDim][jDim] = total_viscosity*( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
-      - TWO3*total_viscosity*div_vel*delta[iDim][jDim]
-                                                 - TWO3*Density*val_turb_ke*delta[iDim][jDim];
+                        - TWO3*total_viscosity*div_vel*delta[iDim][jDim]
+			            - TWO3*Density*val_turb_ke*delta[iDim][jDim];
   if (val_qcr){
     su2double den_aux, c_cr1=0.3, O_ik, O_jk;
     unsigned short kDim;
@@ -1818,7 +1821,8 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
 }
 
 void CNumerics::GetViscousProjFlux(su2double *val_primvar,
-                                   su2double **val_gradprimvar, su2double val_turb_ke,
+                                   su2double **val_gradprimvar,
+								   su2double val_turb_ke,
                                    su2double *val_normal,
                                    su2double val_laminar_viscosity,
                                    su2double val_eddy_viscosity,
@@ -1839,8 +1843,8 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
   for (iDim = 0 ; iDim < nDim; iDim++)
     for (jDim = 0 ; jDim < nDim; jDim++)
       tau[iDim][jDim] = total_viscosity*( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
-      - TWO3*total_viscosity*div_vel*delta[iDim][jDim]
-                                                 - TWO3*Density*val_turb_ke*delta[iDim][jDim];
+                        - TWO3*total_viscosity*div_vel*delta[iDim][jDim]
+                        - TWO3*Density*val_turb_ke*delta[iDim][jDim];
 
 
   /*--- Gradient of primitive variables -> [Temp vel_x vel_y vel_z Pressure] ---*/
@@ -1887,8 +1891,10 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
 
 }
 
-void CNumerics::GetViscousArtCompProjFlux(su2double **val_gradprimvar, su2double *val_normal, su2double val_laminar_viscosity,
-    su2double val_eddy_viscosity) {
+void CNumerics::GetViscousArtCompProjFlux(su2double **val_gradprimvar,
+		                                  su2double *val_normal,
+										  su2double val_laminar_viscosity,
+										  su2double val_eddy_viscosity) {
   unsigned short iVar, iDim;
   su2double total_viscosity;
   
