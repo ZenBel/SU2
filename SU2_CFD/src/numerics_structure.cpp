@@ -1734,7 +1734,8 @@ void CNumerics::GetViscousFlux(su2double *val_primvar,
 
 
 void CNumerics::GetViscousProjFlux(su2double *val_primvar,
-                  su2double **val_gradprimvar, su2double val_turb_ke,
+                  su2double **val_gradprimvar,
+				  su2double val_turb_ke,
                   su2double *val_normal,
                   su2double val_laminar_viscosity,
                   su2double val_eddy_viscosity,
@@ -1742,6 +1743,18 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
 
   unsigned short iVar, iDim, jDim;
   su2double total_viscosity, heat_flux_factor, div_vel, Cp, Density;
+
+  su2double **tau_lam, **tau_turb_ev, **tau_turb_anis;
+  tau_lam = new su2double*[nDim];
+  tau_turb_ev = new su2double*[nDim];
+  tau_turb_anis = new su2double*[nDim];
+  for (iDim = 0 ; iDim < nDim; iDim++){
+	  tau_lam[iDim] = new su2double[nDim];
+	  tau_turb_ev[iDim] = new su2double[nDim];
+	  tau_turb_anis[iDim] = new su2double[nDim];
+  }
+
+  su2double blend = 0.0;
 
   Density = val_primvar[nDim+2];
   total_viscosity = val_laminar_viscosity + val_eddy_viscosity;
@@ -1751,11 +1764,20 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
   div_vel = 0.0;
   for (iDim = 0 ; iDim < nDim; iDim++)
     div_vel += val_gradprimvar[iDim+1][iDim];
-  for (iDim = 0 ; iDim < nDim; iDim++)
-    for (jDim = 0 ; jDim < nDim; jDim++)
-      tau[iDim][jDim] = total_viscosity*( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
-                        - TWO3*total_viscosity*div_vel*delta[iDim][jDim]
-			            - TWO3*Density*val_turb_ke*delta[iDim][jDim];
+  for (iDim = 0 ; iDim < nDim; iDim++){
+    for (jDim = 0 ; jDim < nDim; jDim++){
+//      tau[iDim][jDim] = total_viscosity*( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
+//                        - TWO3*total_viscosity*div_vel*delta[iDim][jDim]
+//			            - TWO3*Density*val_turb_ke*delta[iDim][jDim];
+    	tau_lam[iDim][jDim] = val_laminar_viscosity * ( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
+		                       - TWO3*val_laminar_viscosity*div_vel*delta[iDim][jDim];
+	    tau_turb_ev[iDim][jDim] = val_eddy_viscosity * ( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
+	                           - TWO3*val_eddy_viscosity*div_vel*delta[iDim][jDim];
+	    tau[iDim][jDim] = tau_lam[iDim][jDim] + (1-blend) * tau_turb_ev[iDim][jDim] +
+	    		          blend * tau_turb_anis[iDim][jDim] - TWO3*Density*val_turb_ke*delta[iDim][jDim];
+    }
+  }
+
   if (val_qcr){
     su2double den_aux, c_cr1=0.3, O_ik, O_jk;
     unsigned short kDim;

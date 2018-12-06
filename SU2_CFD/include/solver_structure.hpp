@@ -8855,6 +8855,9 @@ public:
    * \param[in] val_turb_var - Value of the turbulence variable to be used.
    */
   void SetInlet_TurbVar(unsigned short val_marker, unsigned long val_vertex, unsigned short val_dim, su2double val_turb_var);
+
+  void ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config);
+
 };
 
 /*!
@@ -8922,7 +8925,7 @@ public:
   void Source_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CNumerics *second_numerics,
                        CConfig *config, unsigned short iMesh);
   
-  void ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config);
+//  void ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config);
   su2double GetDiscrepancyTerm(unsigned long val_global_index);
 
   /*!

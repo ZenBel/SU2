@@ -1195,6 +1195,70 @@ void CTurbSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfig *
 
 }
 
+void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
+
+  /*--- Initialize discrepancyTerm from external input file ---*/
+  string text_line;
+  ifstream input_file;
+  string input_filename = "discrepancyTerm.dat";
+
+  unsigned long nPointLocal, nPointGlobal;
+  unsigned long InputPoints, GlobalIndex;
+  vector<su2double> VecdTerm;
+  su2double dTerm;
+
+  nPointLocal = nPointDomain;
+#ifdef HAVE_MPI
+  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+#else
+  nPointGlobal = nPointLocal; //Total number of points in the domain (no halo nodes considered)
+#endif
+
+  config->InitializeDiscrTerm(nPointGlobal);
+
+  input_file.open(input_filename.data(), ios::in);
+
+  if (input_file.fail()) {
+
+	  cout << "There is no input file!! " << input_filename.data() << ". Setting the discrepancy term to unity"<< endl;
+
+	for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
+		config->SetDiscrTerm(1.0, GlobalIndex);
+  }
+  else{
+
+    /*--- Read head of the file for allocation ---*/
+    getline (input_file, text_line);
+    istringstream point_line(text_line);
+    point_line >> InputPoints;
+
+    if (InputPoints == nPointGlobal){
+
+      while (getline (input_file, text_line)) {
+	    istringstream point_line(text_line);
+	    point_line >> GlobalIndex >> dTerm;
+	    VecdTerm.push_back(dTerm);
+	  }
+      input_file.close();
+
+      for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
+    	  config->SetDiscrTerm(VecdTerm[GlobalIndex], GlobalIndex);
+    }
+    else{
+
+      if (rank == MASTER_NODE){
+        cout << "The number of points in " << input_filename.data() << " is different from the total number of points in the mesh." << endl;
+        exit(EXIT_FAILURE);
+      }
+
+    }
+
+  }
+
+  cout << "aaaa" << endl;
+
+}
+
 CTurbSASolver::CTurbSASolver(void) : CTurbSolver() {
 
   Inlet_TurbVars = NULL;
@@ -1393,6 +1457,7 @@ CTurbSASolver::CTurbSASolver(CGeometry *geometry, CConfig *config, unsigned shor
 
   /*--- Read values of discrepancyTerm from external file ---*/
   ReadDiscrepancyTerm(geometry, config);
+  cout << "bbbb" << endl;
 
 }
 
@@ -1627,68 +1692,6 @@ void CTurbSASolver::Source_Residual(CGeometry *geometry, CSolver **solver_contai
     }
   }
   
-}
-
-void CTurbSASolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
-
-  /*--- Initialize discrepancyTerm from external input file ---*/
-  string text_line;
-  ifstream input_file;
-  string input_filename = "discrepancyTerm.dat";
-
-  unsigned long nPointLocal, nPointGlobal;
-  unsigned long InputPoints, GlobalIndex;
-  vector<su2double> VecdTerm;
-  su2double dTerm;
-
-  nPointLocal = nPointDomain;
-#ifdef HAVE_MPI
-  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-#else
-  nPointGlobal = nPointLocal; //Total number of points in the domain (no halo nodes considered)
-#endif
-
-  config->InitializeDiscrTerm(nPointGlobal);
-
-  input_file.open(input_filename.data(), ios::in);
-
-  if (input_file.fail()) {
-
-	  cout << "There is no input file!! " << input_filename.data() << ". Setting the discrepancy term to unity"<< endl;
-
-	for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
-		config->SetDiscrTerm(1.0, GlobalIndex);
-  }
-  else{
-
-    /*--- Read head of the file for allocation ---*/
-    getline (input_file, text_line);
-    istringstream point_line(text_line);
-    point_line >> InputPoints;
-
-    if (InputPoints == nPointGlobal){
-
-      while (getline (input_file, text_line)) {
-	    istringstream point_line(text_line);
-	    point_line >> GlobalIndex >> dTerm;
-	    VecdTerm.push_back(dTerm);
-	  }
-      input_file.close();
-
-      for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
-    	  config->SetDiscrTerm(VecdTerm[GlobalIndex], GlobalIndex);
-    }
-    else{
-
-      if (rank == MASTER_NODE){
-        cout << "The number of points in " << input_filename.data() << " is different from the total number of points in the mesh." << endl;
-        exit(EXIT_FAILURE);
-      }
-
-    }
-
-  }
-
 }
 
 void CTurbSASolver::Source_Template(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics,
