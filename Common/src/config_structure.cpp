@@ -6943,6 +6943,58 @@ void CConfig::InitializeDiscrTerm(unsigned long val_point){
   BoolDiscTerm = true;
 }
 
+void CConfig::SetEigenVectors(string filename, su2double val_eigvec_x, su2double val_eigvec_y, su2double val_eigvec_z,
+		                      unsigned long val_point){
+
+   if (filename == "eigenvector1.dat"){
+	   eigenvector1[val_point][0] = val_eigvec_x;
+	   eigenvector1[val_point][1] = val_eigvec_y;
+	   eigenvector1[val_point][3] = val_eigvec_z;
+   }
+   if (filename == "eigenvector2.dat"){
+	   eigenvector2[val_point][0] = val_eigvec_x;
+	   eigenvector2[val_point][1] = val_eigvec_y;
+	   eigenvector2[val_point][3] = val_eigvec_z;
+   }
+   if (filename == "eigenvector3.dat"){
+	   eigenvector3[val_point][0] = val_eigvec_x;
+	   eigenvector3[val_point][1] = val_eigvec_y;
+	   eigenvector3[val_point][3] = val_eigvec_z;
+   }
+
+}
+
+void CConfig::SetEigenValues(string filename, su2double val_eigval, unsigned long val_point){
+
+   if (filename == "eigenvalue1.dat"){
+	   eigenvalue1[val_point] = val_eigval;
+   }
+   if (filename == "eigenvalue2.dat"){
+	   eigenvalue2[val_point] = val_eigval;
+   }
+   if (filename == "eigenvalue3.dat"){
+	   eigenvalue3[val_point] = val_eigval;
+   }
+
+}
+
+void CConfig::InitializeAnisotropyTensor(unsigned long val_point){
+
+  unsigned long iPoint;
+  eigenvector1 =  new su2double*[val_point];
+  eigenvector2 =  new su2double*[val_point];
+  eigenvector3 =  new su2double*[val_point];
+  for (iPoint=0; iPoint < val_point; iPoint++){
+	  eigenvector1[iPoint] = new su2double[3];
+	  eigenvector2[iPoint] = new su2double[3];
+	  eigenvector3[iPoint] = new su2double[3];
+  }
+  eigenvalue1 =  new su2double[val_point];
+  eigenvalue2 =  new su2double[val_point];
+  eigenvalue3 =  new su2double[val_point];
+  BoolAnisotropy = true;
+}
+
 void CConfig::SetNUBC_Coord(su2double newVar, unsigned long val_pos, unsigned short val_marker) {
   NonUniform_Coord[val_marker][val_pos] = newVar;
 }

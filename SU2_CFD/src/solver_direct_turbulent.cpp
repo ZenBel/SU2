@@ -1259,6 +1259,109 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 
 }
 
+void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
+
+  /*--- Initialize discrepancyTerm from external input file ---*/
+  string text_line;
+  ifstream input_file;
+
+  string input_eigenvector[3], input_eigenvalue[3];
+  input_eigenvector[0] = "eigenvector1.dat";
+  input_eigenvector[1] = "eigenvector2.dat";
+  input_eigenvector[2] = "eigenvector3.dat";
+  input_eigenvalue[0]  = "eigenvalue1.dat";
+  input_eigenvalue[1]  = "eigenvalue2.dat";
+  input_eigenvalue[2]  = "eigenvalue3.dat";
+
+  unsigned long nPointLocal, nPointGlobal;
+  unsigned long InputPoints, GlobalIndex;
+  vector<su2double> eigvec_x, eigvec_y, eigvec_z, eigval;
+  su2double vec_x, vec_y, vec_z, eig;
+
+  nPointLocal = nPointDomain;
+#ifdef HAVE_MPI
+  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+#else
+  nPointGlobal = nPointLocal; //Total number of points in the domain (no halo nodes considered)
+#endif
+
+  /*-- Initialize anisotropy eigenvectors and eigenvalues ---*/
+  config->InitializeAnisotropyTensor(nPointGlobal);
+
+  /*--- Read eigenvectors from files ---*/
+  unsigned short ii;
+  for (ii = 0; ii < 3; ii++){
+	input_file.open(input_eigenvector[ii].data(), ios::in);
+	if (input_file.fail()) {
+		  cout << "ERROR: There is no input file!! " << input_eigenvector[ii].data() << ". Declare all the necessary input files!"<< endl;
+		  exit(EXIT_FAILURE);
+	}
+	else{
+      /*--- Read head of the file for allocation ---*/
+	  getline (input_file, text_line);
+	  istringstream point_line(text_line);
+	  point_line >> InputPoints;
+
+	  if (InputPoints == nPointGlobal){
+        while (getline (input_file, text_line)) {
+		istringstream point_line(text_line);
+		point_line >> GlobalIndex >> vec_x >> vec_y >> vec_z;
+		eigvec_x.push_back(vec_x);
+		eigvec_y.push_back(vec_y);
+		eigvec_z.push_back(vec_z);
+		}
+		input_file.close();
+
+		for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
+		  config->SetEigenVectors(input_eigenvector[ii], eigvec_x[GlobalIndex],
+				  eigvec_y[GlobalIndex], eigvec_z[GlobalIndex], GlobalIndex);
+	  }
+	  else{
+        if (rank == MASTER_NODE){
+		  cout << "The number of points in " << input_eigenvector[ii].data() << " is different from the total number of points in the mesh." << endl;
+		  exit(EXIT_FAILURE);
+		}
+	  }
+	}
+  }
+
+  /*--- Read eigenvalues from files ---*/
+  for (ii = 0; ii < 3; ii++){
+  	input_file.open(input_eigenvalue[ii].data(), ios::in);
+  	if (input_file.fail()) {
+  		  cout << "ERROR: There is no input file!! " << input_eigenvalue[ii].data() << ". Declare all the necessary input files!"<< endl;
+  		  exit(EXIT_FAILURE);
+  	}
+  	else{
+        /*--- Read head of the file for allocation ---*/
+  	  getline (input_file, text_line);
+  	  istringstream point_line(text_line);
+  	  point_line >> InputPoints;
+
+  	  if (InputPoints == nPointGlobal){
+        while (getline (input_file, text_line)) {
+  		istringstream point_line(text_line);
+  		point_line >> GlobalIndex >> eig;
+  		eigval.push_back(eig);
+  		}
+  		input_file.close();
+
+  		for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
+  		  config->SetEigenValues(input_eigenvalue[ii], eigval[GlobalIndex], GlobalIndex);
+  	  }
+  	  else{
+          if (rank == MASTER_NODE){
+  		  cout << "The number of points in " << input_eigenvalue[ii].data() << " is different from the total number of points in the mesh." << endl;
+  		  exit(EXIT_FAILURE);
+  		}
+  	  }
+  	}
+  }
+
+  cout << "aaaa" << endl;
+
+}
+
 CTurbSASolver::CTurbSASolver(void) : CTurbSolver() {
 
   Inlet_TurbVars = NULL;

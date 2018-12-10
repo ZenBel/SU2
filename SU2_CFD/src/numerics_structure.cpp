@@ -1754,7 +1754,7 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
 	  tau_turb_anis[iDim] = new su2double[nDim];
   }
 
-  su2double blend = 0.0;
+  su2double blend = 0.0; //HARDCODED
 
   Density = val_primvar[nDim+2];
   total_viscosity = val_laminar_viscosity + val_eddy_viscosity;
@@ -1773,7 +1773,7 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
 		                       - TWO3*val_laminar_viscosity*div_vel*delta[iDim][jDim];
 	    tau_turb_ev[iDim][jDim] = val_eddy_viscosity * ( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
 	                           - TWO3*val_eddy_viscosity*div_vel*delta[iDim][jDim];
-	    tau[iDim][jDim] = tau_lam[iDim][jDim] + (1-blend) * tau_turb_ev[iDim][jDim] +
+	    tau[iDim][jDim] = tau_lam[iDim][jDim] + (1.0-blend) * tau_turb_ev[iDim][jDim] +
 	    		          blend * tau_turb_anis[iDim][jDim] - TWO3*Density*val_turb_ke*delta[iDim][jDim];
     }
   }

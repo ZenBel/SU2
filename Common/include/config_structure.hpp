@@ -289,7 +289,9 @@ private:
             **NonUniform_d2Var4, **NonUniform_d2Var5, **NonUniform_d2Var6;
 
   su2double *discTerm;
+  su2double **eigenvector1, **eigenvector2, **eigenvector3, *eigenvalue1, *eigenvalue2, *eigenvalue3;
   bool BoolDiscTerm;
+  bool BoolAnisotropy;
 
   su2double *TargetQuantity;
   bool *TargetPointID;
@@ -5992,6 +5994,11 @@ public:
   void SetDiscrTerm(su2double val_discTerm, unsigned long val_point);
   void InitializeDiscrTerm(unsigned long val_point);
   su2double GetDiscrTerm(unsigned long val_point);
+
+  void SetEigenVectors(string filename, su2double val_eigvec_x, su2double val_eigvec_y,
+		  su2double val_eigvec_z, unsigned long val_point);
+  void SetEigenValues(string filename, su2double val_eigval, unsigned long val_point);
+  void InitializeAnisotropyTensor(unsigned long val_point);
 
   void SetNUBC_Var1(su2double newVar, unsigned long val_pos, unsigned short val_marker);
   void SetNUBC_Var2(su2double newVar, unsigned long val_pos, unsigned short val_marker);
