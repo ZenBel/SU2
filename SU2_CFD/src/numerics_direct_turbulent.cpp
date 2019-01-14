@@ -1205,7 +1205,7 @@ void CSourcePieceWise_TurbSST::ComputeResidual(su2double *val_residual, su2doubl
   AD::SetPreaccIn(F1_i); AD::SetPreaccIn(F2_i); AD::SetPreaccIn(CDkw_i);
   AD::SetPreaccIn(PrimVar_Grad_i, nDim+1, nDim);
 
-  unsigned short iDim;
+  unsigned short iDim, jDim;
   su2double alfa_blended, beta_blended;
   su2double diverg, pk, pw, zeta;
   
@@ -1241,7 +1241,14 @@ void CSourcePieceWise_TurbSST::ComputeResidual(su2double *val_residual, su2doubl
     for (iDim = 0; iDim < nDim; iDim++)
       diverg += PrimVar_Grad_i[iDim+1][iDim];
     
-    pk = Eddy_Viscosity_i*StrainMag_i*StrainMag_i - 2.0/3.0*Density_i*TurbVar_i[0]*diverg;
+    for (iDim = 0; iDim < nDim; iDim++){
+      for (jDim = 0; jDim < nDim; jDim++){
+    	  pk += tau_turb[iDim][jDim]*PrimVar_Grad_i[iDim+1][jDim];
+    	  cout << "tau_turbaaa[" << iDim << "][" << jDim << "] = " << tau_turb[iDim][jDim] << endl;
+      }
+    }
+
+//    pk = Eddy_Viscosity_i*StrainMag_i*StrainMag_i - 2.0/3.0*Density_i*TurbVar_i[0]*diverg;
     pk = min(pk,20.0*beta_star*Density_i*TurbVar_i[1]*TurbVar_i[0]);
     pk = max(pk,0.0);
     

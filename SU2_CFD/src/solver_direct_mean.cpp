@@ -4608,7 +4608,7 @@ void CEulerSolver::Centered_Residual(CGeometry *geometry, CSolver **solver_conta
     }
     
     /*--- Compute residuals, and Jacobians ---*/
-    
+
     numerics->ComputeResidual(Res_Conv, Jacobian_i, Jacobian_j, config);
     
     /*--- Update convective and artificial dissipation residuals ---*/
@@ -4833,7 +4833,7 @@ void CEulerSolver::Upwind_Residual(CGeometry *geometry, CSolver **solver_contain
     }
       
     /*--- Compute the residual ---*/
-    
+
     numerics->ComputeResidual(Res_Conv, Jacobian_i, Jacobian_j, config);
 
     /*--- Update residual value ---*/
@@ -4978,7 +4978,7 @@ void CEulerSolver::Source_Residual(CGeometry *geometry, CSolver **solver_contain
   }
   
   if (axisymmetric) {
-    
+
     /*--- Zero out Jacobian structure ---*/
     if (implicit) {
       for (iVar = 0; iVar < nVar; iVar ++)
@@ -5011,7 +5011,7 @@ void CEulerSolver::Source_Residual(CGeometry *geometry, CSolver **solver_contain
   }
   
   if (gravity) {
-    
+
     /*--- loop over points ---*/
     for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
       
@@ -5032,7 +5032,7 @@ void CEulerSolver::Source_Residual(CGeometry *geometry, CSolver **solver_contain
   }
   
   if (harmonic_balance) {
-    
+
     su2double Volume, Source;
     
     /*--- loop over points ---*/
@@ -5054,7 +5054,7 @@ void CEulerSolver::Source_Residual(CGeometry *geometry, CSolver **solver_contain
   }
   
   if (windgust) {
-    
+
     /*--- Loop over all points ---*/
     for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
       
@@ -9220,12 +9220,27 @@ void CEulerSolver::BC_Far_Field(CGeometry *geometry, CSolver **solver_container,
         
         /*--- Turbulent kinetic energy ---*/
         
-        if (config->GetKind_Turb_Model() == SST)
+        if (config->GetKind_Turb_Model() == SST){
           visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0),
                                               solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
+          unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+//          cout << "idx0 = " << GlobalIndex << endl;
+          visc_numerics->SetEigenValue1(config->GetEigenValue1(GlobalIndex));
+          visc_numerics->SetEigenValue2(config->GetEigenValue2(GlobalIndex));
+          visc_numerics->SetEigenValue3(config->GetEigenValue3(GlobalIndex));
+          visc_numerics->SetEigenVector1x(config->GetEigenVector1x(GlobalIndex));
+          visc_numerics->SetEigenVector1y(config->GetEigenVector1y(GlobalIndex));
+          visc_numerics->SetEigenVector1z(config->GetEigenVector1z(GlobalIndex));
+          visc_numerics->SetEigenVector2x(config->GetEigenVector2x(GlobalIndex));
+          visc_numerics->SetEigenVector2y(config->GetEigenVector2y(GlobalIndex));
+          visc_numerics->SetEigenVector2z(config->GetEigenVector2z(GlobalIndex));
+          visc_numerics->SetEigenVector3x(config->GetEigenVector3x(GlobalIndex));
+          visc_numerics->SetEigenVector3y(config->GetEigenVector3y(GlobalIndex));
+          visc_numerics->SetEigenVector3z(config->GetEigenVector3z(GlobalIndex));
+
+        }
         
         /*--- Compute and update viscous residual ---*/
-        
         visc_numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
         LinSysRes.SubtractBlock(iPoint, Residual);
         
@@ -16766,9 +16781,25 @@ void CNSSolver::Viscous_Residual(CGeometry *geometry, CSolver **solver_container
     
     /*--- Turbulent kinetic energy ---*/
     
-    if (config->GetKind_Turb_Model() == SST)
+    if (config->GetKind_Turb_Model() == SST){
       numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0),
                                      solver_container[TURB_SOL]->node[jPoint]->GetSolution(0));
+      unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+//      cout << "idx1 = " << GlobalIndex << endl;
+      numerics->SetEigenValue1(config->GetEigenValue1(GlobalIndex));
+      numerics->SetEigenValue2(config->GetEigenValue2(GlobalIndex));
+      numerics->SetEigenValue3(config->GetEigenValue3(GlobalIndex));
+      numerics->SetEigenVector1x(config->GetEigenVector1x(GlobalIndex));
+      numerics->SetEigenVector1y(config->GetEigenVector1y(GlobalIndex));
+      numerics->SetEigenVector1z(config->GetEigenVector1z(GlobalIndex));
+      numerics->SetEigenVector2x(config->GetEigenVector2x(GlobalIndex));
+      numerics->SetEigenVector2y(config->GetEigenVector2y(GlobalIndex));
+      numerics->SetEigenVector2z(config->GetEigenVector2z(GlobalIndex));
+      numerics->SetEigenVector3x(config->GetEigenVector3x(GlobalIndex));
+      numerics->SetEigenVector3y(config->GetEigenVector3y(GlobalIndex));
+      numerics->SetEigenVector3z(config->GetEigenVector3z(GlobalIndex));
+
+    }
     
     /*--- Compute and update residual ---*/
     
@@ -17396,7 +17427,7 @@ void CNSSolver::BC_HeatFlux_Wall(CGeometry *geometry, CSolver **solver_container
             tau[iDim][jDim] = total_viscosity*( Grad_Vel[jDim][iDim]+Grad_Vel[iDim][jDim] ) - TWO3*total_viscosity*div_vel*delta[iDim][jDim];
           }
         }
-        
+
         /*--- Dot product of the stress tensor with the grid velocity ---*/
         
         for (iDim = 0 ; iDim < nDim; iDim++) {
@@ -17698,7 +17729,7 @@ void CNSSolver::BC_Isothermal_Wall(CGeometry *geometry, CSolver **solver_contain
           }
         }
         
-        /*--- Divergence of the velocity ---*/
+       /*--- Divergence of the velocity ---*/
         
         div_vel = 0.0; for (iDim = 0 ; iDim < nDim; iDim++) div_vel += Grad_Vel[iDim][iDim];
         
@@ -17708,7 +17739,7 @@ void CNSSolver::BC_Isothermal_Wall(CGeometry *geometry, CSolver **solver_contain
           for (jDim = 0; jDim < nDim; jDim++) {
             tau[iDim][jDim] = total_viscosity*( Grad_Vel[jDim][iDim] + Grad_Vel[iDim][jDim] ) - TWO3*total_viscosity*div_vel*delta[iDim][jDim];
           }
-        
+
         /*--- Dot product of the stress tensor with the grid velocity ---*/
         
         for (iDim = 0 ; iDim < nDim; iDim++) {

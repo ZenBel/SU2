@@ -6949,17 +6949,17 @@ void CConfig::SetEigenVectors(string filename, su2double val_eigvec_x, su2double
    if (filename == "eigenvector1.dat"){
 	   eigenvector1[val_point][0] = val_eigvec_x;
 	   eigenvector1[val_point][1] = val_eigvec_y;
-	   eigenvector1[val_point][3] = val_eigvec_z;
+	   eigenvector1[val_point][2] = val_eigvec_z;
    }
    if (filename == "eigenvector2.dat"){
 	   eigenvector2[val_point][0] = val_eigvec_x;
 	   eigenvector2[val_point][1] = val_eigvec_y;
-	   eigenvector2[val_point][3] = val_eigvec_z;
+	   eigenvector2[val_point][2] = val_eigvec_z;
    }
    if (filename == "eigenvector3.dat"){
 	   eigenvector3[val_point][0] = val_eigvec_x;
 	   eigenvector3[val_point][1] = val_eigvec_y;
-	   eigenvector3[val_point][3] = val_eigvec_z;
+	   eigenvector3[val_point][2] = val_eigvec_z;
    }
 
 }
@@ -6977,6 +6977,55 @@ void CConfig::SetEigenValues(string filename, su2double val_eigval, unsigned lon
    }
 
 }
+
+su2double CConfig::GetEigenValue1(unsigned long val_point){
+	return eigenvalue1[val_point];
+}
+
+su2double CConfig::GetEigenValue2(unsigned long val_point){
+	return eigenvalue2[val_point];
+}
+
+su2double CConfig::GetEigenValue3(unsigned long val_point){
+	return eigenvalue3[val_point];
+}
+
+su2double CConfig::GetEigenVector1x(unsigned long val_point){
+	return eigenvector1[val_point][0];
+}
+
+su2double CConfig::GetEigenVector1y(unsigned long val_point){
+	return eigenvector1[val_point][1];
+}
+
+su2double CConfig::GetEigenVector1z(unsigned long val_point){
+	return eigenvector1[val_point][2];
+}
+
+su2double CConfig::GetEigenVector2x(unsigned long val_point){
+	return eigenvector2[val_point][0];
+}
+
+su2double CConfig::GetEigenVector2y(unsigned long val_point){
+	return eigenvector2[val_point][1];
+}
+
+su2double CConfig::GetEigenVector2z(unsigned long val_point){
+	return eigenvector2[val_point][2];
+}
+
+su2double CConfig::GetEigenVector3x(unsigned long val_point){
+	return eigenvector3[val_point][0];
+}
+
+su2double CConfig::GetEigenVector3y(unsigned long val_point){
+	return eigenvector3[val_point][1];
+}
+
+su2double CConfig::GetEigenVector3z(unsigned long val_point){
+	return eigenvector3[val_point][2];
+}
+
 
 void CConfig::InitializeAnisotropyTensor(unsigned long val_point){
 

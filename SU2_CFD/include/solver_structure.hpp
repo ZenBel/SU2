@@ -8927,7 +8927,6 @@ public:
   void Source_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CNumerics *second_numerics,
                        CConfig *config, unsigned short iMesh);
   
-//  void ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config);
   su2double GetDiscrepancyTerm(unsigned long val_global_index);
 
   /*!

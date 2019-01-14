@@ -5995,9 +5995,22 @@ public:
   void InitializeDiscrTerm(unsigned long val_point);
   su2double GetDiscrTerm(unsigned long val_point);
 
-  void SetEigenVectors(string filename, su2double val_eigvec_x, su2double val_eigvec_y,
-		  su2double val_eigvec_z, unsigned long val_point);
+  void SetEigenVectors(string filename, su2double val_eigvec_x, su2double val_eigvec_y, su2double val_eigvec_z,
+  		                      unsigned long val_point);
   void SetEigenValues(string filename, su2double val_eigval, unsigned long val_point);
+  su2double GetEigenValue1(unsigned long val_point);
+  su2double GetEigenValue2(unsigned long val_point);
+  su2double GetEigenValue3(unsigned long val_point);
+  su2double GetEigenVector1x(unsigned long val_point);
+  su2double GetEigenVector1y(unsigned long val_point);
+  su2double GetEigenVector1z(unsigned long val_point);
+  su2double GetEigenVector2x(unsigned long val_point);
+  su2double GetEigenVector2y(unsigned long val_point);
+  su2double GetEigenVector2z(unsigned long val_point);
+  su2double GetEigenVector3x(unsigned long val_point);
+  su2double GetEigenVector3y(unsigned long val_point);
+  su2double GetEigenVector3z(unsigned long val_point);
+
   void InitializeAnisotropyTensor(unsigned long val_point);
 
   void SetNUBC_Var1(su2double newVar, unsigned long val_pos, unsigned short val_marker);

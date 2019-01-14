@@ -306,7 +306,8 @@ public:
    */
   void SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry, CSolver *FlowSolver, unsigned long iExtIter, unsigned short val_iZone);
 
-  void SetTurbulent_CSV(CConfig *config, CGeometry *geometry, CSolver *FlowSolver, CSolver *TurbSolver, unsigned long iExtIter, unsigned short val_iZone);
+  void SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry, CSolver *FlowSolver, CSolver *TurbSolver, unsigned long iExtIter, unsigned short val_iZone);
+  void SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry, CSolver *FlowSolver, CSolver *TurbSolver, unsigned long iExtIter, unsigned short val_iZone);
 
   /*! 
    * \brief Create and write the file with the adjoint coefficients on the surface for serial computations.

@@ -208,6 +208,12 @@ public:
 
   su2double discrepancyTerm;
 
+  su2double anis_eigvec1x, anis_eigvec1y, anis_eigvec1z, anis_eigvec2x, anis_eigvec2y, anis_eigvec2z, anis_eigvec3x, anis_eigvec3y, anis_eigvec3z;
+  su2double anis_eigval1, anis_eigval2, anis_eigval3;
+
+  su2double **tau_turb;
+
+
   /*!
    * \brief Constructor of the class.
    */
@@ -276,6 +282,19 @@ public:
   void SetVorticity(su2double *val_vorticity_i, su2double *val_vorticity_j);
   
   void SetDiscrepancyTerm(su2double val_discrepancyTerm);
+
+  void SetEigenValue1(su2double val_eigenval);
+  void SetEigenValue2(su2double val_eigenval);
+  void SetEigenValue3(su2double val_eigenval);
+  void SetEigenVector1x(su2double val_eigenvec);
+  void SetEigenVector1y(su2double val_eigenvec);
+  void SetEigenVector1z(su2double val_eigenvec);
+  void SetEigenVector2x(su2double val_eigenvec);
+  void SetEigenVector2y(su2double val_eigenvec);
+  void SetEigenVector2z(su2double val_eigenvec);
+  void SetEigenVector3x(su2double val_eigenvec);
+  void SetEigenVector3y(su2double val_eigenvec);
+  void SetEigenVector3z(su2double val_eigenvec);
 
   /*!
    * \brief Set the value of the rate of strain magnitude.

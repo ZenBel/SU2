@@ -1255,8 +1255,7 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 
   }
 
-  cout << "aaaa" << endl;
-
+  cout << "discrepancy.dat read." << endl;
 }
 
 void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
@@ -1275,7 +1274,7 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
 
   unsigned long nPointLocal, nPointGlobal;
   unsigned long InputPoints, GlobalIndex;
-  vector<su2double> eigvec_x, eigvec_y, eigvec_z, eigval;
+//  vector<su2double> eigvec_x, eigvec_y, eigvec_z, eigval;
   su2double vec_x, vec_y, vec_z, eig;
 
   nPointLocal = nPointDomain;
@@ -1303,9 +1302,11 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
 	  point_line >> InputPoints;
 
 	  if (InputPoints == nPointGlobal){
+
+		vector<su2double> eigvec_x, eigvec_y, eigvec_z;
         while (getline (input_file, text_line)) {
 		istringstream point_line(text_line);
-		point_line >> GlobalIndex >> vec_x >> vec_y >> vec_z;
+		point_line >> GlobalIndex >> vec_x >> vec_y >> vec_z; //note that we are not saving GlobalIndex because we assume the file is already sorted.
 		eigvec_x.push_back(vec_x);
 		eigvec_y.push_back(vec_y);
 		eigvec_z.push_back(vec_z);
@@ -1323,6 +1324,8 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
 		}
 	  }
 	}
+
+	cout << input_eigenvector[ii].data() << " read." << endl;
   }
 
   /*--- Read eigenvalues from files ---*/
@@ -1339,9 +1342,10 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
   	  point_line >> InputPoints;
 
   	  if (InputPoints == nPointGlobal){
+  		vector<su2double> eigval;
         while (getline (input_file, text_line)) {
   		istringstream point_line(text_line);
-  		point_line >> GlobalIndex >> eig;
+  		point_line >> GlobalIndex >> eig; //note that we are not saving GlobalIndex because we assume the file is already sorted.
   		eigval.push_back(eig);
   		}
   		input_file.close();
@@ -1356,9 +1360,11 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
   		}
   	  }
   	}
+
+  	cout << input_eigenvalue[ii].data() << " read." << endl;
   }
 
-  cout << "aaaa" << endl;
+
 
 }
 
@@ -1560,7 +1566,6 @@ CTurbSASolver::CTurbSASolver(CGeometry *geometry, CConfig *config, unsigned shor
 
   /*--- Read values of discrepancyTerm from external file ---*/
   ReadDiscrepancyTerm(geometry, config);
-  cout << "bbbb" << endl;
 
 }
 
@@ -1750,7 +1755,7 @@ void CTurbSASolver::Source_Residual(CGeometry *geometry, CSolver **solver_contai
     
     numerics->ComputeResidual(Residual, Jacobian_i, NULL, config);
 
-    /*---Store all variables necessary for SetTurbulent_CSV ---*/
+    /*---Store all variables necessary for SetTurbulentSA_CSV ---*/
     solver_container[TURB_SOL]->node[iPoint]->SetProductionDestruction(numerics->GetProduction(), numerics->GetDestruction());
     solver_container[TURB_SOL]->node[iPoint]->SetOmegaTurb(numerics->GetOmegaTurb());
 
@@ -3573,8 +3578,10 @@ CTurbSSTSolver::CTurbSSTSolver(CGeometry *geometry, CConfig *config, unsigned sh
   }
 
   /*--- Set up inlet profiles, if necessary ---*/
-
   SetInlet(config);
+
+  /*--- Read eigenvalues and eigenvectors of anisotropy tensor ---*/
+  ReadAnisotrpyTensor(geometry, config);
 
 }
 
