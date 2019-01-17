@@ -41,7 +41,6 @@ CTurbVariable::CTurbVariable(void) : CVariable() {
   
   /*--- Array initialization ---*/
   HB_Source = NULL;
-  
 }
 
 CTurbVariable::CTurbVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *config)
@@ -82,6 +81,8 @@ CTurbVariable::~CTurbVariable(void) { }
 su2double CTurbVariable::GetmuT() { return muT; }
 
 void CTurbVariable::SetmuT(su2double val_muT) { muT = val_muT; }
+
+
 
 CTurbSAVariable::CTurbSAVariable(void) : CTurbVariable() { }
 
@@ -156,7 +157,7 @@ void CTurbSAVariable::SetVortex_Tilting(su2double **PrimGrad_Flow, su2double* Vo
 CTurbSAVariable::~CTurbSAVariable(void) {
   
   if (HB_Source != NULL) delete [] HB_Source;
-  
+
 }
 
 CTurbSSTVariable::CTurbSSTVariable(void) : CTurbVariable() { }

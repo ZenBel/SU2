@@ -1155,8 +1155,9 @@ void CAvgGrad_TurbSST::FinishResidualCalc(su2double *val_residual, su2double **J
   sigma_omega_j = F1_j*sigma_om1 + (1.0 - F1_j)*sigma_om2;
   
   /*--- Compute mean effective viscosity ---*/
-  diff_i_kine  = Laminar_Viscosity_i + sigma_kine_i*Eddy_Viscosity_i;
-  diff_j_kine  = Laminar_Viscosity_j + sigma_kine_j*Eddy_Viscosity_j;
+  su2double blend = 1.0; //HARDCODED
+  diff_i_kine  = Laminar_Viscosity_i + (1-blend)*sigma_kine_i*Eddy_Viscosity_i;
+  diff_j_kine  = Laminar_Viscosity_j + (1-blend)*sigma_kine_j*Eddy_Viscosity_j;
   diff_i_omega = Laminar_Viscosity_i + sigma_omega_i*Eddy_Viscosity_i;
   diff_j_omega = Laminar_Viscosity_j + sigma_omega_j*Eddy_Viscosity_j;
   
@@ -1191,9 +1192,11 @@ CSourcePieceWise_TurbSST::CSourcePieceWise_TurbSST(unsigned short val_nDim, unsi
   alfa_1        = constants[8];
   alfa_2        = constants[9];
   a1            = constants[7];
+
 }
 
-CSourcePieceWise_TurbSST::~CSourcePieceWise_TurbSST(void) { }
+CSourcePieceWise_TurbSST::~CSourcePieceWise_TurbSST(void) {
+}
 
 void CSourcePieceWise_TurbSST::ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config) {
   
@@ -1233,25 +1236,48 @@ void CSourcePieceWise_TurbSST::ComputeResidual(su2double *val_residual, su2doubl
   alfa_blended = F1_i*alfa_1 + (1.0 - F1_i)*alfa_2;
   beta_blended = F1_i*beta_1 + (1.0 - F1_i)*beta_2;
   
+  diverg = 0.0;
+  for (iDim = 0; iDim < nDim; iDim++)
+    diverg += PrimVar_Grad_i[iDim+1][iDim];
+
+  /*--- Compute the turbulent Reynolds stress (sample code from CNumerics::GetViscousProjFlux() ---*/
+  su2double **tau_turb_ev, **tau_turb;
+  tau_turb_ev = new su2double*[nDim];
+  tau_turb = new su2double*[nDim];
+  for (iDim = 0 ; iDim < nDim; iDim++){
+	  tau_turb_ev[iDim] = new su2double[nDim];
+	  tau_turb[iDim] = new su2double[nDim];
+  }
+
+  su2double blend = 1.0; //HARDCODED
+
+  for (iDim = 0 ; iDim < nDim; iDim++){
+    for (jDim = 0 ; jDim < nDim; jDim++){
+	    tau_turb_ev[iDim][jDim] = Eddy_Viscosity_i * ( PrimVar_Grad_i[jDim+1][iDim] + PrimVar_Grad_i[iDim+1][jDim] )
+	                             - TWO3*Eddy_Viscosity_i*diverg*delta[iDim][jDim] - TWO3*Density_i*TurbVar_i[0]*delta[iDim][jDim];
+	    tau_turb[iDim][jDim] = (1.0-blend) * tau_turb_ev[iDim][jDim] + blend * tau_anis[iDim][jDim];
+    }
+  }
+
+//  for (iDim = 0 ; iDim < nDim; iDim++){
+//    for (jDim = 0 ; jDim < nDim; jDim++){
+//    	cout << "tau_evSST[" << iDim << "][" << jDim << "] = " << tau_turb_ev[iDim][jDim] << endl;
+//    }
+//  }
+
   if (dist_i > 1e-10) {
     
     /*--- Production ---*/
-    
-    diverg = 0.0;
-    for (iDim = 0; iDim < nDim; iDim++)
-      diverg += PrimVar_Grad_i[iDim+1][iDim];
-    
     for (iDim = 0; iDim < nDim; iDim++){
       for (jDim = 0; jDim < nDim; jDim++){
     	  pk += tau_turb[iDim][jDim]*PrimVar_Grad_i[iDim+1][jDim];
-    	  cout << "tau_turbaaa[" << iDim << "][" << jDim << "] = " << tau_turb[iDim][jDim] << endl;
       }
     }
-
+    
 //    pk = Eddy_Viscosity_i*StrainMag_i*StrainMag_i - 2.0/3.0*Density_i*TurbVar_i[0]*diverg;
     pk = min(pk,20.0*beta_star*Density_i*TurbVar_i[1]*TurbVar_i[0]);
     pk = max(pk,0.0);
-    
+
     zeta = max(TurbVar_i[1], StrainMag_i*F2_i/a1);
     pw = StrainMag_i*StrainMag_i - 2.0/3.0*zeta*diverg;
     pw = max(pw,0.0);
@@ -1278,5 +1304,12 @@ void CSourcePieceWise_TurbSST::ComputeResidual(su2double *val_residual, su2doubl
   
   AD::SetPreaccOut(val_residual, nVar);
   AD::EndPreacc();
+
+  for (iDim = 0; iDim < nDim; iDim++)  {
+    delete [] tau_turb_ev[iDim];
+    delete [] tau_turb[iDim];
+  }
+  delete [] tau_turb_ev;
+  delete [] tau_turb;
 
 }

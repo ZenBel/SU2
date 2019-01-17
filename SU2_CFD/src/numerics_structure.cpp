@@ -53,7 +53,7 @@ CNumerics::CNumerics(void) {
   tau    = NULL;
   delta  = NULL;
 
-  tau_turb    = NULL;
+  tau_anis    = NULL;
 
   Diffusion_Coeff_i = NULL;
   Diffusion_Coeff_j = NULL;
@@ -85,7 +85,7 @@ CNumerics::CNumerics(unsigned short val_nDim, unsigned short val_nVar,
   tau    = NULL;
   delta  = NULL;
 
-  tau_turb    = NULL;
+  tau_anis    = NULL;
 
   Diffusion_Coeff_i = NULL;
   Diffusion_Coeff_j = NULL;
@@ -116,9 +116,9 @@ CNumerics::CNumerics(unsigned short val_nDim, unsigned short val_nVar,
     tau[iDim] = new su2double [nDim];
   }
 
-  tau_turb = new su2double* [nDim];
+  tau_anis = new su2double* [nDim];
   for (iDim = 0; iDim < nDim; iDim++) {
-    tau_turb[iDim] = new su2double [nDim];
+    tau_anis[iDim] = new su2double [nDim];
   }
 
   delta = new su2double* [nDim];
@@ -177,11 +177,11 @@ CNumerics::~CNumerics(void) {
     delete [] tau;
   }
 
-  if (tau_turb != NULL) {
+  if (tau_anis != NULL) {
     for (unsigned short iDim = 0; iDim < nDim; iDim++) {
-      delete [] tau_turb[iDim];
+      delete [] tau_anis[iDim];
     }
-    delete [] tau_turb;
+    delete [] tau_anis;
   }
 
   if (delta != NULL) {
@@ -1760,45 +1760,17 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
   unsigned short iVar, iDim, jDim, kDim;
   su2double total_viscosity, heat_flux_factor, div_vel, Cp, Density;
 
-  su2double **tau_lam, **tau_turb_ev;
+  su2double **tau_lam, **tau_turb_ev, **tau_turb;
   tau_lam = new su2double*[nDim];
   tau_turb_ev = new su2double*[nDim];
+  tau_turb = new su2double*[nDim];
   for (iDim = 0 ; iDim < nDim; iDim++){
 	  tau_lam[iDim] = new su2double[nDim];
 	  tau_turb_ev[iDim] = new su2double[nDim];
+	  tau_turb[iDim] = new su2double[nDim];
   }
 
   su2double blend = 1.0; //HARDCODED
-  su2double eigvals[3][3] = {{anis_eigval1,0.0,0.0},{0.0,anis_eigval2,0.0},{0.0,0.0,anis_eigval3}};
-  su2double eigvecs[3][3] = {{anis_eigvec1x,anis_eigvec2x,anis_eigvec3x},
-		                     {anis_eigvec1y,anis_eigvec2y,anis_eigvec3y},
-							 {anis_eigvec1z,anis_eigvec2z,anis_eigvec3z}};
-
-  su2double buffer[3][3] = {{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}};
-  su2double tau_turb_anis[3][3] = {{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}};
-
-  /*--- Compute anisotropy tensor tau_anis= X*Delta*X.T ---*/
-  for (iDim=0; iDim<3; iDim++) {
-    for (jDim=0; jDim<3; jDim++) {
-      for (kDim=0; kDim<3; kDim++) {
-    	  buffer[iDim][jDim] += eigvecs[iDim][kDim] * eigvals[kDim][jDim];
-      }
-    }
-  }
-
-  for (iDim=0; iDim<3; iDim++) {
-    for (jDim=0; jDim<3; jDim++) {
-      for (kDim=0; kDim<3; kDim++) {
-    	  tau_turb_anis[iDim][jDim] += buffer[iDim][kDim] * eigvecs[jDim][kDim];
-      }
-    }
-  }
-
-  for (iDim=0; iDim<3; iDim++) {
-    for (jDim=0; jDim<3; jDim++) {
-    	tau_turb_anis[iDim][jDim] = -1.0 * tau_turb_anis[iDim][jDim]; //sign convention!
-    }
-  }
 
   Density = val_primvar[nDim+2];
   total_viscosity = val_laminar_viscosity + val_eddy_viscosity;
@@ -1811,24 +1783,25 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
 
   for (iDim = 0 ; iDim < nDim; iDim++){
     for (jDim = 0 ; jDim < nDim; jDim++){
+
 //      tau[iDim][jDim] = total_viscosity*( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
 //                        - TWO3*total_viscosity*div_vel*delta[iDim][jDim]
 //			            - TWO3*Density*val_turb_ke*delta[iDim][jDim];
+
     	tau_lam[iDim][jDim] = val_laminar_viscosity * ( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
 		                       - TWO3*val_laminar_viscosity*div_vel*delta[iDim][jDim];
 	    tau_turb_ev[iDim][jDim] = val_eddy_viscosity * ( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
 	                           - TWO3*val_eddy_viscosity*div_vel*delta[iDim][jDim] - TWO3*Density*val_turb_ke*delta[iDim][jDim];
-	    tau_turb[iDim][jDim] = (1.0-blend) * tau_turb_ev[iDim][jDim] + blend * tau_turb_anis[iDim][jDim];
+	    tau_turb[iDim][jDim] = (1.0-blend) * tau_turb_ev[iDim][jDim] + blend * tau_anis[iDim][jDim];
 	    tau[iDim][jDim] = tau_lam[iDim][jDim] + tau_turb[iDim][jDim];
     }
   }
 
-  for (iDim = 0 ; iDim < nDim; iDim++){
-    for (jDim = 0 ; jDim < nDim; jDim++){
-    	cout << "tau_turb[" << iDim << "][" << jDim << "] = " << tau_turb[iDim][jDim] << endl;
-//    	cout << "blend*tau_anis[" << iDim << "][" << jDim << "] = " << blend * tau_turb_anis[iDim][jDim] << endl;
-    }
-  }
+//  for (iDim = 0 ; iDim < nDim; iDim++){
+//    for (jDim = 0 ; jDim < nDim; jDim++){
+//    	cout << "tau_ev[" << iDim << "][" << jDim << "] = " << tau_turb_ev[iDim][jDim] << endl;
+//    }
+//  }
 
   if (val_qcr){
     su2double den_aux, c_cr1=0.3, O_ik, O_jk;
@@ -1896,9 +1869,11 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
   for (iDim = 0; iDim < nDim; iDim++)  {
     delete [] tau_turb_ev[iDim];
     delete [] tau_lam[iDim];
+    delete [] tau_turb[iDim];
   }
   delete [] tau_turb_ev;
   delete [] tau_lam;
+  delete [] tau_turb;
 
 }
 
@@ -2788,6 +2763,102 @@ void CNumerics::SetRoe_Dissipation(su2double *Coord_i, su2double *Coord_j,
       
     }
   }
+
+}
+
+void CNumerics::SetAnisotropyTensor(CConfig *config, unsigned long val_global_index){
+
+	unsigned short iDim, jDim, kDim;
+	su2double anis_eigval1, anis_eigval2, anis_eigval3, anis_eigvec1x, anis_eigvec2x, anis_eigvec3x, anis_eigvec1y, anis_eigvec2y,
+	          anis_eigvec3y, anis_eigvec1z, anis_eigvec2z, anis_eigvec3z;
+
+	su2double **buffer, **eigvals, **eigvecs;
+	buffer = new su2double* [nDim];
+	eigvals = new su2double* [nDim];
+	eigvecs = new su2double* [nDim];
+	for (iDim=0; iDim < nDim; iDim++){
+	  buffer[iDim] = new su2double [nDim];
+	  eigvals[iDim] = new su2double [nDim];
+	  eigvecs[iDim] = new su2double [nDim];
+	}
+
+	/*--- Initialize matrices ---*/
+	for (iDim=0; iDim<nDim; iDim++) {
+	  for (jDim=0; jDim<nDim; jDim++) {
+		buffer[iDim][jDim] = 0.0;
+		eigvals[iDim][jDim] = 0.0;
+		eigvecs[iDim][jDim] = 0.0;
+		tau_anis[iDim][jDim] = 0.0;
+	  }
+	}
+
+	anis_eigval1 = config->GetEigenValue1(val_global_index);
+	anis_eigval2 = config->GetEigenValue2(val_global_index);
+	anis_eigval3 = config->GetEigenValue3(val_global_index);
+	anis_eigvec1x =	config->GetEigenVector1x(val_global_index);
+	anis_eigvec2x = config->GetEigenVector2x(val_global_index);
+	anis_eigvec3x = config->GetEigenVector3x(val_global_index);
+	anis_eigvec1y = config->GetEigenVector1y(val_global_index);
+	anis_eigvec2y = config->GetEigenVector2y(val_global_index);
+	anis_eigvec3y = config->GetEigenVector3y(val_global_index);
+	anis_eigvec1z = config->GetEigenVector1z(val_global_index);
+	anis_eigvec2z = config->GetEigenVector2z(val_global_index);
+	anis_eigvec3z = config->GetEigenVector3z(val_global_index);
+
+	/*--- Build matrix of eigenvalues ---*/
+	eigvals[0][0] = anis_eigval1;
+	eigvals[1][1] = anis_eigval2;
+	if (nDim == 3){
+      eigvals[2][2] = anis_eigval3;
+	}
+
+	/*--- Build matrix of eigenvectors ---*/
+	eigvecs[0][0] = anis_eigvec1x;
+	eigvecs[0][1] = anis_eigvec2x;
+	eigvecs[1][0] = anis_eigvec1y;
+	eigvecs[1][1] = anis_eigvec2y;
+	if (nDim == 3){
+	  eigvecs[0][2] = anis_eigvec3x;
+	  eigvecs[1][2] = anis_eigvec3y;
+	  eigvecs[2][0] = anis_eigvec1z;
+	  eigvecs[2][1] = anis_eigvec2z;
+	  eigvecs[2][2] = anis_eigvec3z;
+	}
+
+
+	/*--- Compute anisotropy tensor tau_anis= X*Delta*X.T ---*/
+	for (iDim=0; iDim<nDim; iDim++) {
+	  for (jDim=0; jDim<nDim; jDim++) {
+		for (kDim=0; kDim<nDim; kDim++) {
+		  buffer[iDim][jDim] += eigvecs[iDim][kDim] * eigvals[kDim][jDim];
+		}
+	  }
+	}
+
+	for (iDim=0; iDim<nDim; iDim++) {
+	  for (jDim=0; jDim<nDim; jDim++) {
+		for (kDim=0; kDim<nDim; kDim++) {
+		  tau_anis[iDim][jDim] += buffer[iDim][kDim] * eigvecs[jDim][kDim];
+		}
+	  }
+	}
+
+	for (iDim=0; iDim<nDim; iDim++) {
+	  for (jDim=0; jDim<nDim; jDim++) {
+		tau_anis[iDim][jDim] = -1.0 * tau_anis[iDim][jDim]; //sign convention!
+	  }
+	}
+
+
+
+	for (iDim = 0; iDim < nDim; iDim++)  {
+	  delete [] buffer[iDim];
+	  delete [] eigvals[iDim];
+	  delete [] eigvecs[iDim];
+	}
+	delete [] buffer;
+	delete [] eigvals;
+	delete [] eigvecs;
 
 }
 

@@ -255,54 +255,6 @@ inline void CNumerics::SetDiscrepancyTerm(su2double val_discrepancyTerm) {
   discrepancyTerm = val_discrepancyTerm;
 }
 
-inline void CNumerics::SetEigenValue1(su2double val_eigenval) {
-  anis_eigval1 = val_eigenval;
-}
-
-inline void CNumerics::SetEigenValue2(su2double val_eigenval) {
-  anis_eigval2 = val_eigenval;
-}
-
-inline void CNumerics::SetEigenValue3(su2double val_eigenval) {
-  anis_eigval3 = val_eigenval;
-}
-
-inline void CNumerics::SetEigenVector1x(su2double val_eigenvec) {
-  anis_eigvec1x = val_eigenvec;
-}
-
-inline void CNumerics::SetEigenVector1y(su2double val_eigenvec) {
-  anis_eigvec1y = val_eigenvec;
-}
-
-inline void CNumerics::SetEigenVector1z(su2double val_eigenvec) {
-  anis_eigvec1z = val_eigenvec;
-}
-
-inline void CNumerics::SetEigenVector2x(su2double val_eigenvec) {
-  anis_eigvec2x = val_eigenvec;
-}
-
-inline void CNumerics::SetEigenVector2y(su2double val_eigenvec) {
-  anis_eigvec2y = val_eigenvec;
-}
-
-inline void CNumerics::SetEigenVector2z(su2double val_eigenvec) {
-  anis_eigvec2z = val_eigenvec;
-}
-
-inline void CNumerics::SetEigenVector3x(su2double val_eigenvec) {
-  anis_eigvec3x = val_eigenvec;
-}
-
-inline void CNumerics::SetEigenVector3y(su2double val_eigenvec) {
-  anis_eigvec3y = val_eigenvec;
-}
-
-inline void CNumerics::SetEigenVector3z(su2double val_eigenvec) {
-  anis_eigvec3z = val_eigenvec;
-}
-
 
 inline void CNumerics::SetStrainMag(su2double val_strainmag_i, su2double val_strainmag_j) {
   StrainMag_i = val_strainmag_i;
@@ -538,7 +490,7 @@ inline void CSourcePieceWise_TurbSST::SetF2blending(su2double val_F2_i, su2doubl
 inline void CSourcePieceWise_TurbSST::SetCrossDiff(su2double val_CDkw_i, su2double val_CDkw_j) {
   CDkw_i = val_CDkw_i;
   CDkw_j = val_CDkw_j;
-}      
+}  
 
 inline void CSourcePieceWise_TurbSA::SetIntermittency(su2double intermittency_in) { intermittency = intermittency_in; }
 

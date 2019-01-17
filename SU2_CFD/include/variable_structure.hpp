@@ -105,7 +105,6 @@ protected:
   su2double TargetQuantityErrorFunc;
   bool BoolErrorFunc;
 
-  
 public:
   
   /*!
@@ -1074,7 +1073,7 @@ public:
   virtual su2double GetProduction(void);
   virtual su2double GetDestruction(void);
   virtual su2double GetOmegaTurb(void);
-  
+
   /*!
    * \brief A virtual member.
    * \param[in] val_ForceProj_Vector - Pointer to the force projection vector.
@@ -1606,6 +1605,8 @@ public:
   virtual bool SetStrainMag(void);
   virtual void SetProductionDestruction(su2double val_production, su2double val_destruction);
   virtual void SetOmegaTurb(su2double val_omega);
+
+
   /*!
    * \brief A virtual member.
    */
@@ -4222,6 +4223,7 @@ public:
    * \param[in] val_muT - Value of the eddy viscosity.
    */
   void SetmuT(su2double val_muT);
+
 };
 
 /*!
@@ -4428,6 +4430,7 @@ public:
    * \brief Get the value of the cross diffusion of tke and omega.
    */
   su2double GetCrossDiff(void);
+
 };
 
 

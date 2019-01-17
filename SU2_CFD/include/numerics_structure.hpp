@@ -208,10 +208,7 @@ public:
 
   su2double discrepancyTerm;
 
-  su2double anis_eigvec1x, anis_eigvec1y, anis_eigvec1z, anis_eigvec2x, anis_eigvec2y, anis_eigvec2z, anis_eigvec3x, anis_eigvec3y, anis_eigvec3z;
-  su2double anis_eigval1, anis_eigval2, anis_eigval3;
-
-  su2double **tau_turb;
+  su2double **tau_anis;
 
 
   /*!
@@ -283,18 +280,8 @@ public:
   
   void SetDiscrepancyTerm(su2double val_discrepancyTerm);
 
-  void SetEigenValue1(su2double val_eigenval);
-  void SetEigenValue2(su2double val_eigenval);
-  void SetEigenValue3(su2double val_eigenval);
-  void SetEigenVector1x(su2double val_eigenvec);
-  void SetEigenVector1y(su2double val_eigenvec);
-  void SetEigenVector1z(su2double val_eigenvec);
-  void SetEigenVector2x(su2double val_eigenvec);
-  void SetEigenVector2y(su2double val_eigenvec);
-  void SetEigenVector2z(su2double val_eigenvec);
-  void SetEigenVector3x(su2double val_eigenvec);
-  void SetEigenVector3y(su2double val_eigenvec);
-  void SetEigenVector3z(su2double val_eigenvec);
+
+  void SetAnisotropyTensor(CConfig *config, unsigned long val_global_index);
 
   /*!
    * \brief Set the value of the rate of strain magnitude.
@@ -467,7 +454,7 @@ public:
    * \param[in] val_CDkw_j - Value of the cross diffusion at point j.
    */
   virtual void SetCrossDiff(su2double val_CDkw_i, su2double val_CDkw_j) {/* empty */};
-  
+
   /*!
    * \brief Set the gradient of the auxiliary variables.
    * \param[in] val_auxvargrad_i - Gradient of the auxiliary variable at point i.
@@ -4925,7 +4912,7 @@ public:
    * \param[in] val_CDkw_j - Value of the cross diffusion at point j.
    */
   virtual void SetCrossDiff(su2double val_CDkw_i, su2double val_CDkw_j);
-  
+
   /*!
    * \brief Residual for source term integration.
    * \param[out] val_residual - Pointer to the total residual.
@@ -4934,7 +4921,7 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   void ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config);
-  
+
 };
 
 /*!

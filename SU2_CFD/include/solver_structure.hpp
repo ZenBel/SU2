@@ -8652,7 +8652,10 @@ protected:
   int **SlidingStateNodes;
 
 public:
-  
+
+  su2double anis_eigvec1x, anis_eigvec1y, anis_eigvec1z, anis_eigvec2x, anis_eigvec2y, anis_eigvec2z, anis_eigvec3x, anis_eigvec3y, anis_eigvec3z;
+  su2double anis_eigval1, anis_eigval2, anis_eigval3;
+
   /*!
    * \brief Constructor of the class.
    */

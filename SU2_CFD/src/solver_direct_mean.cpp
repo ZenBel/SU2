@@ -9223,21 +9223,10 @@ void CEulerSolver::BC_Far_Field(CGeometry *geometry, CSolver **solver_container,
         if (config->GetKind_Turb_Model() == SST){
           visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0),
                                               solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
+
           unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 //          cout << "idx0 = " << GlobalIndex << endl;
-          visc_numerics->SetEigenValue1(config->GetEigenValue1(GlobalIndex));
-          visc_numerics->SetEigenValue2(config->GetEigenValue2(GlobalIndex));
-          visc_numerics->SetEigenValue3(config->GetEigenValue3(GlobalIndex));
-          visc_numerics->SetEigenVector1x(config->GetEigenVector1x(GlobalIndex));
-          visc_numerics->SetEigenVector1y(config->GetEigenVector1y(GlobalIndex));
-          visc_numerics->SetEigenVector1z(config->GetEigenVector1z(GlobalIndex));
-          visc_numerics->SetEigenVector2x(config->GetEigenVector2x(GlobalIndex));
-          visc_numerics->SetEigenVector2y(config->GetEigenVector2y(GlobalIndex));
-          visc_numerics->SetEigenVector2z(config->GetEigenVector2z(GlobalIndex));
-          visc_numerics->SetEigenVector3x(config->GetEigenVector3x(GlobalIndex));
-          visc_numerics->SetEigenVector3y(config->GetEigenVector3y(GlobalIndex));
-          visc_numerics->SetEigenVector3z(config->GetEigenVector3z(GlobalIndex));
-
+          visc_numerics->SetAnisotropyTensor(config, GlobalIndex);
         }
         
         /*--- Compute and update viscous residual ---*/
@@ -16784,25 +16773,13 @@ void CNSSolver::Viscous_Residual(CGeometry *geometry, CSolver **solver_container
     if (config->GetKind_Turb_Model() == SST){
       numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0),
                                      solver_container[TURB_SOL]->node[jPoint]->GetSolution(0));
+
       unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 //      cout << "idx1 = " << GlobalIndex << endl;
-      numerics->SetEigenValue1(config->GetEigenValue1(GlobalIndex));
-      numerics->SetEigenValue2(config->GetEigenValue2(GlobalIndex));
-      numerics->SetEigenValue3(config->GetEigenValue3(GlobalIndex));
-      numerics->SetEigenVector1x(config->GetEigenVector1x(GlobalIndex));
-      numerics->SetEigenVector1y(config->GetEigenVector1y(GlobalIndex));
-      numerics->SetEigenVector1z(config->GetEigenVector1z(GlobalIndex));
-      numerics->SetEigenVector2x(config->GetEigenVector2x(GlobalIndex));
-      numerics->SetEigenVector2y(config->GetEigenVector2y(GlobalIndex));
-      numerics->SetEigenVector2z(config->GetEigenVector2z(GlobalIndex));
-      numerics->SetEigenVector3x(config->GetEigenVector3x(GlobalIndex));
-      numerics->SetEigenVector3y(config->GetEigenVector3y(GlobalIndex));
-      numerics->SetEigenVector3z(config->GetEigenVector3z(GlobalIndex));
-
+      numerics->SetAnisotropyTensor(config, GlobalIndex);
     }
     
     /*--- Compute and update residual ---*/
-    
     numerics->ComputeResidual(Res_Visc, Jacobian_i, Jacobian_j, config);
     
     LinSysRes.SubtractBlock(iPoint, Res_Visc);

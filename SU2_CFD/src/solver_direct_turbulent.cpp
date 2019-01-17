@@ -87,7 +87,6 @@ CTurbSolver::~CTurbSolver(void) {
   if (upperlimit != NULL) delete [] upperlimit;
   if (nVertex != NULL) delete [] nVertex;
   
-
 }
 
 void CTurbSolver::Set_MPI_Solution(CGeometry *geometry, CConfig *config) {
@@ -600,7 +599,6 @@ void CTurbSolver::Viscous_Residual(CGeometry *geometry, CSolver **solver_contain
       numerics->SetF1blending(node[iPoint]->GetF1blending(), node[jPoint]->GetF1blending());
     
     /*--- Compute residual, and Jacobians ---*/
-    
     numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
     
     /*--- Add and subtract residual, and update Jacobians ---*/
@@ -1320,6 +1318,7 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
 	  else{
         if (rank == MASTER_NODE){
 		  cout << "The number of points in " << input_eigenvector[ii].data() << " is different from the total number of points in the mesh." << endl;
+		  cout << "eigPoints = " << InputPoints << ", domainPoints = " << nPointGlobal << endl;
 		  exit(EXIT_FAILURE);
 		}
 	  }
@@ -1363,8 +1362,6 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
 
   	cout << input_eigenvalue[ii].data() << " read." << endl;
   }
-
-
 
 }
 
@@ -3745,9 +3742,13 @@ void CTurbSSTSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
     /*--- Cross diffusion ---*/
     
     numerics->SetCrossDiff(node[iPoint]->GetCrossDiff(),0.0);
-    
+
+    /*--- Set the value of the turbulent Reynolds stress for computation in the k-equation ---*/
+    unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+//    cout << "idxSST = " << GlobalIndex << endl;
+    numerics->SetAnisotropyTensor(config, GlobalIndex);
+
     /*--- Compute the source term ---*/
-    
     numerics->ComputeResidual(Residual, Jacobian_i, NULL, config);
     
     /*--- Subtract residual and the Jacobian ---*/
