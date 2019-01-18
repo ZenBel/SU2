@@ -654,6 +654,8 @@ public:
    */
   void SetCFL_Number(CSolver ****solver_container, CConfig **config, unsigned short val_iZone);
   
+  void SetBlend_Factor(CConfig **config, unsigned short val_iZone);
+
   /*!
    * \brief Write the sensitivity (including mesh sensitivity) computed with the discrete adjoint method
    *  on the surface and in the volume to a file.

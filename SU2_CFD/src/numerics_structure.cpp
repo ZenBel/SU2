@@ -1755,7 +1755,8 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
                   su2double *val_normal,
                   su2double val_laminar_viscosity,
                   su2double val_eddy_viscosity,
-                  bool val_qcr) {
+                  bool val_qcr,
+				  CConfig *config) {
 
   unsigned short iVar, iDim, jDim, kDim;
   su2double total_viscosity, heat_flux_factor, div_vel, Cp, Density;
@@ -1770,7 +1771,7 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
 	  tau_turb[iDim] = new su2double[nDim];
   }
 
-  su2double blend = 1.0; //HARDCODED
+  su2double blend = config->GetBlendFactor();
 
   Density = val_primvar[nDim+2];
   total_viscosity = val_laminar_viscosity + val_eddy_viscosity;
@@ -1884,7 +1885,8 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
                                    su2double val_laminar_viscosity,
                                    su2double val_eddy_viscosity,
                                    su2double val_thermal_conductivity,
-                                   su2double val_heat_capacity_cp) {
+                                   su2double val_heat_capacity_cp,
+								   CConfig *config) {
 
   unsigned short iVar, iDim, jDim;
   su2double total_viscosity, heat_flux_factor, div_vel, Density;

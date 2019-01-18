@@ -3089,6 +3089,12 @@ bool CDriver::Monitor(unsigned long ExtIter) {
   	output->SetCFL_Number(solver_container, config_container, ZONE_0);
   }
 
+  if (config_container[ZONE_0]->GetBoolBlendFactor() == YES){
+    if (config_container[ZONE_0]->GetBlend_Adapt() == YES){
+	  output->SetBlend_Factor(config_container, ZONE_0);
+    }
+  }
+
   /*--- Check whether the current simulation has reached the specified
    convergence criteria, and set StopCalc to true, if so. ---*/
   

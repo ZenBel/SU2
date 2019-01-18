@@ -5831,10 +5831,15 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
 
                 cout << endl << "---------------------- Local Time Stepping Summary ----------------------" << endl;
 
-                for (unsigned short iMesh = FinestMesh; iMesh <= config[val_iZone]->GetnMGLevels(); iMesh++)
+                for (unsigned short iMesh = FinestMesh; iMesh <= config[val_iZone]->GetnMGLevels(); iMesh++){
                   cout << "MG level: "<< iMesh << " -> Min. DT: " << solver_container[val_iZone][iMesh][FLOW_SOL]->GetMin_Delta_Time()<<
                   ". Max. DT: " << solver_container[val_iZone][iMesh][FLOW_SOL]->GetMax_Delta_Time() <<
                   ". CFL: " << config[val_iZone]->GetCFL(iMesh)  << "." << endl;
+                  if (config[val_iZone]->GetBoolBlendFactor()){
+                	  cout << "Blend Factor: (1-gamma)*tau_EV + gamma*tau_ANIS with gamma = " <<
+                			   config[val_iZone]->GetBlendFactor() << "." << endl;
+                  }
+                }
 
                 cout << "-------------------------------------------------------------------------" << endl;
 
@@ -6633,6 +6638,30 @@ void COutput::SetCFL_Number(CSolver ****solver_container, CConfig **config, unsi
       break;
   }
   
+}
+
+void COutput::SetBlend_Factor(CConfig **config, unsigned short val_iZone) {
+
+  su2double Iter_max, BlendFactor, BlendMax;
+  unsigned long ExtIter = config[val_iZone]->GetExtIter();
+
+  /* NOTE: No multigrid options */
+
+  /*--- Set blending factor with linear continuation method of Knoell & Keyes (2004) ---*/
+
+  if ((ExtIter == 0) && (config[val_iZone]->GetBlend_Adapt())){
+	  BlendFactor = 0.0;
+	  cout << "Initial Blend Factor set to 0.0 when Blend Factor Adaptation is active." << endl;
+  }
+  else{ BlendFactor = config[val_iZone]->GetBlendFactor(); }
+  BlendMax = config[val_iZone]->GetBlend_AdaptParam(0);
+  Iter_max = config[val_iZone]->GetBlend_AdaptParam(1);
+
+  BlendFactor = BlendMax * min( 1.0 , ExtIter/Iter_max );
+
+  config[val_iZone]->SetBlendFactor(BlendFactor);
+
+
 }
 
 void COutput::SpecialOutput_ForcesBreakdown(CSolver ****solver, CGeometry ***geometry, CConfig **config, unsigned short val_iZone, bool output) {

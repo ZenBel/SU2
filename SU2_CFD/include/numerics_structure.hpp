@@ -799,7 +799,8 @@ public:
                           su2double val_turb_ke, su2double *val_normal,
                           su2double val_laminar_viscosity,
                           su2double val_eddy_viscosity,
-                          bool val_qcr);
+                          bool val_qcr,
+						  CConfig *config);
   /*!
    * \brief Compute the projection of the viscous fluxes into a direction for general fluid model.
    * \param[in] val_primvar - Primitive variables.
@@ -817,7 +818,8 @@ public:
                           su2double val_laminar_viscosity,
                           su2double val_eddy_viscosity,
                           su2double val_thermal_conductivity,
-                          su2double val_heat_capacity_cp);
+                          su2double val_heat_capacity_cp,
+						  CConfig *config);
     
   /*
    * \brief Compute the projection of the viscous fluxes into a direction (artificial compresibility method).

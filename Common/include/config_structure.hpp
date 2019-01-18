@@ -979,6 +979,9 @@ private:
 
   bool DataAssimilation;
   su2double Regularization;
+  su2double BlendFactor;
+  bool BoolBlendFactor, BoolBlendAdapt;
+  su2double *default_blend_adapt, *Blend_AdaptParam;
 
   /*--- all_options is a map containing all of the options. This is used during config file parsing
    to track the options which have not been set (so the default values can be used). Without this map
@@ -1483,13 +1486,17 @@ public:
    * \return Value of CFL adapation
    */
   su2double GetCFL_AdaptParam(unsigned short val_index);
-  
+  su2double GetBlend_AdaptParam(unsigned short val_index);
+
   /*!
    * \brief Get the values of the CFL adapation.
    * \return Value of CFL adapation
    */
   bool GetCFL_Adapt(void);
-  
+  bool GetBlend_Adapt(void);
+
+  bool GetBoolBlendFactor(void);
+
   /*!
    * \brief Get the values of the CFL adapation.
    * \return Value of CFL adapation
@@ -2429,13 +2436,15 @@ public:
    * \return CFL number for each grid.
    */
   su2double GetCFL(unsigned short val_mesh);
-  
+  su2double GetBlendFactor();
+
   /*!
    * \brief Get the Courant Friedrich Levi number for each grid.
    * \param[in] val_mesh - Index of the mesh were the CFL is applied.
    * \return CFL number for each grid.
    */
   void SetCFL(unsigned short val_mesh, su2double val_cfl);
+  void SetBlendFactor(su2double val_blend_factor);
 
   /*!
    * \brief Get the Courant Friedrich Levi number for unsteady simulations.

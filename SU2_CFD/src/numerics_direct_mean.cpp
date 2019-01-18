@@ -4416,7 +4416,7 @@ void CAvgGrad_Flow::ComputeResidual(su2double *val_residual, su2double **val_Jac
   /*--- Get projected flux tensor ---*/
   bool QCR = config->GetQCR();
 
-  GetViscousProjFlux(Mean_PrimVar, Mean_GradPrimVar, Mean_turb_ke, Normal, Mean_Laminar_Viscosity, Mean_Eddy_Viscosity,QCR);
+  GetViscousProjFlux(Mean_PrimVar, Mean_GradPrimVar, Mean_turb_ke, Normal, Mean_Laminar_Viscosity, Mean_Eddy_Viscosity,QCR,config);
 
   /*--- Update viscous residual ---*/
   
@@ -4533,7 +4533,7 @@ void CGeneralAvgGrad_Flow::ComputeResidual(su2double *val_residual, su2double **
   
   /*--- Get projected flux tensor ---*/
   GetViscousProjFlux( Mean_PrimVar, Mean_GradPrimVar, Mean_turb_ke, Normal, Mean_Laminar_Viscosity, Mean_Eddy_Viscosity,
-                  Mean_Thermal_Conductivity, Mean_Cp );
+                  Mean_Thermal_Conductivity, Mean_Cp,config);
   
   /*--- Update viscous residual ---*/
   for (iVar = 0; iVar < nVar; iVar++)
@@ -4659,7 +4659,7 @@ void CAvgGradCorrected_Flow::ComputeResidual(su2double *val_residual, su2double 
   
   /*--- Get projected flux tensor ---*/
   bool QCR = config->GetQCR();
-  GetViscousProjFlux(Mean_PrimVar, Mean_GradPrimVar, Mean_turb_ke, Normal, Mean_Laminar_Viscosity, Mean_Eddy_Viscosity, QCR);
+  GetViscousProjFlux(Mean_PrimVar, Mean_GradPrimVar, Mean_turb_ke, Normal, Mean_Laminar_Viscosity, Mean_Eddy_Viscosity, QCR, config);
   
   /*--- Save residual value ---*/
   
@@ -4928,7 +4928,7 @@ void CGeneralAvgGradCorrected_Flow::ComputeResidual(su2double *val_residual, su2
   
   /*--- Get projected flux tensor ---*/
   GetViscousProjFlux( Mean_PrimVar, Mean_GradPrimVar, Mean_turb_ke, Normal, Mean_Laminar_Viscosity, Mean_Eddy_Viscosity,
-                  Mean_Thermal_Conductivity, Mean_Cp );
+                  Mean_Thermal_Conductivity, Mean_Cp, config);
   
   /*--- Save residual value ---*/
   

@@ -1155,7 +1155,7 @@ void CAvgGrad_TurbSST::FinishResidualCalc(su2double *val_residual, su2double **J
   sigma_omega_j = F1_j*sigma_om1 + (1.0 - F1_j)*sigma_om2;
   
   /*--- Compute mean effective viscosity ---*/
-  su2double blend = 1.0; //HARDCODED
+  su2double blend = config->GetBlendFactor();
   diff_i_kine  = Laminar_Viscosity_i + (1-blend)*sigma_kine_i*Eddy_Viscosity_i;
   diff_j_kine  = Laminar_Viscosity_j + (1-blend)*sigma_kine_j*Eddy_Viscosity_j;
   diff_i_omega = Laminar_Viscosity_i + sigma_omega_i*Eddy_Viscosity_i;
@@ -1249,7 +1249,7 @@ void CSourcePieceWise_TurbSST::ComputeResidual(su2double *val_residual, su2doubl
 	  tau_turb[iDim] = new su2double[nDim];
   }
 
-  su2double blend = 1.0; //HARDCODED
+  su2double blend = config->GetBlendFactor();
 
   for (iDim = 0 ; iDim < nDim; iDim++){
     for (jDim = 0 ; jDim < nDim; jDim++){

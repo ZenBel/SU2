@@ -409,9 +409,10 @@ void CConfig::SetPointersNull(void) {
   Velocity_FreeStream = NULL;
 
   RefOriginMoment     = NULL;
-  CFL_AdaptParam      = NULL;            
+  CFL_AdaptParam      = NULL;
+  Blend_AdaptParam    = NULL;
   CFL                 = NULL;
-  HTP_Axis = NULL;
+  HTP_Axis 			  = NULL;
   PlaneTag            = NULL;
   Kappa_Flow          = NULL;    
   Kappa_AdjFlow       = NULL;
@@ -460,6 +461,7 @@ void CConfig::SetPointersNull(void) {
   default_eng_cyl            = NULL;
   default_eng_val            = NULL;
   default_cfl_adapt          = NULL;
+  default_blend_adapt        = NULL;
   default_jst_coeff          = NULL;
   default_ffd_coeff          = NULL;
   default_mixedout_coeff     = NULL;
@@ -551,6 +553,7 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   default_eng_cyl            = new su2double[7];
   default_eng_val            = new su2double[5];
   default_cfl_adapt          = new su2double[4];
+  default_blend_adapt        = new su2double[2];
   default_jst_coeff          = new su2double[2];
   default_ffd_coeff          = new su2double[3];
   default_mixedout_coeff     = new su2double[3];
@@ -980,6 +983,15 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
 
   /*!\par CONFIG_CATEGORY: Time-marching \ingroup Config*/
   /*--- Options related to time-marching ---*/
+
+  /* DESCRIPTION:  Blending factor between the Reynolds stress computed using eddy viscosity models
+   * and that from the anisotropy tensor */
+  addDoubleOption("BLEND_FACTOR", BlendFactor, 0.0); //Follows template of CFL_NUMBER
+  addBoolOption("ACTIVATE_BLEND_FACTOR", BoolBlendFactor, false); //Follows template of CFL_ADAPT
+  addBoolOption("ACTIVATE_BLEND_ADAPT", BoolBlendAdapt, false); //Follows template of CFL_ADAPT
+  default_blend_adapt[0] = 0.0; // max value of blend factor.
+  default_blend_adapt[1] = 0.0; // max value of iterations after which blend factoris not increased anymore.
+  addDoubleArrayOption("BLEND_ADAPT_PARAM", 2, Blend_AdaptParam, default_blend_adapt);
 
   /* DESCRIPTION: Unsteady simulation  */
   addEnumOption("UNSTEADY_SIMULATION", Unsteady_Simulation, Unsteady_Map, STEADY);
@@ -5049,6 +5061,14 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
       else cout << "CFL adaptation. Factor down: "<< CFL_AdaptParam[0] <<", factor up: "<< CFL_AdaptParam[1]
         <<",\n                lower limit: "<< CFL_AdaptParam[2] <<", upper limit: " << CFL_AdaptParam[3] <<"."<< endl;
 
+      if (!BoolBlendFactor) cout << "No Blend Factor for blending eddy viscosity and anisotropy Reynolds stresses." << endl;
+      else {
+    	  cout << "Reynolds stress Blend Factor Active: "<< BlendFactor << endl;
+          if (!BoolBlendAdapt) cout << "No Blend Factor adaptation." << endl;
+          else cout << "Blend Factor adaptation. BlendMax: "<< Blend_AdaptParam[0] <<", maxIter: "<< Blend_AdaptParam[1]<<"."<< endl;
+      }
+
+
       if (nMGLevels !=0) {
         cout << "Multigrid Level:                  ";
         for (unsigned short iLevel = 0; iLevel < nMGLevels+1; iLevel++) {
@@ -6265,6 +6285,7 @@ CConfig::~CConfig(void) {
   if (default_eng_cyl       != NULL) delete [] default_eng_cyl;
   if (default_eng_val       != NULL) delete [] default_eng_val;
   if (default_cfl_adapt     != NULL) delete [] default_cfl_adapt;
+  if (default_blend_adapt     != NULL) delete [] default_blend_adapt;
   if (default_jst_coeff != NULL) delete [] default_jst_coeff;
   if (default_ffd_coeff != NULL) delete [] default_ffd_coeff;
   if (default_mixedout_coeff!= NULL) delete [] default_mixedout_coeff;
