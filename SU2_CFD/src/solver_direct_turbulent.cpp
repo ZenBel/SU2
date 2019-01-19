@@ -3578,7 +3578,9 @@ CTurbSSTSolver::CTurbSSTSolver(CGeometry *geometry, CConfig *config, unsigned sh
   SetInlet(config);
 
   /*--- Read eigenvalues and eigenvectors of anisotropy tensor ---*/
-  ReadAnisotrpyTensor(geometry, config);
+  if (config->GetBoolBlendFactor()){
+    ReadAnisotrpyTensor(geometry, config);
+  }
 
 }
 

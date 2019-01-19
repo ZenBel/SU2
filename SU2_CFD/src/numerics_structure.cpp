@@ -1792,9 +1792,10 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
     	tau_lam[iDim][jDim] = val_laminar_viscosity * ( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
 		                      - TWO3*val_laminar_viscosity*div_vel*delta[iDim][jDim];
 	    tau_turb_ev[iDim][jDim] = val_eddy_viscosity * ( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
-	                              - TWO3*val_eddy_viscosity*div_vel*delta[iDim][jDim]
-								  - TWO3*Density*val_turb_ke*delta[iDim][jDim];
-	    tau_turb[iDim][jDim] = (1.0-blend)*tau_turb_ev[iDim][jDim] + blend*2.0*Density*val_turb_ke*tau_anis[iDim][jDim];
+	                              - TWO3*val_eddy_viscosity*div_vel*delta[iDim][jDim];
+	    tau_turb[iDim][jDim] =  + (1.0-blend) * tau_turb_ev[iDim][jDim]
+								- blend * 2.0 * Density * val_turb_ke * tau_anis[iDim][jDim]
+								- TWO3 * Density * val_turb_ke * delta[iDim][jDim];
 	    tau[iDim][jDim] = tau_lam[iDim][jDim] + tau_turb[iDim][jDim];
     }
   }
@@ -2795,64 +2796,66 @@ void CNumerics::SetAnisotropyTensor(CConfig *config, unsigned long val_global_in
 	  }
 	}
 
-	anis_eigval1 = config->GetEigenValue1(val_global_index);
-	anis_eigval2 = config->GetEigenValue2(val_global_index);
-	anis_eigval3 = config->GetEigenValue3(val_global_index);
-	anis_eigvec1x =	config->GetEigenVector1x(val_global_index);
-	anis_eigvec2x = config->GetEigenVector2x(val_global_index);
-	anis_eigvec3x = config->GetEigenVector3x(val_global_index);
-	anis_eigvec1y = config->GetEigenVector1y(val_global_index);
-	anis_eigvec2y = config->GetEigenVector2y(val_global_index);
-	anis_eigvec3y = config->GetEigenVector3y(val_global_index);
-	anis_eigvec1z = config->GetEigenVector1z(val_global_index);
-	anis_eigvec2z = config->GetEigenVector2z(val_global_index);
-	anis_eigvec3z = config->GetEigenVector3z(val_global_index);
 
-	/*--- Build matrix of eigenvalues ---*/
-	eigvals[0][0] = anis_eigval1;
-	eigvals[1][1] = anis_eigval2;
-	if (nDim == 3){
-      eigvals[2][2] = anis_eigval3;
-	}
+	if (config->GetBoolBlendFactor()){
+		anis_eigval1 = config->GetEigenValue1(val_global_index);
+		anis_eigval2 = config->GetEigenValue2(val_global_index);
+		anis_eigval3 = config->GetEigenValue3(val_global_index);
+		anis_eigvec1x =	config->GetEigenVector1x(val_global_index);
+		anis_eigvec2x = config->GetEigenVector2x(val_global_index);
+		anis_eigvec3x = config->GetEigenVector3x(val_global_index);
+		anis_eigvec1y = config->GetEigenVector1y(val_global_index);
+		anis_eigvec2y = config->GetEigenVector2y(val_global_index);
+		anis_eigvec3y = config->GetEigenVector3y(val_global_index);
+		anis_eigvec1z = config->GetEigenVector1z(val_global_index);
+		anis_eigvec2z = config->GetEigenVector2z(val_global_index);
+		anis_eigvec3z = config->GetEigenVector3z(val_global_index);
 
-	/*--- Build matrix of eigenvectors ---*/
-	eigvecs[0][0] = anis_eigvec1x;
-	eigvecs[0][1] = anis_eigvec2x;
-	eigvecs[1][0] = anis_eigvec1y;
-	eigvecs[1][1] = anis_eigvec2y;
-	if (nDim == 3){
-	  eigvecs[0][2] = anis_eigvec3x;
-	  eigvecs[1][2] = anis_eigvec3y;
-	  eigvecs[2][0] = anis_eigvec1z;
-	  eigvecs[2][1] = anis_eigvec2z;
-	  eigvecs[2][2] = anis_eigvec3z;
-	}
-
-
-	/*--- Compute anisotropy tensor tau_anis= X*Delta*X.T ---*/
-	for (iDim=0; iDim<nDim; iDim++) {
-	  for (jDim=0; jDim<nDim; jDim++) {
-		for (kDim=0; kDim<nDim; kDim++) {
-		  buffer[iDim][jDim] += eigvecs[iDim][kDim] * eigvals[kDim][jDim];
+		/*--- Build matrix of eigenvalues ---*/
+		eigvals[0][0] = anis_eigval1;
+		eigvals[1][1] = anis_eigval2;
+		if (nDim == 3){
+		  eigvals[2][2] = anis_eigval3;
 		}
-	  }
-	}
 
-	for (iDim=0; iDim<nDim; iDim++) {
-	  for (jDim=0; jDim<nDim; jDim++) {
-		for (kDim=0; kDim<nDim; kDim++) {
-		  tau_anis[iDim][jDim] += buffer[iDim][kDim] * eigvecs[jDim][kDim];
+		/*--- Build matrix of eigenvectors ---*/
+		eigvecs[0][0] = anis_eigvec1x;
+		eigvecs[0][1] = anis_eigvec2x;
+		eigvecs[1][0] = anis_eigvec1y;
+		eigvecs[1][1] = anis_eigvec2y;
+		if (nDim == 3){
+		  eigvecs[0][2] = anis_eigvec3x;
+		  eigvecs[1][2] = anis_eigvec3y;
+		  eigvecs[2][0] = anis_eigvec1z;
+		  eigvecs[2][1] = anis_eigvec2z;
+		  eigvecs[2][2] = anis_eigvec3z;
 		}
-	  }
+
+
+		/*--- Compute anisotropy tensor tau_anis= X*Delta*X.T ---*/
+		for (iDim=0; iDim<nDim; iDim++) {
+		  for (jDim=0; jDim<nDim; jDim++) {
+			for (kDim=0; kDim<nDim; kDim++) {
+			  buffer[iDim][jDim] += eigvecs[iDim][kDim] * eigvals[kDim][jDim];
+			}
+		  }
+		}
+
+		for (iDim=0; iDim<nDim; iDim++) {
+		  for (jDim=0; jDim<nDim; jDim++) {
+			for (kDim=0; kDim<nDim; kDim++) {
+			  tau_anis[iDim][jDim] += buffer[iDim][kDim] * eigvecs[jDim][kDim];
+			}
+		  }
+		}
+
+//		for (iDim=0; iDim<nDim; iDim++) {
+//		  for (jDim=0; jDim<nDim; jDim++) {
+//			  cout << "bij[" << iDim << "][" << jDim <<  "] = " << tau_anis[iDim][jDim] << endl;
+//		  }
+//		}
+
 	}
-
-	for (iDim=0; iDim<nDim; iDim++) {
-	  for (jDim=0; jDim<nDim; jDim++) {
-		tau_anis[iDim][jDim] = -1.0 * tau_anis[iDim][jDim]; //sign convention!
-	  }
-	}
-
-
 
 	for (iDim = 0; iDim < nDim; iDim++)  {
 	  delete [] buffer[iDim];

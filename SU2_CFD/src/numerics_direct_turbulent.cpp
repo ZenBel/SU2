@@ -1254,8 +1254,10 @@ void CSourcePieceWise_TurbSST::ComputeResidual(su2double *val_residual, su2doubl
   for (iDim = 0 ; iDim < nDim; iDim++){
     for (jDim = 0 ; jDim < nDim; jDim++){
 	    tau_turb_ev[iDim][jDim] = Eddy_Viscosity_i * ( PrimVar_Grad_i[jDim+1][iDim] + PrimVar_Grad_i[iDim+1][jDim] )
-	                             - TWO3*Eddy_Viscosity_i*diverg*delta[iDim][jDim] - TWO3*Density_i*TurbVar_i[0]*delta[iDim][jDim];
-	    tau_turb[iDim][jDim] = (1.0-blend) * tau_turb_ev[iDim][jDim] + blend*2.0*Density_i*TurbVar_i[0]*tau_anis[iDim][jDim];
+	                             - TWO3*Eddy_Viscosity_i*diverg*delta[iDim][jDim];
+	    tau_turb[iDim][jDim] =  + (1.0-blend) * tau_turb_ev[iDim][jDim]
+								- blend * 2.0 * Density_i * TurbVar_i[0] * tau_anis[iDim][jDim]
+								- TWO3 * Density_i * TurbVar_i[0] * delta[iDim][jDim];
     }
   }
 
