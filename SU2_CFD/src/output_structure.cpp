@@ -6654,7 +6654,8 @@ void COutput::SetBlend_Factor(CConfig **config, unsigned short val_iZone) {
 
   if ((ExtIter == 0) && (config[val_iZone]->GetBlend_Adapt())){
 	  BlendFactor = 0.0;
-	  cout << "Initial Blend Factor set to 0.0 when Blend Factor Adaptation is active." << endl;
+	  if (rank == MASTER_NODE)
+	    cout << "Initial Blend Factor set to 0.0 when Blend Factor Adaptation is active." << endl;
   }
   else{ BlendFactor = config[val_iZone]->GetBlendFactor(); }
   BlendMax = config[val_iZone]->GetBlend_AdaptParam(0);

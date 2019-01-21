@@ -1776,7 +1776,7 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
   Density = val_primvar[nDim+2];
   total_viscosity = val_laminar_viscosity + val_eddy_viscosity;
   Cp = (Gamma / Gamma_Minus_One) * Gas_Constant;
-  heat_flux_factor = Cp * (val_laminar_viscosity/Prandtl_Lam + val_eddy_viscosity/Prandtl_Turb);
+  heat_flux_factor = Cp * (val_laminar_viscosity/Prandtl_Lam + (1.0-blend) * val_eddy_viscosity/Prandtl_Turb);
 
   div_vel = 0.0;
   for (iDim = 0 ; iDim < nDim; iDim++)

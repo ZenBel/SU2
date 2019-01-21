@@ -5066,6 +5066,10 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
     	  cout << "Reynolds stress Blend Factor Active: "<< BlendFactor << endl;
           if (!BoolBlendAdapt) cout << "No Blend Factor adaptation." << endl;
           else cout << "Blend Factor adaptation. BlendMax: "<< Blend_AdaptParam[0] <<", maxIter: "<< Blend_AdaptParam[1]<<"."<< endl;
+          if (Blend_AdaptParam[0] > 1.0){
+        	  cout << "Error: Blend Factor max value larger than 1.0!" << endl;
+        	  exit(EXIT_FAILURE);
+          }
       }
 
 
