@@ -1202,8 +1202,8 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 
   unsigned long nPointLocal, nPointGlobal;
   unsigned long InputPoints, GlobalIndex;
-  vector<su2double> VecdTerm;
-  su2double dTerm;
+  vector<su2double> VecdTerm1, VecdTerm2;
+  su2double dTerm1, dTerm2;
 
   nPointLocal = nPointDomain;
 #ifdef HAVE_MPI
@@ -1217,11 +1217,12 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
   input_file.open(input_filename.data(), ios::in);
 
   if (input_file.fail()) {
+    cout << "There is no input file!! " << input_filename.data() << ". Setting the discrepancy term to unity"<< endl;
 
-	  cout << "There is no input file!! " << input_filename.data() << ". Setting the discrepancy term to unity"<< endl;
-
-	for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
-		config->SetDiscrTerm(1.0, GlobalIndex);
+	for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
+	  config->SetDiscrTerm1(0.0, GlobalIndex); // No perturbation to eigenvalues lambda1
+	  config->SetDiscrTerm2(0.0, GlobalIndex); // No perturbation to eigenvalues lambda2
+	}
   }
   else{
 
@@ -1234,13 +1235,15 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 
       while (getline (input_file, text_line)) {
 	    istringstream point_line(text_line);
-	    point_line >> GlobalIndex >> dTerm;
-	    VecdTerm.push_back(dTerm);
+	    point_line >> GlobalIndex >> dTerm1 >> dTerm2;
+	    VecdTerm1.push_back(dTerm1);
+	    VecdTerm2.push_back(dTerm2);
 	  }
       input_file.close();
 
       for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
-    	  config->SetDiscrTerm(VecdTerm[GlobalIndex], GlobalIndex);
+    	  config->SetDiscrTerm1(VecdTerm1[GlobalIndex], GlobalIndex);
+      	  config->SetDiscrTerm2(VecdTerm2[GlobalIndex], GlobalIndex);
     }
     else{
 
@@ -1713,9 +1716,9 @@ void CTurbSASolver::Source_Residual(CGeometry *geometry, CSolver **solver_contai
     numerics->SetVorticity(solver_container[FLOW_SOL]->node[iPoint]->GetVorticity(), NULL);
     numerics->SetStrainMag(solver_container[FLOW_SOL]->node[iPoint]->GetStrainMag(), 0.0);
 
-    /*--- Set the discrepancy term ---*/
-    unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-    numerics->SetDiscrepancyTerm(config->GetDiscrTerm(GlobalIndex));
+//    /*--- Set the discrepancy term ---*/
+//    unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+//    numerics->SetDiscrepancyTerm1(config->GetDiscrTerm1(GlobalIndex));
     
     /*--- Set intermittency ---*/
     

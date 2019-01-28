@@ -6955,16 +6955,26 @@ void CConfig::Initialize_ErrorFunc_Variables(unsigned long val_points) {
   TargetQuantity = new su2double[val_points];
 }
 
-void CConfig::SetDiscrTerm(su2double val_discTerm, unsigned long val_point){
-  discTerm[val_point] = val_discTerm;
+void CConfig::SetDiscrTerm1(su2double val_discTerm1, unsigned long val_point){
+  discTerm1[val_point] = val_discTerm1;
 }
 
-su2double CConfig::GetDiscrTerm(unsigned long val_point){
-  return discTerm[val_point];
+void CConfig::SetDiscrTerm2(su2double val_discTerm2, unsigned long val_point){
+  discTerm2[val_point] = val_discTerm2;
+}
+
+
+su2double CConfig::GetDiscrTerm1(unsigned long val_point){
+  return discTerm1[val_point];
+}
+
+su2double CConfig::GetDiscrTerm2(unsigned long val_point){
+  return discTerm2[val_point];
 }
 
 void CConfig::InitializeDiscrTerm(unsigned long val_point){
-  discTerm =  new su2double[val_point];
+  discTerm1 =  new su2double[val_point];
+  discTerm2 =  new su2double[val_point];
   BoolDiscTerm = true;
 }
 

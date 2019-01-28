@@ -251,8 +251,12 @@ inline void CNumerics::SetVorticity(su2double *val_vorticity_i, su2double *val_v
   Vorticity_j = val_vorticity_j;
 }
 
-inline void CNumerics::SetDiscrepancyTerm(su2double val_discrepancyTerm) {
-  discrepancyTerm = val_discrepancyTerm;
+inline void CNumerics::SetDiscrepancyTerm1(su2double val_discrepancyTerm) {
+  discrepancyTerm1 = val_discrepancyTerm;
+}
+
+inline void CNumerics::SetDiscrepancyTerm2(su2double val_discrepancyTerm) {
+  discrepancyTerm2 = val_discrepancyTerm;
 }
 
 

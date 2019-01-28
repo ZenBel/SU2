@@ -814,7 +814,7 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
     local_zCoord[Global_Index] = 0.0;
     if (nDim == 3) local_zCoord[Global_Index] = geometry->node[iPoint]->GetCoord(2);
 
-    local_discrTerm[Global_Index] = config->GetDiscrTerm(Global_Index);
+    local_discrTerm[Global_Index] = config->GetDiscrTerm1(Global_Index);
     local_dist_i[Global_Index] = geometry->node[iPoint]->GetWall_Distance();
 
 //    Vorticity = FlowSolver->node[iPoint]->GetVorticity();
@@ -1618,7 +1618,7 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 		  /*--- Print sensitivities values to file: SensNUBC_file.csv ---*/
 	  unsigned long iPoint, iVertex, Global_Index, NUBCInputPoints, totNUBCInputPoints = 0.0;
 	  su2double SensNUBC_Q1, SensNUBC_Q2, SensNUBC_Pstatic, SensNUBC_alpha, SensNUBC_beta, Coord;
-	  su2double Sens_discrepancyTerm;
+	  su2double Sens_discrepancyTerm1;
 	  su2double x, y, z;
 	  unsigned short iMarker;
 	  unsigned short nMarkerNonUniform = config->GetnMarkerNonUniform();
@@ -1659,7 +1659,7 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 
 
 	  if (config->GetBoolDiscrepancyTerm()){
-		  SensNUBC_file <<  "\"PointID\",\"x\",\"y\",\"z\",\"Sens_discrepancyTerm\"";
+		  SensNUBC_file <<  "\"PointID\",\"x\",\"y\",\"z\",\"Sens_discrepancyTerm1\"";
 		  SensNUBC_file << "\n";
 		  for (GlobalIndex = 0; GlobalIndex < nPointGlobal; GlobalIndex++) {
 			  if (GlobalIndex == total_gidx[GlobalIndex]){ //safety check
@@ -1667,9 +1667,9 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 				  y = total_yy[GlobalIndex];
 				  z = 0.0;
 				  if (geometry->GetnDim() == 3) {z = total_zz[GlobalIndex];}
-				  Sens_discrepancyTerm = geometry->GetSens_discrepancyTerm(GlobalIndex);
+				  Sens_discrepancyTerm1 = geometry->GetSens_discrepancyTerm1(GlobalIndex);
 
-				  SensNUBC_file << scientific << GlobalIndex << ", " << x << ", " << y << ", " << z << ", " << Sens_discrepancyTerm;
+				  SensNUBC_file << scientific << GlobalIndex << ", " << x << ", " << y << ", " << z << ", " << Sens_discrepancyTerm1;
 				  SensNUBC_file << "\n";
 			  }
 		  }
@@ -9458,7 +9458,8 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	    }
 		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
 		if (config->GetBoolDiscrepancyTerm()){
-			Buffer_Regularization += (config->GetDiscrTerm(GlobalIndex) - 1.0) * (config->GetDiscrTerm(GlobalIndex) - 1.0);
+			Buffer_Regularization += (config->GetDiscrTerm1(GlobalIndex) - 1.0) * (config->GetDiscrTerm1(GlobalIndex) - 1.0);
+			cout << "Regularization only with DiscrTerm1 !!!" << endl;
 		}
 	  }
     }
@@ -13190,7 +13191,7 @@ void COutput::LoadLocalData_AdjFlow(CConfig *config, CGeometry *geometry, CSolve
 //        Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(1); iVar++;
         if (config->GetBoolDiscrepancyTerm()){
         	Local_Data[jPoint][iVar] = GlobalIndex; iVar++;
-        	Local_Data[jPoint][iVar] = geometry->GetSens_discrepancyTerm(GlobalIndex); iVar++;
+        	Local_Data[jPoint][iVar] = geometry->GetSens_discrepancyTerm1(GlobalIndex); iVar++;
         }
         else{
         	Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(0); iVar++;

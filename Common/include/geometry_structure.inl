@@ -169,15 +169,24 @@ inline su2double* CGeometry::GetSpanWiseValue(unsigned short val_marker) { retur
 
 inline void CGeometry::Initialize_Sens_discrepancyTerm(unsigned long val_n_points_global){
 	unsigned long iPoint;
-	Sens_discrepancyTerm = new su2double[val_n_points_global];
-	for (iPoint=0; iPoint < val_n_points_global; iPoint++){ Sens_discrepancyTerm[iPoint] = 0.0;}
+	Sens_discrepancyTerm1 = new su2double[val_n_points_global];
+	Sens_discrepancyTerm2 = new su2double[val_n_points_global];
+	for (iPoint=0; iPoint < val_n_points_global; iPoint++){ 
+	  Sens_discrepancyTerm1[iPoint] = 0.0;
+	  Sens_discrepancyTerm2[iPoint] = 0.0;
+	}
 }
 
-inline void CGeometry::SetSens_discrepancyTerm(su2double val_sens, unsigned long val_global_index){Sens_discrepancyTerm[val_global_index]=val_sens;}
+inline void CGeometry::SetSens_discrepancyTerm1(su2double val_sens, unsigned long val_global_index){Sens_discrepancyTerm1[val_global_index]=val_sens;}
+inline void CGeometry::SetSens_discrepancyTerm2(su2double val_sens, unsigned long val_global_index){Sens_discrepancyTerm2[val_global_index]=val_sens;}
 	
-inline su2double CGeometry::GetSens_discrepancyTerm(unsigned long val_global_index){return Sens_discrepancyTerm[val_global_index]; }
+inline su2double CGeometry::GetSens_discrepancyTerm1(unsigned long val_global_index){return Sens_discrepancyTerm1[val_global_index]; }
+inline su2double CGeometry::GetSens_discrepancyTerm2(unsigned long val_global_index){return Sens_discrepancyTerm2[val_global_index]; }
 
-inline void CGeometry::DeleteSens_discrepancyTerm(void){ delete [] Sens_discrepancyTerm;}
+inline void CGeometry::DeleteSens_discrepancyTerm(void){ 
+  delete [] Sens_discrepancyTerm1;
+  delete [] Sens_discrepancyTerm2;
+}
 
 inline unsigned long CGeometry::GetnVertex(unsigned short val_marker) { return nVertex[val_marker]; }
 

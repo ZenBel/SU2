@@ -98,7 +98,7 @@ protected:
   SensNUBC_alpha,					/*!<brief x- flow direction sensitivity for the NUBC*/
   SensNUBC_beta;					/*!<brief y- flow direction sensitivity for the NUBC*/
 
-  su2double Sens_discrepancyTerm;
+  su2double Sens_discrepancyTerm1, Sens_discrepancyTerm2;
 
   su2double Ptot_nubc, Ttot_nubc, Alpha_nubc, Pstatic_nubc; /* interpolated values in the direct solver*/
 

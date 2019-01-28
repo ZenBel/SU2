@@ -2827,6 +2827,15 @@ void CNumerics::SetAnisotropyTensor(CConfig *config, unsigned long val_global_in
 		eigvecs[2][1] = anis_eigvec2z;
 		eigvecs[2][2] = anis_eigvec3z;
 
+//		/*--- Perturbation of the normalized anisotropy eigenvalues ---*/
+//		if (config->GetBoolDiscrepancyTerm()){
+//		  for (iDim=0; iDim<3; iDim++) {
+//			eigvals[0][0] = f(discrepancyTerm1);
+//			eigvals[1][1] = f(discrepancyTerm2);
+//			eigvals[2][2] = -1.0*eigvals[0][0] -1.0*eigvals[1][1]; //see Banjeree (2009), pg.6.
+//		  }
+//		}
+
 
 		/*--- Compute anisotropy tensor bij= X*Delta*X.T ---*/
 		for (iDim=0; iDim<3; iDim++) {

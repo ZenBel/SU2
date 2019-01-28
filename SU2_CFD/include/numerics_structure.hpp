@@ -206,7 +206,7 @@ public:
     
   su2double *l, *m;
 
-  su2double discrepancyTerm;
+  su2double discrepancyTerm1, discrepancyTerm2;
 
   su2double **bij; /*!< \brief normalized anisotropy tensor. */
 
@@ -278,8 +278,8 @@ public:
    */
   void SetVorticity(su2double *val_vorticity_i, su2double *val_vorticity_j);
   
-  void SetDiscrepancyTerm(su2double val_discrepancyTerm);
-
+  void SetDiscrepancyTerm1(su2double val_discrepancyTerm);
+  void SetDiscrepancyTerm2(su2double val_discrepancyTerm);
 
   void SetAnisotropyTensor(CConfig *config, unsigned long val_global_index);
 
