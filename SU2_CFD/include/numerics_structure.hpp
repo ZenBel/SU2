@@ -208,7 +208,7 @@ public:
 
   su2double discrepancyTerm;
 
-  su2double **tau_anis;
+  su2double **bij; /*!< \brief normalized anisotropy tensor. */
 
 
   /*!

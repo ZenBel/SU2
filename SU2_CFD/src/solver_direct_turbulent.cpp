@@ -1258,7 +1258,7 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 
 void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
 
-  /*--- Initialize discrepancyTerm from external input file ---*/
+  /*--- Initialize normalized anisotropy tensor from external input file ---*/
   string text_line;
   ifstream input_file;
 

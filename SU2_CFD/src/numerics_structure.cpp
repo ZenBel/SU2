@@ -53,7 +53,7 @@ CNumerics::CNumerics(void) {
   tau    = NULL;
   delta  = NULL;
 
-  tau_anis    = NULL;
+  bij    = NULL;
 
   Diffusion_Coeff_i = NULL;
   Diffusion_Coeff_j = NULL;
@@ -85,7 +85,7 @@ CNumerics::CNumerics(unsigned short val_nDim, unsigned short val_nVar,
   tau    = NULL;
   delta  = NULL;
 
-  tau_anis    = NULL;
+  bij    = NULL;
 
   Diffusion_Coeff_i = NULL;
   Diffusion_Coeff_j = NULL;
@@ -116,9 +116,9 @@ CNumerics::CNumerics(unsigned short val_nDim, unsigned short val_nVar,
     tau[iDim] = new su2double [nDim];
   }
 
-  tau_anis = new su2double* [nDim];
-  for (iDim = 0; iDim < nDim; iDim++) {
-    tau_anis[iDim] = new su2double [nDim];
+  bij = new su2double* [3];
+  for (iDim = 0; iDim < 3; iDim++) {
+    bij[iDim] = new su2double [3];
   }
 
   delta = new su2double* [nDim];
@@ -177,11 +177,11 @@ CNumerics::~CNumerics(void) {
     delete [] tau;
   }
 
-  if (tau_anis != NULL) {
-    for (unsigned short iDim = 0; iDim < nDim; iDim++) {
-      delete [] tau_anis[iDim];
+  if (bij != NULL) {
+    for (unsigned short iDim = 0; iDim < 3; iDim++) {
+      delete [] bij[iDim];
     }
-    delete [] tau_anis;
+    delete [] bij;
   }
 
   if (delta != NULL) {
@@ -1794,7 +1794,7 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
 	    tau_turb_ev[iDim][jDim] = val_eddy_viscosity * ( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
 	                              - TWO3*val_eddy_viscosity*div_vel*delta[iDim][jDim];
 	    tau_turb[iDim][jDim] =  + (1.0-blend) * tau_turb_ev[iDim][jDim]
-								- blend * 2.0 * Density * val_turb_ke * tau_anis[iDim][jDim]
+								- blend * 2.0 * Density * val_turb_ke * bij[iDim][jDim]
 								- TWO3 * Density * val_turb_ke * delta[iDim][jDim];
 	    tau[iDim][jDim] = tau_lam[iDim][jDim] + tau_turb[iDim][jDim];
     }
@@ -2777,22 +2777,22 @@ void CNumerics::SetAnisotropyTensor(CConfig *config, unsigned long val_global_in
 	          anis_eigvec3y, anis_eigvec1z, anis_eigvec2z, anis_eigvec3z;
 
 	su2double **buffer, **eigvals, **eigvecs;
-	buffer = new su2double* [nDim];
-	eigvals = new su2double* [nDim];
-	eigvecs = new su2double* [nDim];
-	for (iDim=0; iDim < nDim; iDim++){
-	  buffer[iDim] = new su2double [nDim];
-	  eigvals[iDim] = new su2double [nDim];
-	  eigvecs[iDim] = new su2double [nDim];
+	buffer = new su2double* [3];
+	eigvals = new su2double* [3];
+	eigvecs = new su2double* [3];
+	for (iDim=0; iDim < 3; iDim++){
+	  buffer[iDim] = new su2double [3];
+	  eigvals[iDim] = new su2double [3];
+	  eigvecs[iDim] = new su2double [3];
 	}
 
 	/*--- Initialize matrices ---*/
-	for (iDim=0; iDim<nDim; iDim++) {
-	  for (jDim=0; jDim<nDim; jDim++) {
+	for (iDim=0; iDim<3; iDim++) {
+	  for (jDim=0; jDim<3; jDim++) {
 		buffer[iDim][jDim] = 0.0;
 		eigvals[iDim][jDim] = 0.0;
 		eigvecs[iDim][jDim] = 0.0;
-		tau_anis[iDim][jDim] = 0.0;
+		bij[iDim][jDim] = 0.0;
 	  }
 	}
 
@@ -2814,50 +2814,46 @@ void CNumerics::SetAnisotropyTensor(CConfig *config, unsigned long val_global_in
 		/*--- Build matrix of eigenvalues ---*/
 		eigvals[0][0] = anis_eigval1;
 		eigvals[1][1] = anis_eigval2;
-		if (nDim == 3){
-		  eigvals[2][2] = anis_eigval3;
-		}
+		eigvals[2][2] = anis_eigval3;
 
 		/*--- Build matrix of eigenvectors ---*/
 		eigvecs[0][0] = anis_eigvec1x;
 		eigvecs[0][1] = anis_eigvec2x;
+		eigvecs[0][2] = anis_eigvec3x;
 		eigvecs[1][0] = anis_eigvec1y;
 		eigvecs[1][1] = anis_eigvec2y;
-		if (nDim == 3){
-		  eigvecs[0][2] = anis_eigvec3x;
-		  eigvecs[1][2] = anis_eigvec3y;
-		  eigvecs[2][0] = anis_eigvec1z;
-		  eigvecs[2][1] = anis_eigvec2z;
-		  eigvecs[2][2] = anis_eigvec3z;
-		}
+		eigvecs[1][2] = anis_eigvec3y;
+		eigvecs[2][0] = anis_eigvec1z;
+		eigvecs[2][1] = anis_eigvec2z;
+		eigvecs[2][2] = anis_eigvec3z;
 
 
-		/*--- Compute anisotropy tensor tau_anis= X*Delta*X.T ---*/
-		for (iDim=0; iDim<nDim; iDim++) {
-		  for (jDim=0; jDim<nDim; jDim++) {
-			for (kDim=0; kDim<nDim; kDim++) {
+		/*--- Compute anisotropy tensor bij= X*Delta*X.T ---*/
+		for (iDim=0; iDim<3; iDim++) {
+		  for (jDim=0; jDim<3; jDim++) {
+			for (kDim=0; kDim<3; kDim++) {
 			  buffer[iDim][jDim] += eigvecs[iDim][kDim] * eigvals[kDim][jDim];
 			}
 		  }
 		}
 
-		for (iDim=0; iDim<nDim; iDim++) {
-		  for (jDim=0; jDim<nDim; jDim++) {
-			for (kDim=0; kDim<nDim; kDim++) {
-			  tau_anis[iDim][jDim] += buffer[iDim][kDim] * eigvecs[jDim][kDim];
+		for (iDim=0; iDim<3; iDim++) {
+		  for (jDim=0; jDim<3; jDim++) {
+			for (kDim=0; kDim<3; kDim++) {
+			  bij[iDim][jDim] += buffer[iDim][kDim] * eigvecs[jDim][kDim];
 			}
 		  }
 		}
 
-//		for (iDim=0; iDim<nDim; iDim++) {
-//		  for (jDim=0; jDim<nDim; jDim++) {
-//			  cout << "bij[" << iDim << "][" << jDim <<  "] = " << tau_anis[iDim][jDim] << endl;
+//		for (iDim=0; iDim<3; iDim++) {
+//		  for (jDim=0; jDim<3; jDim++) {
+//			  cout << "bij[" << iDim << "][" << jDim <<  "] = " << bij[iDim][jDim] << endl;
 //		  }
 //		}
 
 	}
 
-	for (iDim = 0; iDim < nDim; iDim++)  {
+	for (iDim = 0; iDim < 3; iDim++)  {
 	  delete [] buffer[iDim];
 	  delete [] eigvals[iDim];
 	  delete [] eigvecs[iDim];

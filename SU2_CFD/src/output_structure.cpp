@@ -1109,7 +1109,8 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
 
 	  SurfFlow_file << "\"Global_Index\", \"x_coord\", \"y_coord\", \"z_coord\", ";
 	  SurfFlow_file << "\"muT\", \"tke\", \"density\", ";
-	  SurfFlow_file << "\"tau_xx\", \"tau_xy\", \"tau_xz\", \"tau_yx\", \"tau_yy\", \"tau_yz\", \"tau_zx\", \"tau_zy\", \"tau_zz\""<< "\n";
+	  SurfFlow_file << "\"tau_xx\", \"tau_xy\", \"tau_xz\", \"tau_yx\", \"tau_yy\", \"tau_yz\", \"tau_zx\", \"tau_zy\", \"tau_zz\", ";
+	  SurfFlow_file << "\"dudx\", \"dudy\", \"dudz\", \"dvdx\", \"dvdy\", \"dvdz\", \"dwdx\", \"dwdy\", \"dwdz\""<< "\n";
 
 	  for (Global_Index = 0; Global_Index < nPointGlobal; Global_Index++ ){
 
@@ -1117,7 +1118,10 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
 		  SurfFlow_file << scientific << eddy_visc[Global_Index] << ", " << tke[Global_Index] << ", " << density[Global_Index] << ", ";
 		  SurfFlow_file	<< tau_ev[Global_Index][0][0]<< ", " << tau_ev[Global_Index][0][1] << ", " << tau_ev[Global_Index][0][2] << ", ";
 		  SurfFlow_file	<< tau_ev[Global_Index][1][0]<< ", " << tau_ev[Global_Index][1][1] << ", " << tau_ev[Global_Index][1][2] << ", ";
-		  SurfFlow_file	<< tau_ev[Global_Index][2][0]<< ", " << tau_ev[Global_Index][2][1] << ", " << tau_ev[Global_Index][2][2] << "\n";;
+		  SurfFlow_file	<< tau_ev[Global_Index][2][0]<< ", " << tau_ev[Global_Index][2][1] << ", " << tau_ev[Global_Index][2][2] << ", ";
+		  SurfFlow_file	<< Grad_Vel[Global_Index][0][0]<< ", " << Grad_Vel[Global_Index][0][1] << ", " << Grad_Vel[Global_Index][0][2] << ", ";
+		  SurfFlow_file	<< Grad_Vel[Global_Index][1][0]<< ", " << Grad_Vel[Global_Index][1][1] << ", " << Grad_Vel[Global_Index][1][2] << ", ";
+		  SurfFlow_file	<< Grad_Vel[Global_Index][2][0]<< ", " << Grad_Vel[Global_Index][2][1] << ", " << Grad_Vel[Global_Index][2][2] << "\n";
 	  }
 
 	  SurfFlow_file.close();
