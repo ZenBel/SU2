@@ -742,8 +742,12 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
 	for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
 		geometry->SetSens_discrepancyTerm1(TotalSens_discrTerm1[GlobalIndex], GlobalIndex);
 		geometry->SetSens_discrepancyTerm2(TotalSens_discrTerm2[GlobalIndex], GlobalIndex);
+		if (rank == MASTER_NODE){
+			cout << "sens_d1[" << GlobalIndex << "] = " << TotalSens_discrTerm1[GlobalIndex] << endl;
+			cout << "sens_d2[" << GlobalIndex << "] = " << TotalSens_discrTerm2[GlobalIndex] << endl;
+			cout << "" << endl;
+		}
 	}
-
 
   	delete [] LocalSens_discrTerm1;
   	delete [] LocalSens_discrTerm2;

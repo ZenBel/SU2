@@ -3580,6 +3580,9 @@ CTurbSSTSolver::CTurbSSTSolver(CGeometry *geometry, CConfig *config, unsigned sh
   /*--- Set up inlet profiles, if necessary ---*/
   SetInlet(config);
 
+  /*--- Read values of discrepancyTerm from external file ---*/
+  ReadDiscrepancyTerm(geometry, config);
+
   /*--- Read eigenvalues and eigenvectors of anisotropy tensor ---*/
   if (config->GetBoolBlendFactor()){
     ReadAnisotrpyTensor(geometry, config);
@@ -3751,6 +3754,8 @@ void CTurbSSTSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
     /*--- Set the value of the turbulent Reynolds stress for computation in the k-equation ---*/
     unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 //    cout << "idxSST = " << GlobalIndex << endl;
+    numerics->SetDiscrepancyTerm1(config->GetDiscrTerm1(GlobalIndex));
+    numerics->SetDiscrepancyTerm2(config->GetDiscrTerm2(GlobalIndex));
     numerics->SetAnisotropyTensor(config, GlobalIndex);
 
     /*--- Compute the source term ---*/

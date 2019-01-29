@@ -2812,9 +2812,10 @@ void CNumerics::SetAnisotropyTensor(CConfig *config, unsigned long val_global_in
 		anis_eigvec3z = config->GetEigenVector3z(val_global_index);
 
 		/*--- Build matrix of eigenvalues ---*/
-		eigvals[0][0] = anis_eigval1;
-		eigvals[1][1] = anis_eigval2;
+		eigvals[0][0] = anis_eigval1 + discrepancyTerm1;
+		eigvals[1][1] = anis_eigval2 + discrepancyTerm2;
 		eigvals[2][2] = anis_eigval3;
+//		eigvals[2][2] = -1.0 * (eigvals[0][0] + eigvals[1][1]);
 
 		/*--- Build matrix of eigenvectors ---*/
 		eigvecs[0][0] = anis_eigvec1x;
