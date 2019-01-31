@@ -9456,11 +9456,11 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 //		  Computed = Mach = sqrt(solver_container->node[iPoint]->GetVelocity2()) / solver_container->node[iPoint]->GetSoundSpeed();
 		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
 	    }
-		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
-		if (config->GetBoolDiscrepancyTerm()){
-			Buffer_Regularization += (config->GetDiscrTerm1(GlobalIndex) - 1.0) * (config->GetDiscrTerm1(GlobalIndex) - 1.0);
-			cout << "Regularization only with DiscrTerm1 !!!" << endl;
-		}
+//		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
+//		if (config->GetBoolDiscrepancyTerm()){
+//			Buffer_Regularization += (config->GetDiscrTerm1(GlobalIndex) - 1.0) * (config->GetDiscrTerm1(GlobalIndex) - 1.0);
+//			cout << "Regularization only with DiscrTerm1 !!!" << endl;
+//		}
 	  }
     }
 

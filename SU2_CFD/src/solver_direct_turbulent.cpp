@@ -1202,7 +1202,6 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 
   unsigned long nPointLocal, nPointGlobal;
   unsigned long InputPoints, GlobalIndex;
-  vector<su2double> VecdTerm1, VecdTerm2;
   su2double dTerm1, dTerm2;
 
   nPointLocal = nPointDomain;
@@ -1236,14 +1235,10 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
       while (getline (input_file, text_line)) {
 	    istringstream point_line(text_line);
 	    point_line >> GlobalIndex >> dTerm1 >> dTerm2;
-	    VecdTerm1.push_back(dTerm1);
-	    VecdTerm2.push_back(dTerm2);
+	    config->SetDiscrTerm1(dTerm1, GlobalIndex);
+	    config->SetDiscrTerm2(dTerm2, GlobalIndex);
 	  }
       input_file.close();
-
-      for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
-    	  config->SetDiscrTerm1(VecdTerm1[GlobalIndex], GlobalIndex);
-      	  config->SetDiscrTerm2(VecdTerm2[GlobalIndex], GlobalIndex);
     }
     else{
 
@@ -1251,12 +1246,11 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
         cout << "The number of points in " << input_filename.data() << " is different from the total number of points in the mesh." << endl;
         exit(EXIT_FAILURE);
       }
-
     }
-
   }
 
-  cout << "discrepancy.dat read." << endl;
+  cout << "discrepancyTerm.dat read." << endl;
+
 }
 
 void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
@@ -3581,12 +3575,15 @@ CTurbSSTSolver::CTurbSSTSolver(CGeometry *geometry, CConfig *config, unsigned sh
   SetInlet(config);
 
   /*--- Read values of discrepancyTerm from external file ---*/
+  cout << "aaa1" << endl;
   ReadDiscrepancyTerm(geometry, config);
+  cout << "aaa2" << endl;
 
   /*--- Read eigenvalues and eigenvectors of anisotropy tensor ---*/
   if (config->GetBoolBlendFactor()){
     ReadAnisotrpyTensor(geometry, config);
   }
+  cout << "bbb" << endl;
 
 }
 

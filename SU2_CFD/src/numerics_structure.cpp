@@ -1776,7 +1776,7 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
   Density = val_primvar[nDim+2];
   total_viscosity = val_laminar_viscosity + val_eddy_viscosity;
   Cp = (Gamma / Gamma_Minus_One) * Gas_Constant;
-  heat_flux_factor = Cp * (val_laminar_viscosity/Prandtl_Lam + (1.0-blend) * val_eddy_viscosity/Prandtl_Turb);
+  heat_flux_factor = Cp * (val_laminar_viscosity/Prandtl_Lam + val_eddy_viscosity/Prandtl_Turb);
 
   div_vel = 0.0;
   for (iDim = 0 ; iDim < nDim; iDim++)
@@ -2776,22 +2776,26 @@ void CNumerics::SetAnisotropyTensor(CConfig *config, unsigned long val_global_in
 	su2double anis_eigval1, anis_eigval2, anis_eigval3, anis_eigvec1x, anis_eigvec2x, anis_eigvec3x, anis_eigvec1y, anis_eigvec2y,
 	          anis_eigvec3y, anis_eigvec1z, anis_eigvec2z, anis_eigvec3z;
 
-	su2double **buffer, **eigvals, **eigvecs;
-	buffer = new su2double* [3];
-	eigvals = new su2double* [3];
-	eigvecs = new su2double* [3];
-	for (iDim=0; iDim < 3; iDim++){
-	  buffer[iDim] = new su2double [3];
-	  eigvals[iDim] = new su2double [3];
-	  eigvecs[iDim] = new su2double [3];
-	}
+//	su2double **buffer, **eigvals, **eigvecs;
+//	buffer = new su2double* [3];
+//	eigvals = new su2double* [3];
+//	eigvecs = new su2double* [3];
+//	for (iDim=0; iDim < 3; iDim++){
+//	  buffer[iDim] = new su2double [3];
+//	  eigvals[iDim] = new su2double [3];
+//	  eigvecs[iDim] = new su2double [3];
+//	}
+
+	su2double eigvals[3][3] = {{0.0, 0.0, 0.0},{0.0, 0.0, 0.0},{0.0, 0.0, 0.0}};
+	su2double eigvecs[3][3] = {{0.0, 0.0, 0.0},{0.0, 0.0, 0.0},{0.0, 0.0, 0.0}};
+	su2double buffer[3][3] = {{0.0, 0.0, 0.0},{0.0, 0.0, 0.0},{0.0, 0.0, 0.0}};
 
 	/*--- Initialize matrices ---*/
 	for (iDim=0; iDim<3; iDim++) {
 	  for (jDim=0; jDim<3; jDim++) {
-		buffer[iDim][jDim] = 0.0;
-		eigvals[iDim][jDim] = 0.0;
-		eigvecs[iDim][jDim] = 0.0;
+//		buffer[iDim][jDim] = 0.0;
+//		eigvals[iDim][jDim] = 0.0;
+//		eigvecs[iDim][jDim] = 0.0;
 		bij[iDim][jDim] = 0.0;
 	  }
 	}
@@ -2814,8 +2818,10 @@ void CNumerics::SetAnisotropyTensor(CConfig *config, unsigned long val_global_in
 		/*--- Build matrix of eigenvalues ---*/
 		eigvals[0][0] = anis_eigval1 + discrepancyTerm1;
 		eigvals[1][1] = anis_eigval2 + discrepancyTerm2;
-		eigvals[2][2] = anis_eigval3;
-//		eigvals[2][2] = -1.0 * (eigvals[0][0] + eigvals[1][1]);
+		//eigvals[2][2] = anis_eigval3;
+//		eigvals[0][0] = anis_eigval1 + discrepancyTerm1;
+//		eigvals[1][1] = anis_eigval2 + discrepancyTerm2;
+		eigvals[2][2] = -1.0 * (eigvals[0][0] + eigvals[1][1]);
 
 		/*--- Build matrix of eigenvectors ---*/
 		eigvecs[0][0] = anis_eigvec1x;
@@ -2827,16 +2833,6 @@ void CNumerics::SetAnisotropyTensor(CConfig *config, unsigned long val_global_in
 		eigvecs[2][0] = anis_eigvec1z;
 		eigvecs[2][1] = anis_eigvec2z;
 		eigvecs[2][2] = anis_eigvec3z;
-
-//		/*--- Perturbation of the normalized anisotropy eigenvalues ---*/
-//		if (config->GetBoolDiscrepancyTerm()){
-//		  for (iDim=0; iDim<3; iDim++) {
-//			eigvals[0][0] = f(discrepancyTerm1);
-//			eigvals[1][1] = f(discrepancyTerm2);
-//			eigvals[2][2] = -1.0*eigvals[0][0] -1.0*eigvals[1][1]; //see Banjeree (2009), pg.6.
-//		  }
-//		}
-
 
 		/*--- Compute anisotropy tensor bij= X*Delta*X.T ---*/
 		for (iDim=0; iDim<3; iDim++) {
@@ -2863,14 +2859,14 @@ void CNumerics::SetAnisotropyTensor(CConfig *config, unsigned long val_global_in
 
 	}
 
-	for (iDim = 0; iDim < 3; iDim++)  {
-	  delete [] buffer[iDim];
-	  delete [] eigvals[iDim];
-	  delete [] eigvecs[iDim];
-	}
-	delete [] buffer;
-	delete [] eigvals;
-	delete [] eigvecs;
+//	for (iDim = 0; iDim < 3; iDim++)  {
+//	  delete [] buffer[iDim];
+//	  delete [] eigvals[iDim];
+//	  delete [] eigvecs[iDim];
+//	}
+//	delete [] buffer;
+//	delete [] eigvals;
+//	delete [] eigvecs;
 
 }
 
