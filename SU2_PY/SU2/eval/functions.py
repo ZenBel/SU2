@@ -254,6 +254,9 @@ def aerodynamics( config, state=None ):
             pull.append(files['DISCREPANCY_FILE'])
         if ('MACH_AOA_FILE' in files ):
             pull.append(files['MACH_AOA_FILE'])
+        if any('ANIS_FILE' in key for key in files ): 
+            for i in range(6): #6 is the number of elements in anis_filenames
+                pull.append( files['ANIS_FILE_%s'%(i+1)])
         
     if (config.has_key('MARKER_NONUNIFORM')):
         path_nubc  = os.getcwd()
@@ -298,14 +301,15 @@ def aerodynamics( config, state=None ):
     ### Update discrepancy file (remember that DISCREPANCY_DV must always be defined as the last DV)
     if 'DISCREPANCY_FILE' in files:
         buf = numpy.loadtxt(state['FILES']['DISCREPANCY_FILE'], skiprows=1)
-        nPoint = len(buf) # same as number of mesh points
-        assert len(buf) == len(dv_new), 'length of design variable vector is different from number of DVs in discrepancyTerm.dat'
-        buf[:,1:] = numpy.matrix(dv_new).T
-        numpy.savetxt(state['FILES']['DISCREPANCY_FILE'], buf, fmt='%i\t %.16f\t', comments='', header=str(buf.shape[0]))  
+        nPoint = buf[:,1:].size # same as number of mesh points
+        assert buf[:,1:].size == len(dv_new), 'length of design variable vector is different from number of DVs in discrepancyTerm.dat'
+        dv_new_ = numpy.array(dv_new).reshape((2,buf.shape[0]))
+        buf[:,1:] = dv_new_.T
+        numpy.savetxt(state['FILES']['DISCREPANCY_FILE'], buf, fmt='%i\t%.16f\t%.16f\t', comments='', header=str(buf.shape[0]))  
        
     ###  
     ### 
-  
+     
     # output redirection
     with redirect_folder( 'DIRECT', pull, link ) as push:
         with redirect_output(log_direct):     

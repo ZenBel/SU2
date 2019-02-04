@@ -1216,7 +1216,7 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
   input_file.open(input_filename.data(), ios::in);
 
   if (input_file.fail()) {
-    cout << "There is no input file!! " << input_filename.data() << ". Setting the discrepancy term to unity"<< endl;
+    cout << "There is no input file!! " << input_filename.data() << ". Setting the discrepancy term to ZERO"<< endl;
 
 	for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
 	  config->SetDiscrTerm1(0.0, GlobalIndex); // No perturbation to eigenvalues lambda1
@@ -1710,9 +1710,9 @@ void CTurbSASolver::Source_Residual(CGeometry *geometry, CSolver **solver_contai
     numerics->SetVorticity(solver_container[FLOW_SOL]->node[iPoint]->GetVorticity(), NULL);
     numerics->SetStrainMag(solver_container[FLOW_SOL]->node[iPoint]->GetStrainMag(), 0.0);
 
-//    /*--- Set the discrepancy term ---*/
-//    unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-//    numerics->SetDiscrepancyTerm1(config->GetDiscrTerm1(GlobalIndex));
+    /*--- Set the discrepancy term ---*/
+    unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+    numerics->SetDiscrepancyTerm1(config->GetDiscrTerm1(GlobalIndex));
     
     /*--- Set intermittency ---*/
     
@@ -3575,15 +3575,12 @@ CTurbSSTSolver::CTurbSSTSolver(CGeometry *geometry, CConfig *config, unsigned sh
   SetInlet(config);
 
   /*--- Read values of discrepancyTerm from external file ---*/
-  cout << "aaa1" << endl;
   ReadDiscrepancyTerm(geometry, config);
-  cout << "aaa2" << endl;
 
   /*--- Read eigenvalues and eigenvectors of anisotropy tensor ---*/
   if (config->GetBoolBlendFactor()){
     ReadAnisotrpyTensor(geometry, config);
   }
-  cout << "bbb" << endl;
 
 }
 
@@ -3753,7 +3750,7 @@ void CTurbSSTSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
 //    cout << "idxSST = " << GlobalIndex << endl;
     numerics->SetDiscrepancyTerm1(config->GetDiscrTerm1(GlobalIndex));
     numerics->SetDiscrepancyTerm2(config->GetDiscrTerm2(GlobalIndex));
-    numerics->SetAnisotropyTensor(config, GlobalIndex);
+    numerics->SetAnisEigValVecs(config, GlobalIndex);
 
     /*--- Compute the source term ---*/
     numerics->ComputeResidual(Residual, Jacobian_i, NULL, config);

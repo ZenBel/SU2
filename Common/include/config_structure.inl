@@ -658,7 +658,7 @@ inline unsigned short CConfig::GetMGCycle(void) { return MGCycle; }
 inline unsigned short CConfig::GetGeometryMode(void) { return GeometryMode; }
 
 inline su2double CConfig::GetCFL(unsigned short val_mesh) {	return CFL[val_mesh]; }
-inline su2double CConfig::GetBlendFactor() {	return BlendFactor; }
+inline su2double CConfig::GetBlendFactor() { return BlendFactor; }
 
 inline void CConfig::SetCFL(unsigned short val_mesh, su2double val_cfl) { CFL[val_mesh] = val_cfl; }
 inline void CConfig::SetBlendFactor( su2double val_blend_factor) { BlendFactor = val_blend_factor; }

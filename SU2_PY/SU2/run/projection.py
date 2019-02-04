@@ -135,10 +135,12 @@ def projection( config, state={}, step = 1e-3 ):
     if ('DISCREPANCY_DV' in konfig.DV_KIND ):
         import external_gradient
         chaingrad = external_gradient.discrepancy_gradient(konfig, state)
+        print 'aaa', chaingrad[0]
+        print 'bbb', chaingrad[-1]
         discrepancy_dv = 0
         for idv in range(n_DV):
             if (konfig.DV_KIND[idv] != 'DISCREPANCY_DV'):
-                print 'ccc', idv
+                print 'The DV with id%i is not a DISCREPANCY_DV -> skipping it!'%idv
             if (konfig.DV_KIND[idv] == 'DISCREPANCY_DV'):
                 raw_gradients[idv] = chaingrad[discrepancy_dv]
                 discrepancy_dv += 1

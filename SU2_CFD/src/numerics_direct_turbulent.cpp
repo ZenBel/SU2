@@ -451,8 +451,8 @@ void CSourcePieceWise_TurbSA::ComputeResidual(su2double *val_residual, su2double
     
     CrossProduction = cb2_sigma*norm2_Grad*Volume;
     
-//    su2double beta = discrepancyTerm1;
-    su2double beta = 1.0;
+    su2double beta = discrepancyTerm1;
+//    su2double beta = 1.0;
 
     val_residual[0] = beta*Production - Destruction + CrossProduction;
 

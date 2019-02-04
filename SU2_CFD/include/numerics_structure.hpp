@@ -208,8 +208,10 @@ public:
 
   su2double discrepancyTerm1, discrepancyTerm2;
 
-  su2double **bij; /*!< \brief normalized anisotropy tensor. */
-
+  su2double anis_eigval1, anis_eigval2, anis_eigval3,
+            anis_eigvec1x, anis_eigvec2x, anis_eigvec3x,
+			anis_eigvec1y, anis_eigvec2y, anis_eigvec3y,
+			anis_eigvec1z, anis_eigvec2z, anis_eigvec3z;
 
   /*!
    * \brief Constructor of the class.
@@ -281,7 +283,7 @@ public:
   void SetDiscrepancyTerm1(su2double val_discrepancyTerm);
   void SetDiscrepancyTerm2(su2double val_discrepancyTerm);
 
-  void SetAnisotropyTensor(CConfig *config, unsigned long val_global_index);
+  void SetAnisEigValVecs(CConfig *config, unsigned long val_global_index);
 
   /*!
    * \brief Set the value of the rate of strain magnitude.

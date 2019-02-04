@@ -1615,16 +1615,10 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 
   if (rank == MASTER_NODE){
 
-		  /*--- Print sensitivities values to file: SensNUBC_file.csv ---*/
-	  unsigned long iPoint, iVertex, Global_Index, NUBCInputPoints, totNUBCInputPoints = 0.0;
-	  su2double SensNUBC_Q1, SensNUBC_Q2, SensNUBC_Pstatic, SensNUBC_alpha, SensNUBC_beta, Coord;
-	  su2double Sens_discrepancyTerm1;
-	  su2double x, y, z;
-	  unsigned short iMarker;
-	  unsigned short nMarkerNonUniform = config->GetnMarkerNonUniform();
+	  /*--- Print sensitivities values to file: SensNUBC_file.csv ---*/
+	  unsigned long iPoint, iVertex, Global_Index;
 	  char cstr[200], buffer[50];
 	  ofstream SensNUBC_file;
-	  su2double **SensNUBCmatrix;
 
 	  strcpy (cstr, "SensNUBC_file");
 	  SPRINTF (buffer, ".csv");
@@ -1632,16 +1626,21 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 	  SensNUBC_file.precision(15);
 	  SensNUBC_file.open(cstr, ios::out);
 
+	  unsigned long NUBCInputPoints, totNUBCInputPoints = 0.0;
+	  su2double SensNUBC_Q1, SensNUBC_Q2, SensNUBC_Pstatic, SensNUBC_alpha, SensNUBC_beta, Coord;
+	  unsigned short iMarker;
+	  unsigned short nMarkerNonUniform = config->GetnMarkerNonUniform();
+
 	  SensNUBC_file <<  "\"Coord\",\"SensNUBC_Q1\",\"SensNUBC_Q2\",\"SensNUBC_Pstatic\",\"SensNUBC_alpha\",\"SensNUBC_beta\"";
 	  SensNUBC_file << "\n";
 
 	  for (iMarker = 0; iMarker < nMarkerNonUniform; iMarker++)
-	  	    totNUBCInputPoints += config->GetNUBC_nPoints(iMarker);
+			totNUBCInputPoints += config->GetNUBC_nPoints(iMarker);
 
 	  unsigned long pos = 0;
 	  for (iMarker = 0; iMarker < nMarkerNonUniform; iMarker++) {
 		NUBCInputPoints = config->GetNUBC_nPoints(iMarker);
-	    for (iPoint = 0; iPoint < NUBCInputPoints; iPoint++) {
+		for (iPoint = 0; iPoint < NUBCInputPoints; iPoint++) {
 		  Coord = config->GetNUBC_Coord(iPoint, iMarker);
 		  SensNUBC_Q1 = AdjSolver->node[pos]->GetSensNUBC_Q1();
 		  SensNUBC_Q2 = AdjSolver->node[pos]->GetSensNUBC_Q2();
@@ -1651,16 +1650,21 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 		  if (geometry->GetnDim() == 3) {SensNUBC_beta = AdjSolver->node[pos]->GetSensNUBC_beta();}
 
 		  SensNUBC_file << scientific << Coord << ", " << SensNUBC_Q1 << ", " << SensNUBC_Q2 << ", " << SensNUBC_Pstatic << ", "
-					    << SensNUBC_alpha << ", " << SensNUBC_beta ;
+						<< SensNUBC_alpha << ", " << SensNUBC_beta ;
 		  SensNUBC_file << "\n";
 		  pos += 1;
-	    }
+		}
 	  }
 
 
 	  if (config->GetBoolDiscrepancyTerm()){
-		  SensNUBC_file <<  "\"PointID\",\"x\",\"y\",\"z\",\"Sens_discrepancyTerm1\"";
+
+		  su2double Sens_discrepancyTerm1, Sens_discrepancyTerm2;
+		  su2double x, y, z;
+
+		  SensNUBC_file <<  "\"PointID\",\"x\",\"y\",\"z\",\"Sens_discrepancyTerm1\",\"Sens_discrepancyTerm2\"";
 		  SensNUBC_file << "\n";
+
 		  for (GlobalIndex = 0; GlobalIndex < nPointGlobal; GlobalIndex++) {
 			  if (GlobalIndex == total_gidx[GlobalIndex]){ //safety check
 				  x = total_xx[GlobalIndex];
@@ -1668,8 +1672,10 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 				  z = 0.0;
 				  if (geometry->GetnDim() == 3) {z = total_zz[GlobalIndex];}
 				  Sens_discrepancyTerm1 = geometry->GetSens_discrepancyTerm1(GlobalIndex);
+				  Sens_discrepancyTerm2 = geometry->GetSens_discrepancyTerm2(GlobalIndex);
 
-				  SensNUBC_file << scientific << GlobalIndex << ", " << x << ", " << y << ", " << z << ", " << Sens_discrepancyTerm1;
+				  SensNUBC_file << scientific << GlobalIndex << ", " << x << ", " << y << ", " << z << ", " <<
+						          Sens_discrepancyTerm1 << ", " << Sens_discrepancyTerm2;
 				  SensNUBC_file << "\n";
 			  }
 		  }
@@ -6657,7 +6663,7 @@ void COutput::SetBlend_Factor(CConfig **config, unsigned short val_iZone) {
   /*--- Set blending factor with linear continuation method of Knoell & Keyes (2004) ---*/
 
   if ((ExtIter == 0) && (config[val_iZone]->GetBlend_Adapt())){
-	  BlendFactor = 0.0;
+	  BlendFactor = 0.0; //POTENTIAL BUG WHEN RESTARTING SU2_CFD_AD
 	  if (rank == MASTER_NODE)
 	    cout << "Initial Blend Factor set to 0.0 when Blend Factor Adaptation is active." << endl;
   }
@@ -9442,14 +9448,6 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	  if (geometry->node[iPoint]->GetDomain()){
 		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 		if (config->GetTargetPointID(GlobalIndex) == true){
-		  // Coord = geometry->node[iPoint]->GetCoord();
-		  //if ((Coord[0] > 0.5) && (Coord[0] < 0.75)){
-		  //	  weight = 2.0; //HARCODED
-		  //}
-		  //else{
-		  //	  weight = 1.0;
-		  //}
-		  //weight_tot += weight;
 		  weight = 1.0;
 		  Target = config->GetTargetQuantity(GlobalIndex);
 		  Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
@@ -12965,12 +12963,14 @@ void COutput::LoadLocalData_AdjFlow(CConfig *config, CGeometry *geometry, CSolve
   if ((Kind_Solver == DISC_ADJ_EULER)         ||
       (Kind_Solver == DISC_ADJ_NAVIER_STOKES) ||
       (Kind_Solver == DISC_ADJ_RANS)) {
-    nVar_Par += nDim;
     if (config->GetBoolDiscrepancyTerm()){
+      nVar_Par += 3;
       Variable_Names.push_back("GlobalIndex");
-      Variable_Names.push_back("Sens_discrepancy");
+      Variable_Names.push_back("Sens_discrepancy1");
+      Variable_Names.push_back("Sens_discrepancy2");
     }
     else{
+      nVar_Par += nDim;
       Variable_Names.push_back("Sensitivity_x");
       Variable_Names.push_back("Sensitivity_y");
       if (geometry->GetnDim()== 3)
@@ -13187,19 +13187,18 @@ void COutput::LoadLocalData_AdjFlow(CConfig *config, CGeometry *geometry, CSolve
       if ((Kind_Solver == DISC_ADJ_EULER)         ||
           (Kind_Solver == DISC_ADJ_NAVIER_STOKES) ||
           (Kind_Solver == DISC_ADJ_RANS)) {
-//        Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(0); iVar++;
-//        Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(1); iVar++;
         if (config->GetBoolDiscrepancyTerm()){
-        	Local_Data[jPoint][iVar] = GlobalIndex; iVar++;
-        	Local_Data[jPoint][iVar] = geometry->GetSens_discrepancyTerm1(GlobalIndex); iVar++;
+          Local_Data[jPoint][iVar] = GlobalIndex; iVar++;
+          Local_Data[jPoint][iVar] = geometry->GetSens_discrepancyTerm1(GlobalIndex); iVar++;
+          Local_Data[jPoint][iVar] = geometry->GetSens_discrepancyTerm2(GlobalIndex); iVar++;
         }
         else{
-        	Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(0); iVar++;
-        	Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(1); iVar++;
-        }
-        if (geometry->GetnDim()== 3) {
-          Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(2);
-          iVar++;
+          Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(0); iVar++;
+          Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(1); iVar++;
+          if (geometry->GetnDim()== 3) {
+            Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(2);
+            iVar++;
+          }
         }
       }
       

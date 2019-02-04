@@ -236,6 +236,8 @@ class State(ordered_bunch):
         targetheatflux_name = 'TargetHeatFlux.dat'
         discrepancyTerm_name = 'discrepancyTerm.dat'
         mach_aoa_name = 'Mach_Aoa.dat'
+        anis_filenames = ['eigenvalue1.dat', 'eigenvalue2.dat', 'eigenvalue3.dat',
+                          'eigenvector1.dat', 'eigenvector2.dat', 'eigenvector3.dat']
                 
         # files: Non-Uniform boundary (.bc) files           
         if (config.has_key('MARKER_NONUNIFORM')):
@@ -312,6 +314,8 @@ class State(ordered_bunch):
             if 'MACH_AOA_INF' in config['DEFINITION_DV']['KIND']:
                 assert mach_aoa_name in os.listdir(os.getcwd()), 'Mach_Aoa.dat not found. Note that it should be defined for optimizations.'
                 register_file('MACH_AOA_FILE', mach_aoa_name)
+            for i in range(len(anis_filenames)):
+                register_file('ANIS_FILE_%s'%(i+1), anis_filenames[i])  
         
         if (config.has_key('MARKER_NONUNIFORM')):
             for i in range(len(nubc_filenames)):
