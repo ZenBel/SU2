@@ -597,7 +597,7 @@ void CTurbSolver::Viscous_Residual(CGeometry *geometry, CSolver **solver_contain
     /*--- Menter's first blending function (only SST)---*/
     if (config->GetKind_Turb_Model() == SST)
       numerics->SetF1blending(node[iPoint]->GetF1blending(), node[jPoint]->GetF1blending());
-    
+
     /*--- Compute residual, and Jacobians ---*/
     numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
     
@@ -1216,11 +1216,19 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
   input_file.open(input_filename.data(), ios::in);
 
   if (input_file.fail()) {
-    cout << "There is no input file!! " << input_filename.data() << ". Setting the discrepancy term to ZERO"<< endl;
-
-	for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
-	  config->SetDiscrTerm1(0.0, GlobalIndex); // No perturbation to eigenvalues lambda1
-	  config->SetDiscrTerm2(0.0, GlobalIndex); // No perturbation to eigenvalues lambda2
+	if (config->GetKind_Turb_Model() == SST){
+      cout << "There is no input file!! " << input_filename.data() << ". Setting the discrepancy term to ZERO"<< endl;
+	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
+	    config->SetDiscrTerm1(0.0, GlobalIndex); // No perturbation to eigenvalues lambda1
+	    config->SetDiscrTerm2(0.0, GlobalIndex); // No perturbation to eigenvalues lambda2
+	  }
+	}
+	else{
+	  cout << "There is no input file!! " << input_filename.data() << ". Setting the discrepancy term to UNITY"<< endl;
+	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
+		config->SetDiscrTerm1(1.0, GlobalIndex); // No perturbation to eigenvalues lambda1
+		config->SetDiscrTerm2(1.0, GlobalIndex); // No perturbation to eigenvalues lambda2
+	  }
 	}
   }
   else{
@@ -1247,9 +1255,9 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
         exit(EXIT_FAILURE);
       }
     }
+    if (rank == MASTER_NODE)
+      cout << "discrepancyTerm.dat read." << endl;
   }
-
-  cout << "discrepancyTerm.dat read." << endl;
 
 }
 
@@ -1320,8 +1328,8 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
 		}
 	  }
 	}
-
-	cout << input_eigenvector[ii].data() << " read." << endl;
+	if (rank == MASTER_NODE)
+	  cout << input_eigenvector[ii].data() << " read." << endl;
   }
 
   /*--- Read eigenvalues from files ---*/
@@ -1356,8 +1364,8 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
   		}
   	  }
   	}
-
-  	cout << input_eigenvalue[ii].data() << " read." << endl;
+  	if (rank == MASTER_NODE)
+  	  cout << input_eigenvalue[ii].data() << " read." << endl;
   }
 
 }
@@ -3748,9 +3756,7 @@ void CTurbSSTSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
     /*--- Set the value of the turbulent Reynolds stress for computation in the k-equation ---*/
     unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 //    cout << "idxSST = " << GlobalIndex << endl;
-    numerics->SetDiscrepancyTerm1(config->GetDiscrTerm1(GlobalIndex));
-    numerics->SetDiscrepancyTerm2(config->GetDiscrTerm2(GlobalIndex));
-    numerics->SetAnisEigValVecs(config, GlobalIndex);
+    numerics->SetAnisotropyTensor(config, GlobalIndex);
 
     /*--- Compute the source term ---*/
     numerics->ComputeResidual(Residual, Jacobian_i, NULL, config);

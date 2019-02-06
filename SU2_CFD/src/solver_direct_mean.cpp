@@ -9226,9 +9226,7 @@ void CEulerSolver::BC_Far_Field(CGeometry *geometry, CSolver **solver_container,
 
           unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 //          cout << "idx0 = " << GlobalIndex << endl;
-          visc_numerics->SetDiscrepancyTerm1(config->GetDiscrTerm1(GlobalIndex));
-          visc_numerics->SetDiscrepancyTerm2(config->GetDiscrTerm2(GlobalIndex));
-          visc_numerics->SetAnisEigValVecs(config, GlobalIndex);
+          visc_numerics->SetAnisotropyTensor(config, GlobalIndex);
         }
         
         /*--- Compute and update viscous residual ---*/
@@ -16776,11 +16774,9 @@ void CNSSolver::Viscous_Residual(CGeometry *geometry, CSolver **solver_container
       numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0),
                                      solver_container[TURB_SOL]->node[jPoint]->GetSolution(0));
 
-      unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-//      cout << "idx1 = " << GlobalIndex << endl;
-      numerics->SetDiscrepancyTerm1(config->GetDiscrTerm1(GlobalIndex));
-      numerics->SetDiscrepancyTerm2(config->GetDiscrTerm2(GlobalIndex));
-      numerics->SetAnisEigValVecs(config, GlobalIndex);
+      unsigned long i_GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+//      cout << "idx1 = " << i_GlobalIndex << endl;
+      numerics->SetAnisotropyTensor(config, i_GlobalIndex);
     }
     
     /*--- Compute and update residual ---*/

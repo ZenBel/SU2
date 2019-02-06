@@ -4379,7 +4379,6 @@ CAvgGrad_Flow::~CAvgGrad_Flow(void) {
 void CAvgGrad_Flow::ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config) {
 
   /*--- Normalized normal vector ---*/
-  
   Area = 0.0;
   for (iDim = 0; iDim < nDim; iDim++)
     Area += Normal[iDim]*Normal[iDim];
@@ -4596,13 +4595,13 @@ CAvgGradCorrected_Flow::~CAvgGradCorrected_Flow(void) {
 }
 void CAvgGradCorrected_Flow::ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config) {
 
-  AD::StartPreacc();
-  AD::SetPreaccIn(V_i, nDim+9);   AD::SetPreaccIn(V_j, nDim+9);
-  AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
-  AD::SetPreaccIn(PrimVar_Grad_i, nDim+1, nDim);
-  AD::SetPreaccIn(PrimVar_Grad_j, nDim+1, nDim);
-  AD::SetPreaccIn(turb_ke_i); AD::SetPreaccIn(turb_ke_j);
-  AD::SetPreaccIn(Normal, nDim);
+//  AD::StartPreacc();
+//  AD::SetPreaccIn(V_i, nDim+9);   AD::SetPreaccIn(V_j, nDim+9);
+//  AD::SetPreaccIn(Coord_i, nDim); AD::SetPreaccIn(Coord_j, nDim);
+//  AD::SetPreaccIn(PrimVar_Grad_i, nDim+1, nDim);
+//  AD::SetPreaccIn(PrimVar_Grad_j, nDim+1, nDim);
+//  AD::SetPreaccIn(turb_ke_i); AD::SetPreaccIn(turb_ke_j);
+//  AD::SetPreaccIn(Normal, nDim);
 
   /*--- Normalized normal vector ---*/
   
@@ -4685,8 +4684,8 @@ void CAvgGradCorrected_Flow::ComputeResidual(su2double *val_residual, su2double 
     
   }
 
-  AD::SetPreaccOut(val_residual, nVar);
-  AD::EndPreacc();
+//  AD::SetPreaccOut(val_residual, nVar);
+//  AD::EndPreacc();
   
 }
 
