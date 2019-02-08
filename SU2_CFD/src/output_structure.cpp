@@ -767,7 +767,7 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
   unsigned short iMarker, iDim, jDim;
   unsigned long iPoint, jPoint, iVertex, Global_Index, nPointDomain, nPointGlobal;
   su2double *local_xCoord, *local_yCoord, *local_zCoord, *local_discrTerm, *local_dist_i,
-            *local_nu, *local_nu_hat, *local_Omega, *local_eddy_visc, *local_Ji,
+            *local_nu, *local_nu_hat, *local_Omega, *local_eddy_visc, *local_Ji, ***local_tau_ev,
 			*local_Strain_Mag, *local_Production, *local_Destruction, *local_fd, ***local_Grad_Vel;
   char cstr[200];
   char buffer [50];
@@ -784,6 +784,7 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
   local_nu_hat = new su2double[nPointGlobal]; local_eddy_visc = new su2double[nPointGlobal]; local_Ji = new su2double[nPointGlobal];
   local_Strain_Mag = new su2double[nPointGlobal]; local_Production = new su2double[nPointGlobal]; local_Destruction = new su2double[nPointGlobal];
   local_fd = new su2double[nPointGlobal]; local_Grad_Vel = new su2double**[nPointGlobal]; local_Omega = new su2double[nPointGlobal];
+  local_tau_ev = new su2double**[nPointGlobal];
 
   for (iPoint=0; iPoint< nPointGlobal; iPoint++){
 
@@ -793,10 +794,13 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
 	  local_Destruction[iPoint] = 0.0; local_fd[iPoint] = 0.0; local_Omega[iPoint] = 0.0;
 
 	  local_Grad_Vel[iPoint] = new su2double*[3];
+	  local_tau_ev[iPoint] = new su2double*[3];
 	  for (iDim=0; iDim< 3; iDim++){
 		  local_Grad_Vel[iPoint][iDim] = new su2double[3];
+		  local_tau_ev[iPoint][iDim] = new su2double[3];
 		  for (jDim=0; jDim< 3; jDim++){
 			  local_Grad_Vel[iPoint][iDim][jDim] = 0.0;
+			  local_tau_ev[iPoint][iDim][jDim] = 0.0;
 		  }
 	  }
   }
@@ -835,6 +839,17 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
       for (jDim = 0 ; jDim < nDim; jDim++)
     	  local_Grad_Vel[Global_Index][iDim][jDim] = FlowSolver->node[iPoint]->GetGradient_Primitive(iDim+1, jDim);
 
+    su2double div_vel = 0.0, TWO3=2.0/3.0;
+    su2double delta[3][3] = {{1.0, 0.0, 0.0},{0.0,1.0,0.0},{0.0,0.0,1.0}};
+    for (iDim = 0 ; iDim < nDim; iDim++)
+      div_vel += local_Grad_Vel[Global_Index][iDim][iDim];
+    for (iDim = 0 ; iDim < nDim; iDim++){
+      for (jDim = 0 ; jDim < nDim; jDim++){
+  	    local_tau_ev[Global_Index][iDim][jDim] = local_eddy_visc[Global_Index] * ( local_Grad_Vel[Global_Index][jDim][iDim] +  local_Grad_Vel[Global_Index][iDim][jDim] )
+  	                           - TWO3*local_eddy_visc[Global_Index]*div_vel*delta[iDim][jDim];
+      }
+    }
+
     local_Production[Global_Index] = TurbSolver->node[iPoint]->GetProduction();
     local_Destruction[Global_Index] = TurbSolver->node[iPoint]->GetDestruction();
 
@@ -861,7 +876,7 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
 
   /*---Initialize Global quantities ---*/
   su2double *xCoord, *yCoord, *zCoord, *discrTerm, *dist_i,
-            *nu, *nu_hat, *Omega, *eddy_visc, *Ji,
+            *nu, *nu_hat, *Omega, *eddy_visc, *Ji, ***tau_ev,
 			*Strain_Mag, *Production, *Destruction, *fd, ***Grad_Vel;
 
   xCoord = new su2double[nPointGlobal]; yCoord = new su2double[nPointGlobal]; zCoord = new su2double[nPointGlobal];
@@ -869,6 +884,7 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
   nu_hat = new su2double[nPointGlobal]; eddy_visc = new su2double[nPointGlobal]; Ji = new su2double[nPointGlobal];
   Strain_Mag = new su2double[nPointGlobal]; Production = new su2double[nPointGlobal]; Destruction = new su2double[nPointGlobal];
   fd = new su2double[nPointGlobal]; Grad_Vel = new su2double**[nPointGlobal]; Omega = new su2double[nPointGlobal];
+  tau_ev = new su2double**[nPointGlobal];
 
   for (iPoint=0; iPoint< nPointGlobal; iPoint++){
 
@@ -877,10 +893,13 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
 	  Strain_Mag[iPoint] = 0.0; Production[iPoint] = 0.0; Destruction[iPoint] = 0.0; fd[iPoint] = 0.0; Omega[iPoint] = 0.0;
 
 	  Grad_Vel[iPoint] = new su2double*[3];
+	  tau_ev[iPoint] = new su2double*[3];
 	  for (iDim=0; iDim< 3; iDim++){
 		  Grad_Vel[iPoint][iDim] = new su2double[3];
+		  tau_ev[iPoint][iDim] = new su2double[3];
 		  for (jDim=0; jDim< 3; jDim++){
 			  Grad_Vel[iPoint][iDim][jDim] = 0.0;
+			  tau_ev[iPoint][iDim][jDim] = 0.0;
 		  }
 	  }
   }
@@ -903,6 +922,7 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
   for (iPoint=0; iPoint< nPointGlobal; iPoint++){
 	  for (iDim=0; iDim< 3; iDim++){
 		  SU2_MPI::Allreduce(local_Grad_Vel[iPoint][iDim], Grad_Vel[iPoint][iDim], 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		  SU2_MPI::Allreduce(local_tau_ev[iPoint][iDim], tau_ev[iPoint][iDim], 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	  }
   }
 #else
@@ -911,12 +931,13 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
   nu_hat= local_nu_hat;  eddy_visc = local_eddy_visc; Ji = local_Ji;
   Strain_Mag = local_Strain_Mag; Production = local_Production; Destruction = local_Destruction;
   fd = local_fd; Omega = local_Omega; Grad_Vel = local_Grad_Vel;
+  tau_ev = local_tau_ev;
 #endif
 
   if (rank == MASTER_NODE){
 
 	  /*--- Write file name with extension if unsteady ---*/
-	  strcpy (cstr, "TurbulentQuantities");
+	  strcpy (cstr, "TurbulentQuantitiesSA");
 	  SPRINTF (buffer, ".csv");
 	  strcat(cstr, buffer);
 	  SurfFlow_file.precision(15);
@@ -925,6 +946,7 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
 	  SurfFlow_file << "\"Global_Index\", \"x_coord\", \"y_coord\", \"z_coord\", ";
 	  SurfFlow_file << "\"discrTerm\", \"Omega\", \"dist_i\", \"nu\", \"nu_hat\", \"Ji\", ";
 	  SurfFlow_file << "\"Strain_Mag\", \"Production\", \"Destruction\", \"fd\", ";
+	  SurfFlow_file << "\"tau_xx\", \"tau_xy\", \"tau_xz\", \"tau_yx\", \"tau_yy\", \"tau_yz\", \"tau_zx\", \"tau_zy\", \"tau_zz\", ";
 	  SurfFlow_file << "\"dudx\", \"dudy\", \"dudz\", \"dvdx\", \"dvdy\", \"dvdz\", \"dwdx\", \"dwdy\", \"dwdz\""<< "\n";
 
 	  for (Global_Index = 0; Global_Index < nPointGlobal; Global_Index++ ){
@@ -933,6 +955,9 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
 		  SurfFlow_file << scientific << discrTerm[Global_Index] << ", " << Omega[Global_Index] << ", " << dist_i[Global_Index] << ", " << nu[Global_Index] << ", ";
 		  SurfFlow_file	<< nu_hat[Global_Index] << ", " << Ji[Global_Index] << ", " << Strain_Mag[Global_Index] << ", ";
 		  SurfFlow_file	<< Production[Global_Index] << ", " << Destruction[Global_Index] << ", " << fd[Global_Index] << ", ";
+		  SurfFlow_file	<< tau_ev[Global_Index][0][0]<< ", " << tau_ev[Global_Index][0][1] << ", " << tau_ev[Global_Index][0][2] << ", ";
+		  SurfFlow_file	<< tau_ev[Global_Index][1][0]<< ", " << tau_ev[Global_Index][1][1] << ", " << tau_ev[Global_Index][1][2] << ", ";
+		  SurfFlow_file	<< tau_ev[Global_Index][2][0]<< ", " << tau_ev[Global_Index][2][1] << ", " << tau_ev[Global_Index][2][2] << ", ";
 		  SurfFlow_file	<< Grad_Vel[Global_Index][0][0]<< ", " << Grad_Vel[Global_Index][0][1] << ", " << Grad_Vel[Global_Index][0][2] << ", ";
 		  SurfFlow_file	<< Grad_Vel[Global_Index][1][0]<< ", " << Grad_Vel[Global_Index][1][1] << ", " << Grad_Vel[Global_Index][1][2] << ", ";
 		  SurfFlow_file	<< Grad_Vel[Global_Index][2][0]<< ", " << Grad_Vel[Global_Index][2][1] << ", " << Grad_Vel[Global_Index][2][2] << "\n";;
@@ -958,12 +983,18 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
     for (iDim = 0; iDim < 3; iDim++) {
       delete [] Grad_Vel[iPoint][iDim];
       delete [] local_Grad_Vel[iPoint][iDim];
+      delete [] tau_ev[iPoint][iDim];
+      delete [] local_tau_ev[iPoint][iDim];
     }
     delete [] Grad_Vel[iPoint];
     delete [] local_Grad_Vel[iPoint];
+    delete [] tau_ev[iPoint];
+    delete [] local_tau_ev[iPoint];
   }
   delete [] Grad_Vel;
   delete [] local_Grad_Vel;
+  delete [] tau_ev;
+  delete [] local_tau_ev;
 
 }
 
