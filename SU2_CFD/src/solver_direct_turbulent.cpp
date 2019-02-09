@@ -1295,8 +1295,9 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
   for (ii = 0; ii < 3; ii++){
 	input_file.open(input_eigenvector[ii].data(), ios::in);
 	if (input_file.fail()) {
-		  cout << "ERROR: There is no input file!! " << input_eigenvector[ii].data() << ". Declare all the necessary input files!"<< endl;
-		  exit(EXIT_FAILURE);
+	  cout << "ERROR: There is no input file!! " << input_eigenvector[ii].data() << ". Setting all eigenvectors to zero!"<< endl;
+      for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
+		config->SetEigenVectors(input_eigenvector[ii], 0.0, 0.0, 0.0, GlobalIndex);
 	}
 	else{
       /*--- Read head of the file for allocation ---*/
@@ -1336,8 +1337,9 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
   for (ii = 0; ii < 3; ii++){
   	input_file.open(input_eigenvalue[ii].data(), ios::in);
   	if (input_file.fail()) {
-  		  cout << "ERROR: There is no input file!! " << input_eigenvalue[ii].data() << ". Declare all the necessary input files!"<< endl;
-  		  exit(EXIT_FAILURE);
+  	  cout << "ERROR: There is no input file!! " << input_eigenvalue[ii].data() << ". Setting all eigenvalues to zero!"<< endl;
+	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
+		  config->SetEigenValues(input_eigenvalue[ii], 0.0, GlobalIndex);
   	}
   	else{
         /*--- Read head of the file for allocation ---*/
