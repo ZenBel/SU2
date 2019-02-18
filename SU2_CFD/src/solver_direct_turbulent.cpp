@@ -3756,9 +3756,13 @@ void CTurbSSTSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
     numerics->SetCrossDiff(node[iPoint]->GetCrossDiff(),0.0);
 
     /*--- Set the value of the turbulent Reynolds stress for computation in the k-equation ---*/
-    unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+//    unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 //    cout << "idxSST = " << GlobalIndex << endl;
-    numerics->SetAnisotropyTensor(config, GlobalIndex);
+//    numerics->SetAnisotropyTensor(config, GlobalIndex);
+
+    /*--- Set the discrepancy term ---*/
+    unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+    numerics->SetDiscrepancyTerm1(config->GetDiscrTerm1(GlobalIndex));
 
     /*--- Compute the source term ---*/
     numerics->ComputeResidual(Residual, Jacobian_i, NULL, config);

@@ -1785,18 +1785,18 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
   for (iDim = 0 ; iDim < nDim; iDim++){
     for (jDim = 0 ; jDim < nDim; jDim++){
 
-//      tau[iDim][jDim] = total_viscosity*( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
-//                        - TWO3*total_viscosity*div_vel*delta[iDim][jDim]
-//			            - TWO3*Density*val_turb_ke*delta[iDim][jDim];
+      tau[iDim][jDim] = total_viscosity*( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
+                        - TWO3*total_viscosity*div_vel*delta[iDim][jDim]
+			            - TWO3*Density*val_turb_ke*delta[iDim][jDim];
 
-    	tau_lam[iDim][jDim] = val_laminar_viscosity * ( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
-		                      - TWO3*val_laminar_viscosity*div_vel*delta[iDim][jDim];
-	    tau_turb_ev[iDim][jDim] = val_eddy_viscosity * ( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
-	                              - TWO3*val_eddy_viscosity*div_vel*delta[iDim][jDim];
-	    tau_turb[iDim][jDim] =  + (1.0-blend) * tau_turb_ev[iDim][jDim]
-								- blend * 2.0 * Density * val_turb_ke * bij[iDim][jDim]
-								- TWO3 * Density * val_turb_ke * delta[iDim][jDim];
-	    tau[iDim][jDim] = tau_lam[iDim][jDim] + tau_turb[iDim][jDim];
+//    	tau_lam[iDim][jDim] = val_laminar_viscosity * ( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
+//		                      - TWO3*val_laminar_viscosity*div_vel*delta[iDim][jDim];
+//	    tau_turb_ev[iDim][jDim] = val_eddy_viscosity * ( val_gradprimvar[jDim+1][iDim] + val_gradprimvar[iDim+1][jDim] )
+//	                              - TWO3*val_eddy_viscosity*div_vel*delta[iDim][jDim];
+//	    tau_turb[iDim][jDim] =  + (1.0-blend) * tau_turb_ev[iDim][jDim]
+//								- blend * 2.0 * Density * val_turb_ke * bij[iDim][jDim]
+//								- TWO3 * Density * val_turb_ke * delta[iDim][jDim];
+//	    tau[iDim][jDim] = tau_lam[iDim][jDim] + tau_turb[iDim][jDim];
     }
   }
 
