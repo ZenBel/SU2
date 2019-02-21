@@ -12200,6 +12200,7 @@ private:
   su2double **NUBC_Var1, **NUBC_Var2, **NUBC_Pstatic, **NUBC_alpha, **NUBC_beta;
 
   su2double *discTerm_adj1, *discTerm_adj2;
+  su2double *quat_adj_theta, *quat_adj_n1, *quat_adj_n2, *quat_adj_n3;
 
   su2double *Solution_Geometry; /*!< \brief Auxiliary vector for the geometry solution (dimension nDim instead of nVar). */
   

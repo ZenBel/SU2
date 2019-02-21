@@ -1691,9 +1691,11 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 	  if (config->GetBoolDiscrepancyTerm()){
 
 		  su2double Sens_discrepancyTerm1, Sens_discrepancyTerm2;
+		  su2double Sens_quatTheta, Sens_quatn1, Sens_quatn2, Sens_quatn3;
 		  su2double x, y, z;
 
-		  SensNUBC_file <<  "\"PointID\",\"x\",\"y\",\"z\",\"Sens_discrepancyTerm1\",\"Sens_discrepancyTerm2\"";
+		  SensNUBC_file <<  "\"PointID\",\"x\",\"y\",\"z\",\"Sens_discrepancyTerm1\",\"Sens_discrepancyTerm2\",";
+		  SensNUBC_file << "\"Sens_quatTheta\",\"Sens_quatn1\",\"Sens_quatn2\",\"Sens_quatn3\"";
 		  SensNUBC_file << "\n";
 
 		  for (GlobalIndex = 0; GlobalIndex < nPointGlobal; GlobalIndex++) {
@@ -1704,9 +1706,14 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 				  if (geometry->GetnDim() == 3) {z = total_zz[GlobalIndex];}
 				  Sens_discrepancyTerm1 = geometry->GetSens_discrepancyTerm1(GlobalIndex);
 				  Sens_discrepancyTerm2 = geometry->GetSens_discrepancyTerm2(GlobalIndex);
+				  Sens_quatTheta = geometry->GetSens_quatTheta(GlobalIndex);
+				  Sens_quatn1 = geometry->GetSens_quatn1(GlobalIndex);
+				  Sens_quatn2 = geometry->GetSens_quatn2(GlobalIndex);
+				  Sens_quatn3 = geometry->GetSens_quatn3(GlobalIndex);
 
 				  SensNUBC_file << scientific << GlobalIndex << ", " << x << ", " << y << ", " << z << ", " <<
-						          Sens_discrepancyTerm1 << ", " << Sens_discrepancyTerm2;
+						          Sens_discrepancyTerm1 << ", " << Sens_discrepancyTerm2 << ", " <<
+								  Sens_quatTheta << ", " << Sens_quatn1 << ", " << Sens_quatn2 << ", " << Sens_quatn3;
 				  SensNUBC_file << "\n";
 			  }
 		  }

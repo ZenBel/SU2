@@ -1202,7 +1202,7 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 
   unsigned long nPointLocal, nPointGlobal;
   unsigned long InputPoints, GlobalIndex;
-  su2double dTerm1, dTerm2;
+  su2double dTerm1, dTerm2, quat_theta, quat_n1, quat_n2, quat_n3;
 
   nPointLocal = nPointDomain;
 #ifdef HAVE_MPI
@@ -1226,10 +1226,15 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 	else{
 	  cout << "There is no input file!! " << input_filename.data() << ". Setting the discrepancy term to UNITY"<< endl;
 	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
-		config->SetDiscrTerm1(1.0, GlobalIndex); // No perturbation to eigenvalues lambda1
-		config->SetDiscrTerm2(1.0, GlobalIndex); // No perturbation to eigenvalues lambda2
+		config->SetDiscrTerm1(1.0, GlobalIndex); // No perturbation to production term SA model
+		config->SetDiscrTerm2(1.0, GlobalIndex);
 	  }
 	}
+
+    config->SetQuaternion_theta(0.0, GlobalIndex); // No rotation of eigenvectors
+    config->SetQuaternion_n1(0.0, GlobalIndex); // No rotation of eigenvectors
+    config->SetQuaternion_n2(0.0, GlobalIndex); // No rotation of eigenvectors
+    config->SetQuaternion_n3(0.0, GlobalIndex); // No rotation of eigenvectors
   }
   else{
 
@@ -1242,9 +1247,13 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 
       while (getline (input_file, text_line)) {
 	    istringstream point_line(text_line);
-	    point_line >> GlobalIndex >> dTerm1 >> dTerm2;
+	    point_line >> GlobalIndex >> dTerm1 >> dTerm2 >> quat_theta >> quat_n1 >> quat_n2 >> quat_n3;
 	    config->SetDiscrTerm1(dTerm1, GlobalIndex);
 	    config->SetDiscrTerm2(dTerm2, GlobalIndex);
+	    config->SetQuaternion_theta(quat_theta, GlobalIndex);
+	    config->SetQuaternion_n1(quat_n1, GlobalIndex);
+	    config->SetQuaternion_n2(quat_n2, GlobalIndex);
+	    config->SetQuaternion_n3(quat_n3, GlobalIndex); // No rotation of eigenvectors
 	  }
       input_file.close();
     }

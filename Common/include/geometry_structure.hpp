@@ -168,6 +168,7 @@ public:
 	unsigned long *nNewElem_Bound;			/*!< \brief Number of new periodic elements of the boundary. */
 
 	su2double *Sens_discrepancyTerm1, *Sens_discrepancyTerm2;
+	su2double *Sens_quatTheta, *Sens_quatn1, *Sens_quatn2, *Sens_quatn3;
 
   
   /*--- Partitioning-specific variables ---*/
@@ -259,8 +260,18 @@ public:
 	void Initialize_Sens_discrepancyTerm(unsigned long val_n_points_global);
 	void SetSens_discrepancyTerm1(su2double val_sens, unsigned long val_global_index);
 	void SetSens_discrepancyTerm2(su2double val_sens, unsigned long val_global_index);
+	void SetSens_quatTheta(su2double val_sens, unsigned long val_global_index);
+	void SetSens_quatn1(su2double val_sens, unsigned long val_global_index);
+	void SetSens_quatn2(su2double val_sens, unsigned long val_global_index);
+	void SetSens_quatn3(su2double val_sens, unsigned long val_global_index);
+
 	su2double GetSens_discrepancyTerm1(unsigned long val_global_index);
 	su2double GetSens_discrepancyTerm2(unsigned long val_global_index);
+	su2double GetSens_quatTheta(unsigned long val_global_index);
+	su2double GetSens_quatn1(unsigned long val_global_index);
+	su2double GetSens_quatn2(unsigned long val_global_index);
+	su2double GetSens_quatn3(unsigned long val_global_index);
+
 	void DeleteSens_discrepancyTerm(void);
 
 	/*!

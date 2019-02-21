@@ -207,6 +207,7 @@ public:
   su2double *l, *m;
 
   su2double discrepancyTerm1, discrepancyTerm2;
+  su2double quaternion_theta, quaternion_n1, quaternion_n2, quaternion_n3;
 
   su2double **bij;
 

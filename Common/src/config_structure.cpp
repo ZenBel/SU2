@@ -6963,6 +6963,22 @@ void CConfig::SetDiscrTerm2(su2double val_discTerm2, unsigned long val_point){
   discTerm2[val_point] = val_discTerm2;
 }
 
+void CConfig::SetQuaternion_theta(su2double val_theta, unsigned long val_point){
+  quat_theta[val_point] = val_theta;
+}
+
+void CConfig::SetQuaternion_n1(su2double val_n1, unsigned long val_point){
+  quat_n1[val_point] = val_n1;
+}
+
+void CConfig::SetQuaternion_n2(su2double val_n2, unsigned long val_point){
+  quat_n2[val_point] = val_n2;
+}
+
+void CConfig::SetQuaternion_n3(su2double val_n3, unsigned long val_point){
+  quat_n3[val_point] = val_n3;
+}
+
 
 su2double CConfig::GetDiscrTerm1(unsigned long val_point){
   return discTerm1[val_point];
@@ -6972,9 +6988,29 @@ su2double CConfig::GetDiscrTerm2(unsigned long val_point){
   return discTerm2[val_point];
 }
 
+su2double CConfig::GetQuaternion_theta(unsigned long val_point){
+  return quat_theta[val_point];
+}
+
+su2double CConfig::GetQuaternion_n1(unsigned long val_point){
+  return quat_n1[val_point];
+}
+
+su2double CConfig::GetQuaternion_n2(unsigned long val_point){
+  return quat_n2[val_point];
+}
+
+su2double CConfig::GetQuaternion_n3(unsigned long val_point){
+  return quat_n3[val_point];
+}
+
 void CConfig::InitializeDiscrTerm(unsigned long val_point){
   discTerm1 =  new su2double[val_point];
   discTerm2 =  new su2double[val_point];
+  quat_theta = new su2double[val_point];
+  quat_n1 = new su2double[val_point];
+  quat_n2 = new su2double[val_point];
+  quat_n3 = new su2double[val_point];
   BoolDiscTerm = true;
 }
 

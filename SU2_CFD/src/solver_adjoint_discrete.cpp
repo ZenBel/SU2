@@ -400,19 +400,35 @@ void CDiscAdjSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 
 	  discTerm_adj1 = new su2double[nPointDomain];
 	  discTerm_adj2 = new su2double[nPointDomain];
+	  quat_adj_theta = new su2double[nPointDomain];
+	  quat_adj_n1 = new su2double[nPointDomain];
+	  quat_adj_n2 = new su2double[nPointDomain];
+	  quat_adj_n3 = new su2double[nPointDomain];
 
 	  for (iPoint=0; iPoint < nPointDomain; iPoint++){
 		  GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 		  discTerm_adj1[iPoint] = config->GetDiscrTerm1(GlobalIndex);
 		  discTerm_adj2[iPoint] = config->GetDiscrTerm2(GlobalIndex);
+		  quat_adj_theta[iPoint] = config->GetQuaternion_theta(GlobalIndex);
+		  quat_adj_n1[iPoint] = config->GetQuaternion_n1(GlobalIndex);
+		  quat_adj_n2[iPoint] = config->GetQuaternion_n2(GlobalIndex);
+		  quat_adj_n3[iPoint] = config->GetQuaternion_n3(GlobalIndex);
 
 	      if (!reset){
 		      AD::RegisterInput(discTerm_adj1[iPoint]);
 		      AD::RegisterInput(discTerm_adj2[iPoint]);
+		      AD::RegisterInput(quat_adj_theta[iPoint]);
+		      AD::RegisterInput(quat_adj_n1[iPoint]);
+		      AD::RegisterInput(quat_adj_n2[iPoint]);
+		      AD::RegisterInput(quat_adj_n3[iPoint]);
 	      }
 
 	      config->SetDiscrTerm1(discTerm_adj1[iPoint], GlobalIndex);
 	      config->SetDiscrTerm2(discTerm_adj2[iPoint], GlobalIndex);
+	      config->SetQuaternion_theta(quat_adj_theta[iPoint], GlobalIndex);
+	      config->SetQuaternion_n1(quat_adj_n1[iPoint], GlobalIndex);
+	      config->SetQuaternion_n2(quat_adj_n2[iPoint], GlobalIndex);
+	      config->SetQuaternion_n3(quat_adj_n3[iPoint], GlobalIndex);
 	  }
   }
 
@@ -709,39 +725,77 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
 	unsigned long nPointGlobal, iPoint, GlobalIndex;
 	nPointGlobal = geometry->GetGlobal_nPointDomain();
 
-	su2double *LocalSens_discrTerm1, *LocalSens_discrTerm2, *TotalSens_discrTerm1, *TotalSens_discrTerm2;
+	su2double *LocalSens_discrTerm1, *LocalSens_discrTerm2, *LocalSens_quatTheta, *LocalSens_quatn1,
+			  *LocalSens_quatn2, *LocalSens_quatn3;
+	su2double *TotalSens_discrTerm1, *TotalSens_discrTerm2, *TotalSens_quatTheta, *TotalSens_quatn1,
+	  *TotalSens_quatn2, *TotalSens_quatn3;;
 
 	LocalSens_discrTerm1 = new su2double[nPointGlobal];
 	LocalSens_discrTerm2 = new su2double[nPointGlobal];
+	LocalSens_quatTheta = new su2double[nPointGlobal];
+	LocalSens_quatn1 = new su2double[nPointGlobal];
+	LocalSens_quatn2 = new su2double[nPointGlobal];
+	LocalSens_quatn3 = new su2double[nPointGlobal];
+
   	TotalSens_discrTerm1 = new su2double[nPointGlobal];
   	TotalSens_discrTerm2 = new su2double[nPointGlobal];
+	TotalSens_quatTheta = new su2double[nPointGlobal];
+	TotalSens_quatn1 = new su2double[nPointGlobal];
+	TotalSens_quatn2 = new su2double[nPointGlobal];
+	TotalSens_quatn3 = new su2double[nPointGlobal];
 
   	for (iPoint=0; iPoint < nPointGlobal; iPoint++){
   		LocalSens_discrTerm1[iPoint] = 0.0;
   		LocalSens_discrTerm2[iPoint] = 0.0;
+  		LocalSens_quatTheta[iPoint] = 0.0;
+  		LocalSens_quatn1[iPoint] = 0.0;
+  		LocalSens_quatn2[iPoint] = 0.0;
+  		LocalSens_quatn3[iPoint] = 0.0;
+
   		TotalSens_discrTerm1[iPoint] = 0.0;
   		TotalSens_discrTerm2[iPoint] = 0.0;
+  		TotalSens_quatTheta[iPoint] = 0.0;
+  		TotalSens_quatn1[iPoint] = 0.0;
+  		TotalSens_quatn2[iPoint] = 0.0;
+  		TotalSens_quatn3[iPoint] = 0.0;
   	}
 
   	for (iPoint=0; iPoint < nPointDomain; iPoint++){
   		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
   		LocalSens_discrTerm1[GlobalIndex] = SU2_TYPE::GetDerivative(discTerm_adj1[iPoint]);
   		LocalSens_discrTerm2[GlobalIndex] = SU2_TYPE::GetDerivative(discTerm_adj2[iPoint]);
+  		LocalSens_quatTheta[GlobalIndex] = SU2_TYPE::GetDerivative(quat_adj_theta[iPoint]);
+  		LocalSens_quatn1[GlobalIndex] = SU2_TYPE::GetDerivative(quat_adj_n1[iPoint]);
+  		LocalSens_quatn2[GlobalIndex] = SU2_TYPE::GetDerivative(quat_adj_n2[iPoint]);
+  		LocalSens_quatn3[GlobalIndex] = SU2_TYPE::GetDerivative(quat_adj_n3[iPoint]);
   	}
 
 #ifdef HAVE_MPI
   	SU2_MPI::Allreduce(LocalSens_discrTerm1, TotalSens_discrTerm1, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   	SU2_MPI::Allreduce(LocalSens_discrTerm2, TotalSens_discrTerm2, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  	SU2_MPI::Allreduce(LocalSens_quatTheta, TotalSens_quatTheta, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  	SU2_MPI::Allreduce(LocalSens_quatn1, TotalSens_quatn1, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  	SU2_MPI::Allreduce(LocalSens_quatn2, TotalSens_quatn2, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  	SU2_MPI::Allreduce(LocalSens_quatn3, TotalSens_quatn3, nPointGlobal, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
  #else
   	TotalSens_discrTerm1 = LocalSens_discrTerm1;
   	TotalSens_discrTerm2 = LocalSens_discrTerm2;
+  	TotalSens_quatTheta  = LocalSens_quatTheta;
+  	TotalSens_quatn1 = LocalSens_quatn1;
+  	TotalSens_quatn2 = LocalSens_quatn2;
+  	TotalSens_quatn3 = LocalSens_quatn3;
  #endif
 
 	geometry->Initialize_Sens_discrepancyTerm(nPointGlobal);
+
 	//cout << "Storing the Sensitivity of the discrepancy term for each node." << endl;
 	for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
 		geometry->SetSens_discrepancyTerm1(TotalSens_discrTerm1[GlobalIndex], GlobalIndex);
 		geometry->SetSens_discrepancyTerm2(TotalSens_discrTerm2[GlobalIndex], GlobalIndex);
+		geometry->SetSens_quatTheta(TotalSens_quatTheta[GlobalIndex], GlobalIndex);
+		geometry->SetSens_quatn1(TotalSens_quatn1[GlobalIndex], GlobalIndex);
+		geometry->SetSens_quatn2(TotalSens_quatn2[GlobalIndex], GlobalIndex);
+		geometry->SetSens_quatn3(TotalSens_quatn3[GlobalIndex], GlobalIndex);
 //		if (rank == MASTER_NODE){
 //			cout << "sens_d1[" << GlobalIndex << "] = " << TotalSens_discrTerm1[GlobalIndex] << endl;
 //			cout << "sens_d2[" << GlobalIndex << "] = " << TotalSens_discrTerm2[GlobalIndex] << endl;
@@ -751,8 +805,16 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
 
   	delete [] LocalSens_discrTerm1;
   	delete [] LocalSens_discrTerm2;
+  	delete [] LocalSens_quatTheta;
+  	delete [] LocalSens_quatn1;
+  	delete [] LocalSens_quatn2;
+  	delete [] LocalSens_quatn3;
   	delete [] TotalSens_discrTerm1;
   	delete [] TotalSens_discrTerm2;
+  	delete [] TotalSens_quatTheta;
+  	delete [] TotalSens_quatn1;
+  	delete [] TotalSens_quatn2;
+  	delete [] TotalSens_quatn3;
 
   }
 
