@@ -303,9 +303,10 @@ def aerodynamics( config, state=None ):
         buf = numpy.loadtxt(state['FILES']['DISCREPANCY_FILE'], skiprows=1)
         nPoint = buf[:,1:].size # same as number of mesh points
         assert buf[:,1:].size == len(dv_new), 'length of design variable vector is different from number of DVs in discrepancyTerm.dat'
-        dv_new_ = numpy.array(dv_new).reshape((2,buf.shape[0]))
+        type_DVs = 6 #different types of design variables (disc1, disc2, quatTheta, quatn1, quatn2, quatn3)
+        dv_new_ = numpy.array(dv_new).reshape((type_DVs,buf.shape[0]))
         buf[:,1:] = dv_new_.T
-        numpy.savetxt(state['FILES']['DISCREPANCY_FILE'], buf, fmt='%i\t%.16f\t%.16f\t', comments='', header=str(buf.shape[0]))  
+        numpy.savetxt(state['FILES']['DISCREPANCY_FILE'], buf, fmt='%i\t%.16f\t%.16f\t%.16f\t%.16f\t%.16f\t%.16f\t', comments='', header=str(buf.shape[0]))  
        
     ###  
     ### 

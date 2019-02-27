@@ -2875,7 +2875,7 @@ void CNumerics::SetAnisotropyTensor(CConfig *config, unsigned long val_global_in
 		theta = quaternion_theta;
 		n1    = 0.0;
 		n2    = 0.0;
-		n3    = sqrt(1 - (n1*n1 + n2*n2));
+		n3    = sqrt(1.0 - (n1*n1 + n2*n2));
 	}
 	else{
 		theta = quaternion_theta;

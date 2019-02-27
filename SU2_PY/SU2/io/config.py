@@ -748,7 +748,8 @@ def read_config(filename):
     
     if 'DISCREPANCY_DV' in data_dict['DEFINITION_DV']['KIND']:
         idx = data_dict['DEFINITION_DV']['KIND'].index('DISCREPANCY_DV')
-        for i in range(2*mesh_points-1): #2*mesh_points because there are discrTerm1 and discrTerm2
+        type_DV = 6 #different types of DVs (disc1, disc2, quatTheta, quatn1, quatn2, quatn3)
+        for i in range(type_DV*mesh_points-1): #2*mesh_points because there are discrTerm1 and discrTerm2
             for j, key in enumerate(data_dict['DEFINITION_DV'].keys()):
                 data_dict['DEFINITION_DV'][key].insert(idx, values[j][idx])
 
