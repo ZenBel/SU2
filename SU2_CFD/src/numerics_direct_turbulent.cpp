@@ -1200,13 +1200,13 @@ CSourcePieceWise_TurbSST::~CSourcePieceWise_TurbSST(void) {
 
 void CSourcePieceWise_TurbSST::ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config) {
   
-  AD::StartPreacc();
-  AD::SetPreaccIn(StrainMag_i);
-  AD::SetPreaccIn(TurbVar_i, nVar);
-  AD::SetPreaccIn(TurbVar_Grad_i, nVar, nDim);
-  AD::SetPreaccIn(Volume); AD::SetPreaccIn(dist_i);
-  AD::SetPreaccIn(F1_i); AD::SetPreaccIn(F2_i); AD::SetPreaccIn(CDkw_i);
-  AD::SetPreaccIn(PrimVar_Grad_i, nDim+1, nDim);
+//  AD::StartPreacc();
+//  AD::SetPreaccIn(StrainMag_i);
+//  AD::SetPreaccIn(TurbVar_i, nVar);
+//  AD::SetPreaccIn(TurbVar_Grad_i, nVar, nDim);
+//  AD::SetPreaccIn(Volume); AD::SetPreaccIn(dist_i);
+//  AD::SetPreaccIn(F1_i); AD::SetPreaccIn(F2_i); AD::SetPreaccIn(CDkw_i);
+//  AD::SetPreaccIn(PrimVar_Grad_i, nDim+1, nDim);
 
   unsigned short iDim, jDim;
   su2double alfa_blended, beta_blended;
@@ -1240,42 +1240,23 @@ void CSourcePieceWise_TurbSST::ComputeResidual(su2double *val_residual, su2doubl
   for (iDim = 0; iDim < nDim; iDim++)
     diverg += PrimVar_Grad_i[iDim+1][iDim];
 
-//  /*--- Compute the turbulent Reynolds stress (sample code from CNumerics::GetViscousProjFlux() ---*/
-//  su2double **tau_turb_ev, **tau_turb;
-//  tau_turb_ev = new su2double*[nDim];
-//  tau_turb = new su2double*[nDim];
-//  for (iDim = 0 ; iDim < nDim; iDim++){
-//	  tau_turb_ev[iDim] = new su2double[nDim];
-//	  tau_turb[iDim] = new su2double[nDim];
-//  }
-//
-//  su2double blend = config->GetBlendFactor();
-//
-//  for (iDim = 0 ; iDim < nDim; iDim++){
-//    for (jDim = 0 ; jDim < nDim; jDim++){
-//	    tau_turb_ev[iDim][jDim] = Eddy_Viscosity_i * ( PrimVar_Grad_i[jDim+1][iDim] + PrimVar_Grad_i[iDim+1][jDim] )
-//	                             - TWO3*Eddy_Viscosity_i*diverg*delta[iDim][jDim];
-//	    tau_turb[iDim][jDim] =  + (1.0-blend) * tau_turb_ev[iDim][jDim]
-//								- blend * 2.0 * Density_i * TurbVar_i[0] * bij[iDim][jDim]
-//								- TWO3 * Density_i * TurbVar_i[0] * delta[iDim][jDim];
-//    }
-//  }
-
   if (dist_i > 1e-10) {
-    
-//    /*--- Production ---*/
-//    for (iDim = 0; iDim < nDim; iDim++){
-//      for (jDim = 0; jDim < nDim; jDim++){
-//    	  pk += tau_turb[iDim][jDim]*PrimVar_Grad_i[iDim+1][jDim];
-//      }
-//    }
-    
-    pk = Eddy_Viscosity_i*StrainMag_i*StrainMag_i - 2.0/3.0*Density_i*TurbVar_i[0]*diverg;
+
+	/* NOTE: if blend=0, the expressions for pk and pw reduce to the classical ones */
+    SetReynoldsStressMatrix(TurbVar_i[0], V_i, PrimVar_Grad_i, Eddy_Viscosity_i);
+    SetPerturbedRSM(TurbVar_i[0], config, Global_Index);
+    SetPerturbedStrainMag(TurbVar_i[0], config);
+
+    pk = Eddy_Viscosity_i*PerturbedStrainMag*PerturbedStrainMag
+         - 2.0/3.0*Density_i*TurbVar_i[0]*diverg;
+
+//    pk = Eddy_Viscosity_i*StrainMag_i*StrainMag_i - 2.0/3.0*Density_i*TurbVar_i[0]*diverg;
     pk = min(pk,20.0*beta_star*Density_i*TurbVar_i[1]*TurbVar_i[0]);
     pk = max(pk,0.0);
 
     zeta = max(TurbVar_i[1], StrainMag_i*F2_i/a1);
-    pw = StrainMag_i*StrainMag_i - 2.0/3.0*zeta*diverg;
+    pw = PerturbedStrainMag * PerturbedStrainMag - 2.0/3.0*zeta*diverg;
+//    pw = StrainMag_i*StrainMag_i - 2.0/3.0*zeta*diverg;
     pw = max(pw,0.0);
     
     val_residual[0] += pk*Volume;
@@ -1298,8 +1279,8 @@ void CSourcePieceWise_TurbSST::ComputeResidual(su2double *val_residual, su2doubl
     val_Jacobian_i[1][1] = -2.0*beta_blended*TurbVar_i[1]*Volume;
   }
   
-  AD::SetPreaccOut(val_residual, nVar);
-  AD::EndPreacc();
+//  AD::SetPreaccOut(val_residual, nVar);
+//  AD::EndPreacc();
 
 //  for (iDim = 0; iDim < nDim; iDim++)  {
 //    delete [] tau_turb_ev[iDim];
@@ -1308,4 +1289,265 @@ void CSourcePieceWise_TurbSST::ComputeResidual(su2double *val_residual, su2doubl
 //  delete [] tau_turb_ev;
 //  delete [] tau_turb;
 
+}
+
+void CSourcePieceWise_TurbSST::GetMeanRateOfStrainMatrix(su2double **S_ij, su2double **Mean_GradPrimVar){
+
+  /* --- Calculate the rate of strain tensor, using mean velocity gradients --- */
+
+  if (nDim == 3){
+    S_ij[0][0] = Mean_GradPrimVar[1][0];
+    S_ij[1][1] = Mean_GradPrimVar[2][1];
+    S_ij[2][2] = Mean_GradPrimVar[3][2];
+    S_ij[0][1] = 0.5 * (Mean_GradPrimVar[1][1] + Mean_GradPrimVar[2][0]);
+    S_ij[0][2] = 0.5 * (Mean_GradPrimVar[1][2] + Mean_GradPrimVar[3][0]);
+    S_ij[1][2] = 0.5 * (Mean_GradPrimVar[2][2] + Mean_GradPrimVar[3][1]);
+    S_ij[1][0] = S_ij[0][1];
+    S_ij[2][1] = S_ij[1][2];
+    S_ij[2][0] = S_ij[0][2];
+  }
+  else {
+    S_ij[0][0] = Mean_GradPrimVar[1][0];
+    S_ij[1][1] = Mean_GradPrimVar[2][1];
+    S_ij[2][2] = 0.0;
+    S_ij[0][1] = 0.5 * (Mean_GradPrimVar[1][1] + Mean_GradPrimVar[2][0]);
+    S_ij[0][2] = 0.0;
+    S_ij[1][2] = 0.0;
+    S_ij[1][0] = S_ij[0][1];
+    S_ij[2][1] = S_ij[1][2];
+    S_ij[2][0] = S_ij[0][2];
+
+  }
+}
+
+void CSourcePieceWise_TurbSST::SetReynoldsStressMatrix(su2double turb_ke, su2double *Mean_PrimVar, su2double **Mean_GradPrimVar,
+		                                su2double Mean_Eddy_Viscosity){
+
+  unsigned short iDim, jDim;
+  su2double **S_ij = new su2double* [3];
+  su2double muT = Mean_Eddy_Viscosity;
+  su2double divVel = 0;
+  su2double density;
+  su2double TWO3 = 2.0/3.0;
+  density = Mean_PrimVar[nDim+2];
+
+  for (iDim = 0; iDim < 3; iDim++){
+    S_ij[iDim] = new su2double [3];
+  }
+
+  GetMeanRateOfStrainMatrix(S_ij, Mean_GradPrimVar);
+
+  /* --- Using rate of strain matrix, calculate Reynolds stress tensor --- */
+
+  for (iDim = 0; iDim < 3; iDim++){
+    divVel += S_ij[iDim][iDim];
+  }
+
+  for (iDim = 0; iDim < 3; iDim++){
+    for (jDim = 0; jDim < 3; jDim++){
+      MeanReynoldsStress[iDim][jDim] = TWO3 * turb_ke * delta3[iDim][jDim]
+      - muT / density * (2 * S_ij[iDim][jDim] - TWO3 * divVel * delta3[iDim][jDim]);
+    }
+  }
+
+  for (iDim = 0; iDim < 3; iDim++)
+    delete [] S_ij[iDim];
+  delete [] S_ij;
+
+}
+
+void CSourcePieceWise_TurbSST::SetPerturbedRSM(su2double turb_ke, CConfig *config, unsigned long val_global_index){
+
+  unsigned short iDim,jDim, kDim;
+
+  su2double **tmp1 = new su2double* [3];
+  for (iDim= 0; iDim< 3; iDim++)
+    tmp1[iDim] = new su2double [3];
+
+  for (iDim=0; iDim<3; iDim++) {
+	for (jDim=0; jDim<3; jDim++) {
+		tmpA_ij[iDim][jDim] = 0.0;
+		tmp1[iDim][jDim] = 0.0;
+	}
+  }
+
+  /*--- Build vector of eigenvalues ---*/
+  /* NOTE: The current script follows the EQiPS implementation by Mishra.
+   * However, here Eig_Val[0] > Eig_Val[1] > Eig_Val[1] and
+   * the same holds for the corresponding eigenvectors.
+   */
+
+  Eig_Val[0] = config->GetEigenValue1(val_global_index);
+  Eig_Val[1] = config->GetEigenValue2(val_global_index);
+  Eig_Val[2] = config->GetEigenValue3(val_global_index);
+//  Eig_Val[2] = - (Eig_Val[0] + Eig_Val[1]);
+
+  /*--- Build matrix of eigenvectors ---*/
+  Eig_Vec[0][0] = config->GetEigenVector1x(val_global_index);
+  Eig_Vec[0][1] = config->GetEigenVector2x(val_global_index);
+  Eig_Vec[0][2] = config->GetEigenVector3x(val_global_index);
+  Eig_Vec[1][0] = config->GetEigenVector1y(val_global_index);
+  Eig_Vec[1][1] = config->GetEigenVector2y(val_global_index);
+  Eig_Vec[1][2] = config->GetEigenVector3y(val_global_index);
+  Eig_Vec[2][0] = config->GetEigenVector1z(val_global_index);
+  Eig_Vec[2][1] = config->GetEigenVector2z(val_global_index);
+  Eig_Vec[2][2] = config->GetEigenVector3z(val_global_index);
+
+  /*--- Perturbation of Barycentric Coordinates ---*/
+  discrepancyTerm1 =  config->GetDiscrTerm1(val_global_index);
+  discrepancyTerm2 =  config->GetDiscrTerm2(val_global_index);
+
+  /* compute convex combination coefficients */
+  su2double c1c = Eig_Val[0] - Eig_Val[1];
+  su2double c2c = 2.0 * (Eig_Val[1] - Eig_Val[2]);
+  su2double c3c = 3.0 * Eig_Val[2] + 1.0;
+
+  /* define barycentric traingle corner points */
+  Corners[0][0] = 1.0;
+  Corners[0][1] = 0.0;
+  Corners[1][0] = 0.0;
+  Corners[1][1] = 0.0;
+  Corners[2][0] = 0.5;
+  Corners[2][1] = sin(60.0*PI_NUMBER/180.0);
+
+  /* define barycentric coordinates */
+  Barycentric_Coord[0] = Corners[0][0] * c1c + Corners[1][0] * c2c + Corners[2][0] * c3c;
+  Barycentric_Coord[1] = Corners[0][1] * c1c + Corners[1][1] * c2c + Corners[2][1] * c3c;
+
+  /* calculate perturbed barycentric coordinates */
+  Barycentric_Coord[0] = Barycentric_Coord[0] + discrepancyTerm1;
+  Barycentric_Coord[1] = Barycentric_Coord[1] + discrepancyTerm2;
+
+  /* rebuild c1c,c2c,c3c based on perturbed barycentric coordinates */
+  c3c = Barycentric_Coord[1] / Corners[2][1];
+  c1c = Barycentric_Coord[0] - Corners[2][0] * c3c;
+  c2c = 1 - c1c - c3c;
+
+  /* build new anisotropy eigenvalues */
+  Eig_Val[2] = (c3c - 1) / 3.0;
+  Eig_Val[1] = 0.5 *c2c + Eig_Val[2];
+  Eig_Val[0] = c1c + Eig_Val[1];
+
+  EigenRecomposition(tmpA_ij, Eig_Vec, Eig_Val, 3);
+
+  /*--- Multiply A_ij by rotation matrix as Q*A_ij*Q.T ---*/
+  GetRotationMatrix(RotationMatrix, config, val_global_index);
+
+  /*--- This does tmp1 = Q*A_ij ---*/
+  for (iDim=0; iDim<3; iDim++) {
+	for (jDim=0; jDim<3; jDim++) {
+	  for (kDim=0; kDim<3; kDim++) {
+		tmp1[iDim][jDim] += RotationMatrix[iDim][kDim] * tmpA_ij[kDim][jDim];
+	  }
+	}
+  }
+
+  /*--- This does A_ij = tmp1*Q.T ---*/
+  for (iDim=0; iDim<3; iDim++) {
+	for (jDim=0; jDim<3; jDim++) {
+	  A_ij[iDim][jDim] = 0.0;
+	  for (kDim=0; kDim<3; kDim++) {
+		A_ij[iDim][jDim] += tmp1[iDim][kDim] * RotationMatrix[jDim][kDim];
+	  }
+	}
+  }
+
+  /* compute perturbed Reynolds stress matrix; */
+  for (iDim = 0; iDim< 3; iDim++){
+    for (jDim = 0; jDim < 3; jDim++){
+      MeanPerturbedRSM[iDim][jDim] = 2.0 * turb_ke * (A_ij[iDim][jDim] + 1.0/3.0 * delta3[iDim][jDim]);
+    }
+  }
+
+  for (iDim = 0; iDim < 3; iDim++){
+    delete [] tmp1[iDim];
+  }
+  delete [] tmp1;
+
+}
+
+void CSourcePieceWise_TurbSST::GetRotationMatrix(su2double **RotationMatrix, CConfig *config, unsigned long val_global_index){
+
+  su2double theta, n1, n2, n3, hr, hi, hj, hk;
+  su2double norm;
+
+  quaternion_theta =  config->GetQuaternion_theta(val_global_index);
+  quaternion_n1	   =  config->GetQuaternion_n1(val_global_index);
+  quaternion_n2	   =  config->GetQuaternion_n2(val_global_index);
+  if (nDim == 3) {
+	quaternion_n3	 =  config->GetQuaternion_n3(val_global_index);
+	norm  = sqrt(quaternion_n1*quaternion_n1 + quaternion_n2*quaternion_n2 + quaternion_n3*quaternion_n3);
+  }
+
+  if (nDim == 2){
+	theta = quaternion_theta*PI_NUMBER/180.;
+	n1    = 0.0;
+	n2    = 0.0;
+	n3    = sqrt(1.0 - (n1*n1 + n2*n2));
+  }
+  else{
+	theta = quaternion_theta*PI_NUMBER/180.;
+	n1    = quaternion_n1/norm;
+	n2    = quaternion_n2/norm;
+	n3    = quaternion_n3/norm;
+  }
+
+  hr = cos(theta/2.0);
+  hi = n1 * sin(theta/2.0);
+  hj = n2 * sin(theta/2.0);
+  hk = n3 * sin(theta/2.0);
+
+  RotationMatrix[0][0] = 1.0 - 2.0 * (hj*hj + hk*hk);
+  RotationMatrix[0][1] = 2.0 * (hi*hj - hk*hr);
+  RotationMatrix[0][2] = 2.0 * (hi*hk + hj*hr);
+  RotationMatrix[1][0] = 2.0 * (hi*hj + hk*hr);
+  RotationMatrix[1][1] = 1.0 - 2.0 * (hi*hi + hk*hk);
+  RotationMatrix[1][2] = 2.0 * (hj*hk - hi*hr);
+  RotationMatrix[2][0] = 2.0 * (hi*hk - hj*hr);
+  RotationMatrix[2][1] = 2.0 * (hj*hk + hi*hr);
+  RotationMatrix[2][2] = 1.0 - 2.0 * (hi*hi + hj*hj);
+
+}
+
+void CSourcePieceWise_TurbSST::SetPerturbedStrainMag(su2double turb_ke, CConfig *config){
+
+  unsigned short iDim, jDim;
+  PerturbedStrainMag = 0;
+  su2double **StrainRate = new su2double* [nDim];
+  for (iDim= 0; iDim< nDim; iDim++){
+    StrainRate[iDim] = new su2double [nDim];
+  }
+
+  su2double blend = config->GetBlendFactor();
+
+  /* compute perturbed strain rate tensor */
+  for (iDim = 0; iDim < nDim; iDim++){
+    for (jDim =0; jDim < nDim; jDim++){
+      StrainRate[iDim][jDim] = MeanReynoldsStress[iDim][jDim] * (1.0 - blend)
+    		                   + MeanPerturbedRSM[iDim][jDim] * blend
+                               - TWO3 * turb_ke * delta[iDim][jDim];
+      StrainRate[iDim][jDim] = - StrainRate[iDim][jDim] * Density_i / (2 * Eddy_Viscosity_i);
+    }
+  }
+
+  /*--- Add diagonal part ---*/
+  for (iDim = 0; iDim < nDim; iDim++) {
+    PerturbedStrainMag += pow(StrainRate[iDim][iDim], 2.0);
+  }
+
+  /*--- Add off diagonals ---*/
+  PerturbedStrainMag += 2.0*pow(StrainRate[1][0], 2.0);
+
+  if (nDim == 3) {
+    PerturbedStrainMag += 2.0*pow(StrainRate[0][2], 2.0);
+    PerturbedStrainMag += 2.0*pow(StrainRate[1][2], 2.0);
+  }
+
+  PerturbedStrainMag = sqrt(2.0*PerturbedStrainMag);
+
+  for (iDim= 0; iDim< nDim; iDim++){
+    delete [] StrainRate[iDim];
+  }
+
+  delete [] StrainRate;
 }

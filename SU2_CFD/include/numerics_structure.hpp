@@ -78,7 +78,8 @@ public:
   
   su2double
   **tau,    /*!< \brief Viscous stress tensor. */
-  **delta;      /*!< \brief Identity matrix. */
+  **delta,      /*!< \brief Identity matrix. */
+  **delta3;   /*!< \brief 3 row Identity matrix. */
   su2double
   *Diffusion_Coeff_i, /*!< \brief Species diffusion coefficients at point i. */
   *Diffusion_Coeff_j; /*!< \brief Species diffusion coefficients at point j. */
@@ -210,6 +211,12 @@ public:
   su2double quaternion_theta, quaternion_n1, quaternion_n2, quaternion_n3;
 
   su2double **bij;
+  su2double **MeanReynoldsStress; /*!< \brief Mean Reynolds stress tensor  */
+  su2double **MeanPerturbedRSM;   /*!< \brief Perturbed Reynolds stress tensor  */
+  su2double *Barycentric_Coord, *New_Coord, **Corners;
+  su2double *Eig_Val, **A_ij, **Eig_Vec, **RotationMatrix, **tmpA_ij;
+  su2double PerturbedStrainMag;   /*!< \brief Strain magnitude calculated using perturbed stress tensor  */
+  unsigned long Global_Index;
 
   /*!
    * \brief Constructor of the class.
@@ -281,7 +288,52 @@ public:
   void SetDiscrepancyTerm1(su2double val_discrepancyTerm);
   void SetDiscrepancyTerm2(su2double val_discrepancyTerm);
 
+  void SetGlobalIndex(unsigned long val_global_index);
   void SetAnisotropyTensor(CConfig *config, unsigned long val_global_index);
+  void SetReynoldsStressMatrix(su2double turb_ke,
+		                       su2double *Mean_PrimVar,
+		                       su2double **Mean_GradPrimVar,
+							   su2double Mean_Eddy_Viscosity);
+  void SetPerturbedRSM(su2double turb_ke, CConfig *config, unsigned long val_global_index);
+  void GetMeanRateOfStrainMatrix(su2double **S_ij, su2double **Mean_GradPrimVar);
+  void GetRotationMatrix(su2double **RotationMatrix, CConfig *config, unsigned long val_global_index);
+
+  /*!
+   * \brief Decomposes the symmetric matrix A_ij, into eigenvectors and eigenvalues
+   * \param[in] A_i: symmetric matrix to be decomposed
+   * \param[in] Eig_Vec: strores the eigenvectors
+   * \param[in] Eig_Val: stores the eigenvalues
+   * \param[in] n: order of matrix A_ij
+   */
+  static void EigenDecomposition(su2double **A_ij, su2double **Eig_Vec, su2double *Eig_Val, unsigned short n);
+
+  /*!
+   * \brief Recomposes the eigenvectors and eigenvalues into a matrix
+   * \param[in] A_ij: recomposed matrix
+   * \param[in] Eig_Vec: eigenvectors
+   * \param[in] Eig_Val: eigenvalues
+   * \param[in] n: order of matrix A_ij
+   */
+  static void EigenRecomposition(su2double **A_ij, su2double **Eig_Vec, su2double *Eig_Val, unsigned short n);
+
+  /*!
+   * \brief tred2
+   * \param[in] V: matrix that needs to be decomposed
+   * \param[in] d: holds eigenvalues
+   * \param[in] e: supplemental data structure
+   * \param[in] n: order of matrix V
+   */
+  static void tred2(su2double **V, su2double *d, su2double *e, unsigned short n);
+
+  /*!
+   * \brief tql2
+   * \param[in] V: matrix that will hold the eigenvectors
+   * \param[in] d: array that will hold the ordered eigenvalues
+   * \param[in] e: supplemental data structure
+   * \param[in] n: order of matrix V
+
+   */
+  static void tql2(su2double **V, su2double *d, su2double *e, unsigned short n);
 
   /*!
    * \brief Set the value of the rate of strain magnitude.
@@ -4923,6 +4975,35 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   void ComputeResidual(su2double *val_residual, su2double **val_Jacobian_i, su2double **val_Jacobian_j, CConfig *config);
+
+  /*!
+   * \brief Initialize the Reynolds Stress Matrix
+   * \param[in] turb_ke turbulent kinetic energy of node
+   */
+  void SetReynoldsStressMatrix(su2double turb_ke,
+		                       su2double *Mean_PrimVar,
+							   su2double **Mean_GradPrimVar,
+                               su2double Mean_Eddy_Viscosity);
+
+  /*!
+   * \brief Perturb the Reynolds stress tensor based on parameters
+   * \param[in] turb_ke: turbulent kinetic energy of the noce
+   * \param[in] config: config file
+   */
+  void SetPerturbedRSM(su2double turb_ke, CConfig *config, unsigned long val_global_index);
+  /*!
+     * \brief A virtual member. Get strain magnitude based on perturbed reynolds stress matrix
+     * \param[in] turb_ke: turbulent kinetic energy of the node
+     */
+  void SetPerturbedStrainMag(su2double turb_ke, CConfig *config);
+
+  /*!
+   * \brief Get the mean rate of strain matrix based on velocity gradients
+   * \param[in] S_ij
+   */
+  void GetMeanRateOfStrainMatrix(su2double **S_ij, su2double **Mean_GradPrimVar);
+
+  void GetRotationMatrix(su2double **RotationMatrix, CConfig *config, unsigned long val_global_index);
 
 };
 

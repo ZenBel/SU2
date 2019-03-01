@@ -259,6 +259,9 @@ inline void CNumerics::SetDiscrepancyTerm2(su2double val_discrepancyTerm) {
   discrepancyTerm2 = val_discrepancyTerm;
 }
 
+inline void CNumerics::SetGlobalIndex(unsigned long val_global_index){
+  Global_Index = val_global_index;
+}
 
 inline void CNumerics::SetStrainMag(su2double val_strainmag_i, su2double val_strainmag_j) {
   StrainMag_i = val_strainmag_i;

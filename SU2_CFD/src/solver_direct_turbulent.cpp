@@ -3767,6 +3767,7 @@ void CTurbSSTSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
     /*--- Set the value of the turbulent Reynolds stress for computation in the k-equation ---*/
     unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 //    cout << "idxSST = " << GlobalIndex << endl;
+    numerics->SetGlobalIndex(GlobalIndex);
     numerics->SetAnisotropyTensor(config, GlobalIndex);
 
     /*--- Compute the source term ---*/
