@@ -3088,14 +3088,14 @@ void CNumerics::GetRotationMatrix(su2double **RotationMatrix, CConfig *config, u
   }
 
   if (nDim == 2){
-	theta = quaternion_theta*PI_NUMBER/180.;
+	theta = (0.0 + quaternion_theta) * PI_NUMBER/180.;
 	n1    = 0.0;
 	n2    = 0.0;
 	n3    = sqrt(1.0 - (n1*n1 + n2*n2));
   }
   else{
-	theta = quaternion_theta*PI_NUMBER/180.;
-	n1    = quaternion_n1/norm;
+	theta = (0.0 + quaternion_theta) * PI_NUMBER/180.;
+	n1    = quaternion_n1/norm; //needs modification: we want it to be felt as a perturbation to a certain initial value.
 	n2    = quaternion_n2/norm;
 	n3    = quaternion_n3/norm;
   }
