@@ -109,8 +109,12 @@ def projection( config, state={}, step = 1e-3 ):
 
     os.remove(grad_filename)
     
-    info = su2io.State()   
+    info = su2io.State()
     
+    if len(raw_gradients) != n_DV:
+        print 'Warning: len(raw_gradients) != n_DV, probably because n_DV > max(unsigned short). Setting len(raw_gradients) == n_DV.'
+        raw_gradients = [0] * n_DV  #this is a fix for the fact that nDV is an unsigned short whose max value can be 65535
+                            # note that this fix can cause some bugs when combinations of DVs are used.      
     
     if ('MACH_AOA_INF' in konfig.DV_KIND ):
         import external_gradient
