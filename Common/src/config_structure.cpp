@@ -7005,12 +7005,12 @@ su2double CConfig::GetQuaternion_n3(unsigned long val_point){
 }
 
 void CConfig::InitializeDiscrTerm(unsigned long val_point){
-  discTerm1 =  new su2double[val_point];
-  discTerm2 =  new su2double[val_point];
-  quat_theta = new su2double[val_point];
-  quat_n1 = new su2double[val_point];
-  quat_n2 = new su2double[val_point];
-  quat_n3 = new su2double[val_point];
+  discTerm1  =  new su2double[val_point];
+  discTerm2  =  new su2double[val_point];
+  quat_theta =  new su2double[val_point];
+  quat_n1    =  new su2double[val_point];
+  quat_n2    =  new su2double[val_point];
+  quat_n3    =  new su2double[val_point];
   BoolDiscTerm = true;
 }
 
