@@ -1217,7 +1217,8 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 
   if (input_file.fail()) {
 	if (config->GetKind_Turb_Model() == SST){
-      cout << "WARNING: There is no input file " << input_filename.data() << ". Setting the discrepancy term to ZERO"<< endl;
+	  if (rank == MASTER_NODE)
+        cout << "WARNING: There is no input file " << input_filename.data() << ". Setting the discrepancy term to ZERO"<< endl;
 	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
 	    config->SetDiscrTerm1(0.0, GlobalIndex); // No perturbation to eigenvalues lambda1
 	    config->SetDiscrTerm2(0.0, GlobalIndex); // No perturbation to eigenvalues lambda2
@@ -1228,7 +1229,8 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 	  }
 	}
 	else{
-	  cout << "WARNING: There is no input file " << input_filename.data() << ". Setting the discrepancy term to UNITY"<< endl;
+	  if (rank == MASTER_NODE)
+		cout << "WARNING: There is no input file " << input_filename.data() << ". Setting the discrepancy term to UNITY"<< endl;
 	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
 		config->SetDiscrTerm1(1.0, GlobalIndex); // No perturbation to production term SA model
 		config->SetDiscrTerm2(1.0, GlobalIndex);
@@ -1307,7 +1309,8 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
   for (ii = 0; ii < 3; ii++){
 	input_file.open(input_eigenvector[ii].data(), ios::in);
 	if (input_file.fail()) {
-	  cout << "WARNING: There is no input file " << input_eigenvector[ii].data() << ". Setting all eigenvectors to ZERO!"<< endl;
+	  if (rank == MASTER_NODE)
+	    cout << "WARNING: There is no input file " << input_eigenvector[ii].data() << ". Setting all eigenvectors to ZERO!"<< endl;
       for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
 		config->SetEigenVectors(input_eigenvector[ii], 0.0, 0.0, 0.0, GlobalIndex);
 	}
@@ -1349,7 +1352,8 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
   for (ii = 0; ii < 3; ii++){
   	input_file.open(input_eigenvalue[ii].data(), ios::in);
   	if (input_file.fail()) {
-  	  cout << "WARNING: There is no input file " << input_eigenvalue[ii].data() << ". Setting all eigenvalues to ZERO!"<< endl;
+  	  if (rank == MASTER_NODE)
+  	    cout << "WARNING: There is no input file " << input_eigenvalue[ii].data() << ". Setting all eigenvalues to ZERO!"<< endl;
 	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
 		  config->SetEigenValues(input_eigenvalue[ii], 0.0, GlobalIndex);
   	}
