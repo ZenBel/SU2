@@ -54,8 +54,6 @@ CNumerics::CNumerics(void) {
   delta  = NULL;
   delta3 = NULL;
 
-  bij = NULL;
-
   Diffusion_Coeff_i = NULL;
   Diffusion_Coeff_j = NULL;
 
@@ -87,17 +85,10 @@ CNumerics::CNumerics(unsigned short val_nDim, unsigned short val_nVar,
   delta  = NULL;
   delta3 = NULL;
 
-  bij = NULL;
   MeanReynoldsStress  = NULL;
   MeanPerturbedRSM    = NULL;
-  Corners             = NULL;
-  Eig_Val             = NULL;
-  Barycentric_Coord   = NULL;
-  New_Coord           = NULL;
-  A_ij				  = NULL;
-  tmpA_ij			  = NULL;
-  Eig_Vec			  = NULL;
-  RotationMatrix	  = NULL;
+  L					  = NULL;
+  LR				  = NULL;
 
   Diffusion_Coeff_i = NULL;
   Diffusion_Coeff_j = NULL;
@@ -128,36 +119,16 @@ CNumerics::CNumerics(unsigned short val_nDim, unsigned short val_nVar,
     tau[iDim] = new su2double [nDim];
   }
 
-  bij = new su2double* [3];
   MeanReynoldsStress  = new su2double* [3];
   MeanPerturbedRSM    = new su2double* [3];
-  Corners             = new su2double* [3];
-  Eig_Val             = new su2double [3];
-  Barycentric_Coord   = new su2double [2];
-  New_Coord           = new su2double [2];
-  A_ij                = new su2double* [3];
-  tmpA_ij		      = new su2double* [3];
-  Eig_Vec             = new su2double* [3];
-  RotationMatrix      = new su2double* [3];
+  L                   = new su2double* [3];
+  LR                  = new su2double* [3];
   for (iDim = 0; iDim < 3; iDim++) {
-    bij[iDim] = new su2double [3];
     MeanReynoldsStress[iDim]  = new su2double [3];
     MeanPerturbedRSM[iDim]    = new su2double [3];
-    Corners[iDim]             = new su2double [2];
-    Eig_Val[iDim]             = 0;
-    A_ij[iDim]                = new su2double [3];
-    tmpA_ij[iDim]             = new su2double [3];
-    Eig_Vec[iDim]             = new su2double [3];
-    RotationMatrix[iDim]      = new su2double [3];
+    L[iDim]                   = new su2double [3];
+    LR[iDim]                  = new su2double [3];
   }
-
-  /* define barycentric traingle corner points */
-  Corners[0][0] = 1.0;
-  Corners[0][1] = 0.0;
-  Corners[1][0] = 0.0;
-  Corners[1][1] = 0.0;
-  Corners[2][0] = 0.5;
-  Corners[2][1] = 0.866025;
 
   delta = new su2double* [nDim];
   for (iDim = 0; iDim < nDim; iDim++) {
@@ -227,28 +198,17 @@ CNumerics::~CNumerics(void) {
     delete [] tau;
   }
 
-  if (bij != NULL) {
+  if (L != NULL) {
     for (unsigned short iDim = 0; iDim < 3; iDim++) {
-      delete [] bij[iDim];
       delete [] MeanReynoldsStress[iDim];
       delete [] MeanPerturbedRSM[iDim];
-      delete [] Corners[iDim];
-      delete [] A_ij[iDim];
-      delete [] tmpA_ij[iDim];
-      delete [] Eig_Vec[iDim];
-      delete [] RotationMatrix[iDim];
+      delete [] L[iDim];
+      delete [] LR[iDim];
     }
-    delete [] bij;
     delete [] MeanReynoldsStress;
     delete [] MeanPerturbedRSM;
-    delete [] Corners;
-    delete [] Eig_Val;
-    delete [] Barycentric_Coord;
-    delete [] New_Coord;
-    delete [] A_ij;
-    delete [] tmpA_ij;
-    delete [] Eig_Vec;
-    delete [] RotationMatrix;
+    delete [] L;
+    delete [] LR;
   }
 
   if (delta != NULL) {
@@ -2968,154 +2928,81 @@ void CNumerics::SetReynoldsStressMatrix(su2double turb_ke, su2double *Mean_PrimV
 void CNumerics::SetPerturbedRSM(su2double turb_ke, CConfig *config, unsigned long val_global_index){
 
   unsigned short iDim,jDim, kDim;
+
   su2double **tmp1 = new su2double* [3];
-  for (iDim= 0; iDim< 3; iDim++)
-	tmp1[iDim] = new su2double [3];
+  su2double **tmp2 = new su2double* [3];
+  for (iDim= 0; iDim< 3; iDim++){
+    tmp1[iDim] = new su2double [3];
+    tmp2[iDim] = new su2double [3];
+  }
 
   for (iDim=0; iDim<3; iDim++) {
 	for (jDim=0; jDim<3; jDim++) {
-		tmpA_ij[iDim][jDim] = 0.0;
+		L[iDim][jDim] = 0.0;
+		LR[iDim][jDim] = 0.0;
 		tmp1[iDim][jDim] = 0.0;
+		tmp2[iDim][jDim] = 0.0;
+		MeanPerturbedRSM[iDim][jDim] = 0.0;
 	}
   }
 
-  /*--- Build vector of eigenvalues ---*/
-  /* NOTE: The current script follows the EQiPS implementation by Mishra.
-   * However, here Eig_Val[0] > Eig_Val[1] > Eig_Val[1] and
-   * the same holds for the corresponding eigenvectors.
+  /*--- Build the Cholesky decomposition of Rij and the random matrix G
+   * for which Rij = LR' * LR, with LR: upper-triangular and
+   * for which G = L' * L, with L: upper triangular.
+   * Finally we have [R] = LR' * L' * L * LR, where [R] is Reynolds Stress Tensor.
+   * See Xiao et al. (2017).
    */
 
-  Eig_Val[0] = config->GetEigenValue1(val_global_index);
-  Eig_Val[1] = config->GetEigenValue2(val_global_index);
-  Eig_Val[2] = config->GetEigenValue3(val_global_index);
-//  Eig_Val[2] = - (Eig_Val[0] + Eig_Val[1]);
+  LR[0][0] = config->Get_lr00(val_global_index);
+  LR[0][1] = config->Get_lr01(val_global_index);
+  LR[0][2] = config->Get_lr02(val_global_index);
+  LR[1][1] = config->Get_lr11(val_global_index);
+  LR[1][2] = config->Get_lr12(val_global_index);
+  LR[2][2] = config->Get_lr22(val_global_index);
 
-  /*--- Build matrix of eigenvectors ---*/
-  Eig_Vec[0][0] = config->GetEigenVector1x(val_global_index);
-  Eig_Vec[0][1] = config->GetEigenVector2x(val_global_index);
-  Eig_Vec[0][2] = config->GetEigenVector3x(val_global_index);
-  Eig_Vec[1][0] = config->GetEigenVector1y(val_global_index);
-  Eig_Vec[1][1] = config->GetEigenVector2y(val_global_index);
-  Eig_Vec[1][2] = config->GetEigenVector3y(val_global_index);
-  Eig_Vec[2][0] = config->GetEigenVector1z(val_global_index);
-  Eig_Vec[2][1] = config->GetEigenVector2z(val_global_index);
-  Eig_Vec[2][2] = config->GetEigenVector3z(val_global_index);
+  L[0][0] = config->Get_l00(val_global_index);
+  L[0][1] = config->Get_l01(val_global_index);
+  L[0][2] = config->Get_l02(val_global_index);
+  L[1][1] = config->Get_l11(val_global_index);
+  L[1][2] = config->Get_l12(val_global_index);
+  L[2][2] = config->Get_l22(val_global_index);
 
-  /*--- Perturbation of Barycentric Coordinates ---*/
-  discrepancyTerm1 =  config->GetDiscrTerm1(val_global_index);
-  discrepancyTerm2 =  config->GetDiscrTerm2(val_global_index);
-
-  /* compute convex combination coefficients */
-  su2double c1c = Eig_Val[0] - Eig_Val[1];
-  su2double c2c = 2.0 * (Eig_Val[1] - Eig_Val[2]);
-  su2double c3c = 3.0 * Eig_Val[2] + 1.0;
-
-  /* define barycentric traingle corner points */
-  Corners[0][0] = 1.0;
-  Corners[0][1] = 0.0;
-  Corners[1][0] = 0.0;
-  Corners[1][1] = 0.0;
-  Corners[2][0] = 0.5;
-  Corners[2][1] = sin(60.0*PI_NUMBER/180.0);
-
-  /* define barycentric coordinates */
-  Barycentric_Coord[0] = Corners[0][0] * c1c + Corners[1][0] * c2c + Corners[2][0] * c3c;
-  Barycentric_Coord[1] = Corners[0][1] * c1c + Corners[1][1] * c2c + Corners[2][1] * c3c;
-
-  /* calculate perturbed barycentric coordinates */
-  Barycentric_Coord[0] = Barycentric_Coord[0] + discrepancyTerm1;
-  Barycentric_Coord[1] = Barycentric_Coord[1] + discrepancyTerm2;
-
-  /* rebuild c1c,c2c,c3c based on perturbed barycentric coordinates */
-  c3c = Barycentric_Coord[1] / Corners[2][1];
-  c1c = Barycentric_Coord[0] - Corners[2][0] * c3c;
-  c2c = 1 - c1c - c3c;
-
-  /* build new anisotropy eigenvalues */
-  Eig_Val[2] = (c3c - 1) / 3.0;
-  Eig_Val[1] = 0.5 *c2c + Eig_Val[2];
-  Eig_Val[0] = c1c + Eig_Val[1];
-
-  EigenRecomposition(tmpA_ij, Eig_Vec, Eig_Val, 3);
-
-  /*--- Multiply A_ij by rotation matrix as Q*A_ij*Q.T ---*/
-  GetRotationMatrix(RotationMatrix, config, val_global_index);
-
-  /*--- This does tmp1 = Q*A_ij ---*/
+  /*--- This does [LR]'*[L]' ---*/
   for (iDim=0; iDim<3; iDim++) {
 	for (jDim=0; jDim<3; jDim++) {
 	  for (kDim=0; kDim<3; kDim++) {
-		tmp1[iDim][jDim] += RotationMatrix[iDim][kDim] * tmpA_ij[kDim][jDim];
+		tmp1[iDim][jDim] += LR[kDim][iDim] * L[jDim][kDim];
 	  }
 	}
   }
 
-  /*--- This does A_ij = tmp1*Q.T ---*/
+  /*--- This does  [L]*[LR] ---*/
   for (iDim=0; iDim<3; iDim++) {
 	for (jDim=0; jDim<3; jDim++) {
-	  A_ij[iDim][jDim] = 0.0;
 	  for (kDim=0; kDim<3; kDim++) {
-		A_ij[iDim][jDim] += tmp1[iDim][kDim] * RotationMatrix[jDim][kDim];
+		tmp2[iDim][jDim] += L[iDim][kDim] * LR[kDim][jDim];
 	  }
 	}
   }
 
-  /* compute perturbed Reynolds stress matrix; */
-  for (iDim = 0; iDim< 3; iDim++){
-	for (jDim = 0; jDim < 3; jDim++){
-	  MeanPerturbedRSM[iDim][jDim] = 2.0 * turb_ke * (A_ij[iDim][jDim] + 1.0/3.0 * delta3[iDim][jDim]);
+  /*--- This does [R] = tmp1*tmp2 =  [LR]'*[L]'* [L]*[LR] ---*/
+  for (iDim=0; iDim<3; iDim++) {
+	for (jDim=0; jDim<3; jDim++) {
+	  for (kDim=0; kDim<3; kDim++) {
+		MeanPerturbedRSM[iDim][jDim] += tmp1[iDim][kDim] * tmp2[kDim][jDim];
+	  }
 	}
   }
 
   for (iDim = 0; iDim < 3; iDim++){
-	delete [] tmp1[iDim];
+    delete [] tmp1[iDim];
+    delete [] tmp2[iDim];
   }
   delete [] tmp1;
+  delete [] tmp2;
 
 }
 
-void CNumerics::GetRotationMatrix(su2double **RotationMatrix, CConfig *config, unsigned long val_global_index){
-
-  su2double theta, n1, n2, n3, hr, hi, hj, hk;
-  su2double norm;
-
-  quaternion_theta =  config->GetQuaternion_theta(val_global_index);
-  quaternion_n1	   =  config->GetQuaternion_n1(val_global_index);
-  quaternion_n2	   =  config->GetQuaternion_n2(val_global_index);
-  if (nDim == 3) {
-	quaternion_n3	 =  config->GetQuaternion_n3(val_global_index);
-	norm  = sqrt(quaternion_n1*quaternion_n1 + quaternion_n2*quaternion_n2 + quaternion_n3*quaternion_n3);
-  }
-
-  if (nDim == 2){
-	theta = (0.0 + quaternion_theta) * PI_NUMBER/180.;
-	n1    = 0.0;
-	n2    = 0.0;
-	n3    = sqrt(1.0 - (n1*n1 + n2*n2));
-  }
-  else{
-	theta = (0.0 + quaternion_theta) * PI_NUMBER/180.;
-	n1    = quaternion_n1/norm; //needs modification: we want it to be felt as a perturbation to a certain initial value.
-	n2    = quaternion_n2/norm;
-	n3    = quaternion_n3/norm;
-  }
-
-  hr = cos(theta/2.0);
-  hi = n1 * sin(theta/2.0);
-  hj = n2 * sin(theta/2.0);
-  hk = n3 * sin(theta/2.0);
-
-  RotationMatrix[0][0] = 1.0 - 2.0 * (hj*hj + hk*hk);
-  RotationMatrix[0][1] = 2.0 * (hi*hj - hk*hr);
-  RotationMatrix[0][2] = 2.0 * (hi*hk + hj*hr);
-  RotationMatrix[1][0] = 2.0 * (hi*hj + hk*hr);
-  RotationMatrix[1][1] = 1.0 - 2.0 * (hi*hi + hk*hk);
-  RotationMatrix[1][2] = 2.0 * (hj*hk - hi*hr);
-  RotationMatrix[2][0] = 2.0 * (hi*hk - hj*hr);
-  RotationMatrix[2][1] = 2.0 * (hj*hk + hi*hr);
-  RotationMatrix[2][2] = 1.0 - 2.0 * (hi*hi + hj*hj);
-
-}
 
 void CNumerics::EigenDecomposition(su2double **A_ij, su2double **Eig_Vec, su2double *Eig_Val, unsigned short n){
   int iDim,jDim;
@@ -3175,135 +3062,6 @@ void CNumerics::EigenRecomposition(su2double **A_ij, su2double **Eig_Vec, su2dou
   delete [] deltaN;
 }
 
-void CNumerics::SetAnisotropyTensor(CConfig *config, unsigned long val_global_index){
-
-	unsigned short iDim, jDim, kDim;
-	su2double anis_eigval1, anis_eigval2, anis_eigval3;
-	su2double theta, n1, n2, n3, hr, hi, hj, hk;
-	su2double norm;
-
-	su2double eigvals[3][3]  = {{0.0, 0.0, 0.0},{0.0, 0.0, 0.0},{0.0, 0.0, 0.0}};
-	su2double eigvecs[3][3]  = {{0.0, 0.0, 0.0},{0.0, 0.0, 0.0},{0.0, 0.0, 0.0}};
-	su2double buffer1[3][3]  = {{0.0, 0.0, 0.0},{0.0, 0.0, 0.0},{0.0, 0.0, 0.0}};
-	su2double buffer2[3][3]  = {{0.0, 0.0, 0.0},{0.0, 0.0, 0.0},{0.0, 0.0, 0.0}};
-	su2double buffer3[3][3]  = {{0.0, 0.0, 0.0},{0.0, 0.0, 0.0},{0.0, 0.0, 0.0}};
-	su2double rotation[3][3] = {{0.0, 0.0, 0.0},{0.0, 0.0, 0.0},{0.0, 0.0, 0.0}};
-
-	for (iDim=0; iDim<3; iDim++)
-		for (jDim=0; jDim<3; jDim++)
-			bij[iDim][jDim] = 0.0;
-
-	anis_eigval1 = config->GetEigenValue1(val_global_index);
-	anis_eigval2 = config->GetEigenValue2(val_global_index);
-	anis_eigval3 = config->GetEigenValue3(val_global_index);
-
-	discrepancyTerm1 =  config->GetDiscrTerm1(val_global_index);
-	discrepancyTerm2 =  config->GetDiscrTerm2(val_global_index);
-
-	quaternion_theta =  config->GetQuaternion_theta(val_global_index);
-	quaternion_n1	 =  config->GetQuaternion_n1(val_global_index);
-	quaternion_n2	 =  config->GetQuaternion_n2(val_global_index);
-	if (nDim == 3) {
-	  quaternion_n3	 =  config->GetQuaternion_n3(val_global_index);
-	  norm  = sqrt(quaternion_n1*quaternion_n1 + quaternion_n2*quaternion_n2 + quaternion_n3*quaternion_n3);
-	}
-
-	if (nDim == 2){
-		theta = quaternion_theta*PI_NUMBER/180.;
-		n1    = 0.0;
-		n2    = 0.0;
-		n3    = sqrt(1.0 - (n1*n1 + n2*n2));
-	}
-	else{
-		theta = quaternion_theta*PI_NUMBER/180.;
-		n1    = quaternion_n1/norm;
-		n2    = quaternion_n2/norm;
-		n3    = quaternion_n3/norm;
-	}
-
-	hr = cos(theta/2.0);
-	hi = n1 * sin(theta/2.0);
-	hj = n2 * sin(theta/2.0);
-	hk = n3 * sin(theta/2.0);
-
-	/*--- Compute the normalized anisotropy tensor ---*/
-	if (config->GetBoolBlendFactor()){
-
-		/*--- Build matrix of eigenvalues ---*/
-
-		eigvals[0][0] = anis_eigval1 + discrepancyTerm1;
-		eigvals[1][1] = anis_eigval2 + discrepancyTerm2;
-	//	eigvals[2][2] = anis_eigval3;
-		eigvals[2][2] = -1.0 * (eigvals[0][0] + eigvals[1][1]);
-
-		/*--- Build matrix of eigenvectors ---*/
-		eigvecs[0][0] = config->GetEigenVector1x(val_global_index);
-		eigvecs[0][1] = config->GetEigenVector2x(val_global_index);
-		eigvecs[0][2] = config->GetEigenVector3x(val_global_index);
-		eigvecs[1][0] = config->GetEigenVector1y(val_global_index);
-		eigvecs[1][1] = config->GetEigenVector2y(val_global_index);
-		eigvecs[1][2] = config->GetEigenVector3y(val_global_index);
-		eigvecs[2][0] = config->GetEigenVector1z(val_global_index);
-		eigvecs[2][1] = config->GetEigenVector2z(val_global_index);
-		eigvecs[2][2] = config->GetEigenVector3z(val_global_index);
-
-		rotation[0][0] = 1.0 - 2.0 * (hj*hj + hk*hk);
-		rotation[0][1] = 2.0 * (hi*hj - hk*hr);
-		rotation[0][2] = 2.0 * (hi*hk + hj*hr);
-		rotation[1][0] = 2.0 * (hi*hj + hk*hr);
-		rotation[1][1] = 1.0 - 2.0 * (hi*hi + hk*hk);
-		rotation[1][2] = 2.0 * (hj*hk - hi*hr);
-		rotation[2][0] = 2.0 * (hi*hk - hj*hr);
-		rotation[2][1] = 2.0 * (hj*hk + hi*hr);
-		rotation[2][2] = 1.0 - 2.0 * (hi*hi + hj*hj);
-
-		/*--- Compute anisotropy tensor bij= Q*V*Lambda*V.T*Q.T ---*/
-
-		/*--- This does Q*V ---*/
-		for (iDim=0; iDim<3; iDim++) {
-		  for (jDim=0; jDim<3; jDim++) {
-			for (kDim=0; kDim<3; kDim++) {
-			  buffer1[iDim][jDim] += rotation[iDim][kDim] * eigvecs[kDim][jDim];
-			}
-		  }
-		}
-
-		/*--- This does Q*V*Lambda ---*/
-		for (iDim=0; iDim<3; iDim++) {
-		  for (jDim=0; jDim<3; jDim++) {
-			for (kDim=0; kDim<3; kDim++) {
-			  buffer2[iDim][jDim] += buffer1[iDim][kDim] * eigvals[kDim][jDim];
-			}
-		  }
-		}
-
-		/*--- This does Q*V*Lambda*V.T ---*/
-		for (iDim=0; iDim<3; iDim++) {
-		  for (jDim=0; jDim<3; jDim++) {
-			for (kDim=0; kDim<3; kDim++) {
-			  buffer3[iDim][jDim] += buffer2[iDim][kDim] * eigvecs[jDim][kDim];
-			}
-		  }
-		}
-
-		/*--- This does Q*V*Lambda*V.T*Q.T ---*/
-		for (iDim=0; iDim<3; iDim++) {
-		  for (jDim=0; jDim<3; jDim++) {
-			for (kDim=0; kDim<3; kDim++) {
-			  bij[iDim][jDim] += buffer3[iDim][kDim] * rotation[jDim][kDim];
-			}
-		  }
-		}
-
-	//	for (iDim=0; iDim<3; iDim++) {
-	//	  for (jDim=0; jDim<3; jDim++) {
-	//		  cout << "bij[" << iDim << "][" << jDim <<  "] = " << bij[iDim][jDim] << endl;
-	//	  }
-	//	}
-
-	}
-
-}
 
 void CNumerics::tred2(su2double **V, su2double *d, su2double *e, unsigned short n) {
 /* Author:

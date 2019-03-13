@@ -167,9 +167,7 @@ public:
 	CPrimalGrid*** newBound;            /*!< \brief Boundary vector for new periodic elements (primal grid information). */
 	unsigned long *nNewElem_Bound;			/*!< \brief Number of new periodic elements of the boundary. */
 
-	su2double *Sens_discrepancyTerm1, *Sens_discrepancyTerm2;
-	su2double *Sens_quatTheta, *Sens_quatn1, *Sens_quatn2, *Sens_quatn3;
-
+	su2double *Sens_l00, *Sens_l01, *Sens_l02, *Sens_l11, *Sens_l12, *Sens_l22;
   
   /*--- Partitioning-specific variables ---*/
   map<unsigned long,unsigned long> Global_to_Local_Elem;
@@ -257,22 +255,22 @@ public:
 	 */
 	unsigned long GetnVertex(unsigned short val_marker);
 
-	void Initialize_Sens_discrepancyTerm(unsigned long val_n_points_global);
-	void SetSens_discrepancyTerm1(su2double val_sens, unsigned long val_global_index);
-	void SetSens_discrepancyTerm2(su2double val_sens, unsigned long val_global_index);
-	void SetSens_quatTheta(su2double val_sens, unsigned long val_global_index);
-	void SetSens_quatn1(su2double val_sens, unsigned long val_global_index);
-	void SetSens_quatn2(su2double val_sens, unsigned long val_global_index);
-	void SetSens_quatn3(su2double val_sens, unsigned long val_global_index);
+	void Initialize_Sens_randomMatrix(unsigned long val_n_points_global);
+	void SetSens_l00(su2double val_sens, unsigned long val_global_index);
+	void SetSens_l01(su2double val_sens, unsigned long val_global_index);
+	void SetSens_l02(su2double val_sens, unsigned long val_global_index);
+	void SetSens_l11(su2double val_sens, unsigned long val_global_index);
+	void SetSens_l12(su2double val_sens, unsigned long val_global_index);
+	void SetSens_l22(su2double val_sens, unsigned long val_global_index);
 
-	su2double GetSens_discrepancyTerm1(unsigned long val_global_index);
-	su2double GetSens_discrepancyTerm2(unsigned long val_global_index);
-	su2double GetSens_quatTheta(unsigned long val_global_index);
-	su2double GetSens_quatn1(unsigned long val_global_index);
-	su2double GetSens_quatn2(unsigned long val_global_index);
-	su2double GetSens_quatn3(unsigned long val_global_index);
+	su2double GetSens_l00(unsigned long val_global_index);
+	su2double GetSens_l01(unsigned long val_global_index);
+	su2double GetSens_l02(unsigned long val_global_index);
+	su2double GetSens_l11(unsigned long val_global_index);
+	su2double GetSens_l12(unsigned long val_global_index);
+	su2double GetSens_l22(unsigned long val_global_index);
 
-	void DeleteSens_discrepancyTerm(void);
+	void DeleteSens_randomMatrix(void);
 
 	/*!
 	 * \brief Get number of span wise section.

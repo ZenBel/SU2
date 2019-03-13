@@ -167,45 +167,45 @@ inline void CGeometry::SetnDim(unsigned short val_nDim) { nDim = val_nDim; }
 
 inline su2double* CGeometry::GetSpanWiseValue(unsigned short val_marker) { return SpanWiseValue[val_marker-1]; }
 
-inline void CGeometry::Initialize_Sens_discrepancyTerm(unsigned long val_n_points_global){
+inline void CGeometry::Initialize_Sens_randomMatrix(unsigned long val_n_points_global){
 	unsigned long iPoint;
-	Sens_discrepancyTerm1 = new su2double[val_n_points_global];
-	Sens_discrepancyTerm2 = new su2double[val_n_points_global];
-	Sens_quatTheta = new su2double[val_n_points_global];
-	Sens_quatn1 = new su2double[val_n_points_global];
-	Sens_quatn2 = new su2double[val_n_points_global];
-	Sens_quatn3 = new su2double[val_n_points_global];
+	Sens_l00 = new su2double[val_n_points_global];
+	Sens_l01 = new su2double[val_n_points_global];
+	Sens_l02 = new su2double[val_n_points_global];
+	Sens_l11 = new su2double[val_n_points_global];
+	Sens_l12 = new su2double[val_n_points_global];
+	Sens_l22 = new su2double[val_n_points_global];
 	for (iPoint=0; iPoint < val_n_points_global; iPoint++){ 
-	  Sens_discrepancyTerm1[iPoint] = 0.0;
-	  Sens_discrepancyTerm2[iPoint] = 0.0;
-	  Sens_quatTheta[iPoint] = 0.0;
-	  Sens_quatn1[iPoint] = 0.0;
-  	  Sens_quatn2[iPoint] = 0.0;
-  	  Sens_quatn3[iPoint] = 0.0;
+	  Sens_l00[iPoint] = 0.0;
+	  Sens_l01[iPoint] = 0.0;
+	  Sens_l02[iPoint] = 0.0;
+	  Sens_l11[iPoint] = 0.0;
+  	  Sens_l12[iPoint] = 0.0;
+  	  Sens_l22[iPoint] = 0.0;
 	}
 }
 
-inline void CGeometry::SetSens_discrepancyTerm1(su2double val_sens, unsigned long val_global_index){Sens_discrepancyTerm1[val_global_index]=val_sens;}
-inline void CGeometry::SetSens_discrepancyTerm2(su2double val_sens, unsigned long val_global_index){Sens_discrepancyTerm2[val_global_index]=val_sens;}
-inline void CGeometry::SetSens_quatTheta(su2double val_sens, unsigned long val_global_index){Sens_quatTheta[val_global_index]=val_sens;}
-inline void CGeometry::SetSens_quatn1(su2double val_sens, unsigned long val_global_index){Sens_quatn1[val_global_index]=val_sens;}
-inline void CGeometry::SetSens_quatn2(su2double val_sens, unsigned long val_global_index){Sens_quatn2[val_global_index]=val_sens;}
-inline void CGeometry::SetSens_quatn3(su2double val_sens, unsigned long val_global_index){Sens_quatn3[val_global_index]=val_sens;}
+inline void CGeometry::SetSens_l00(su2double val_sens, unsigned long val_global_index){Sens_l00[val_global_index]=val_sens;}
+inline void CGeometry::SetSens_l01(su2double val_sens, unsigned long val_global_index){Sens_l01[val_global_index]=val_sens;}
+inline void CGeometry::SetSens_l02(su2double val_sens, unsigned long val_global_index){Sens_l02[val_global_index]=val_sens;}
+inline void CGeometry::SetSens_l11(su2double val_sens, unsigned long val_global_index){Sens_l11[val_global_index]=val_sens;}
+inline void CGeometry::SetSens_l12(su2double val_sens, unsigned long val_global_index){Sens_l12[val_global_index]=val_sens;}
+inline void CGeometry::SetSens_l22(su2double val_sens, unsigned long val_global_index){Sens_l22[val_global_index]=val_sens;}
 	
-inline su2double CGeometry::GetSens_discrepancyTerm1(unsigned long val_global_index){return Sens_discrepancyTerm1[val_global_index]; }
-inline su2double CGeometry::GetSens_discrepancyTerm2(unsigned long val_global_index){return Sens_discrepancyTerm2[val_global_index]; }
-inline su2double CGeometry::GetSens_quatTheta(unsigned long val_global_index){return Sens_quatTheta[val_global_index]; }
-inline su2double CGeometry::GetSens_quatn1(unsigned long val_global_index){return Sens_quatn1[val_global_index]; }
-inline su2double CGeometry::GetSens_quatn2(unsigned long val_global_index){return Sens_quatn2[val_global_index]; }
-inline su2double CGeometry::GetSens_quatn3(unsigned long val_global_index){return Sens_quatn3[val_global_index]; }
+inline su2double CGeometry::GetSens_l00(unsigned long val_global_index){return Sens_l00[val_global_index]; }
+inline su2double CGeometry::GetSens_l01(unsigned long val_global_index){return Sens_l01[val_global_index]; }
+inline su2double CGeometry::GetSens_l02(unsigned long val_global_index){return Sens_l02[val_global_index]; }
+inline su2double CGeometry::GetSens_l11(unsigned long val_global_index){return Sens_l11[val_global_index]; }
+inline su2double CGeometry::GetSens_l12(unsigned long val_global_index){return Sens_l12[val_global_index]; }
+inline su2double CGeometry::GetSens_l22(unsigned long val_global_index){return Sens_l22[val_global_index]; }
 
-inline void CGeometry::DeleteSens_discrepancyTerm(void){ 
-  delete [] Sens_discrepancyTerm1;
-  delete [] Sens_discrepancyTerm2;
-  delete [] Sens_quatTheta;
-  delete [] Sens_quatn1;
-  delete [] Sens_quatn2;
-  delete [] Sens_quatn3;
+inline void CGeometry::DeleteSens_randomMatrix(void){ 
+  delete [] Sens_l00;
+  delete [] Sens_l01;
+  delete [] Sens_l02;
+  delete [] Sens_l11;
+  delete [] Sens_l12;
+  delete [] Sens_l22;
 }
 
 inline unsigned long CGeometry::GetnVertex(unsigned short val_marker) { return nVertex[val_marker]; }

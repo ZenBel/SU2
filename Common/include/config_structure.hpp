@@ -288,9 +288,8 @@ private:
   su2double **NonUniform_d2Var1, **NonUniform_d2Var2, **NonUniform_d2Var3,
             **NonUniform_d2Var4, **NonUniform_d2Var5, **NonUniform_d2Var6;
 
-  su2double *discTerm1, *discTerm2;
-  su2double *quat_theta, *quat_n1, *quat_n2, *quat_n3;
-  su2double **eigenvector1, **eigenvector2, **eigenvector3, *eigenvalue1, *eigenvalue2, *eigenvalue3;
+  su2double *l00, *l01, *l02, *l11, *l12, *l22;
+  su2double *lr00, *lr01, *lr02, *lr11, *lr12, *lr22;
   bool BoolDiscTerm;
   bool BoolAnisotropy;
 
@@ -6003,37 +6002,35 @@ public:
 
   void InitializeDiscrTerm(unsigned long val_point);
 
-  void SetDiscrTerm1(su2double val_discTerm1, unsigned long val_point);
-  void SetDiscrTerm2(su2double val_discTerm2, unsigned long val_point);
-  su2double GetDiscrTerm1(unsigned long val_point);
-  su2double GetDiscrTerm2(unsigned long val_point);
+  void Set_l00(su2double val_l00, unsigned long val_point);
+  void Set_l01(su2double val_l01, unsigned long val_point);
+  void Set_l02(su2double val_l02, unsigned long val_point);
+  void Set_l11(su2double val_l11, unsigned long val_point);
+  void Set_l12(su2double val_l12, unsigned long val_point);
+  void Set_l22(su2double val_l22, unsigned long val_point);
 
-  void SetQuaternion_theta(su2double val_theta, unsigned long val_point);
-  void SetQuaternion_n1(su2double val_n1, unsigned long val_point);
-  void SetQuaternion_n2(su2double val_n2, unsigned long val_point);
-  void SetQuaternion_n3(su2double val_n2, unsigned long val_point);
-  su2double GetQuaternion_theta(unsigned long val_point);
-  su2double GetQuaternion_n1(unsigned long val_point);
-  su2double GetQuaternion_n2(unsigned long val_point);
-  su2double GetQuaternion_n3(unsigned long val_point);
-
-  void SetEigenVectors(string filename, su2double val_eigvec_x, su2double val_eigvec_y, su2double val_eigvec_z,
-  		                      unsigned long val_point);
-  void SetEigenValues(string filename, su2double val_eigval, unsigned long val_point);
-  su2double GetEigenValue1(unsigned long val_point);
-  su2double GetEigenValue2(unsigned long val_point);
-  su2double GetEigenValue3(unsigned long val_point);
-  su2double GetEigenVector1x(unsigned long val_point);
-  su2double GetEigenVector1y(unsigned long val_point);
-  su2double GetEigenVector1z(unsigned long val_point);
-  su2double GetEigenVector2x(unsigned long val_point);
-  su2double GetEigenVector2y(unsigned long val_point);
-  su2double GetEigenVector2z(unsigned long val_point);
-  su2double GetEigenVector3x(unsigned long val_point);
-  su2double GetEigenVector3y(unsigned long val_point);
-  su2double GetEigenVector3z(unsigned long val_point);
+  su2double Get_l00(unsigned long val_point);
+  su2double Get_l01(unsigned long val_point);
+  su2double Get_l02(unsigned long val_point);
+  su2double Get_l11(unsigned long val_point);
+  su2double Get_l12(unsigned long val_point);
+  su2double Get_l22(unsigned long val_point);
 
   void InitializeAnisotropyTensor(unsigned long val_point);
+
+  void Set_lr00(su2double val_l00, unsigned long val_point);
+  void Set_lr01(su2double val_l01, unsigned long val_point);
+  void Set_lr02(su2double val_l02, unsigned long val_point);
+  void Set_lr11(su2double val_l11, unsigned long val_point);
+  void Set_lr12(su2double val_l12, unsigned long val_point);
+  void Set_lr22(su2double val_l22, unsigned long val_point);
+
+  su2double Get_lr00(unsigned long val_point);
+  su2double Get_lr01(unsigned long val_point);
+  su2double Get_lr02(unsigned long val_point);
+  su2double Get_lr11(unsigned long val_point);
+  su2double Get_lr12(unsigned long val_point);
+  su2double Get_lr22(unsigned long val_point);
 
   void SetNUBC_Var1(su2double newVar, unsigned long val_pos, unsigned short val_marker);
   void SetNUBC_Var2(su2double newVar, unsigned long val_pos, unsigned short val_marker);

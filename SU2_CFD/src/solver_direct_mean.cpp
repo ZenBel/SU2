@@ -9227,7 +9227,6 @@ void CEulerSolver::BC_Far_Field(CGeometry *geometry, CSolver **solver_container,
           unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 //          cout << "idx0 = " << GlobalIndex << endl;
           visc_numerics->SetGlobalIndex(GlobalIndex);
-          visc_numerics->SetAnisotropyTensor(config, GlobalIndex);
         }
         
         /*--- Compute and update viscous residual ---*/
@@ -16778,7 +16777,6 @@ void CNSSolver::Viscous_Residual(CGeometry *geometry, CSolver **solver_container
       unsigned long i_GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 //      cout << "idx1 = " << i_GlobalIndex << endl;
       numerics->SetGlobalIndex(i_GlobalIndex);
-      numerics->SetAnisotropyTensor(config, i_GlobalIndex);
     }
     
     /*--- Compute and update residual ---*/

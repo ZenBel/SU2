@@ -207,14 +207,12 @@ public:
     
   su2double *l, *m;
 
-  su2double discrepancyTerm1, discrepancyTerm2;
-  su2double quaternion_theta, quaternion_n1, quaternion_n2, quaternion_n3;
+  su2double L00, L01, L02, L11, L12, L22;
+  su2double LR00, LR01, LR02, LR11, LR12, LR22;
 
-  su2double **bij;
   su2double **MeanReynoldsStress; /*!< \brief Mean Reynolds stress tensor  */
   su2double **MeanPerturbedRSM;   /*!< \brief Perturbed Reynolds stress tensor  */
-  su2double *Barycentric_Coord, *New_Coord, **Corners;
-  su2double *Eig_Val, **A_ij, **Eig_Vec, **RotationMatrix, **tmpA_ij;
+  su2double **L, **LR;
   su2double PerturbedStrainMag;   /*!< \brief Strain magnitude calculated using perturbed stress tensor  */
   unsigned long Global_Index;
 
@@ -289,14 +287,12 @@ public:
   void SetDiscrepancyTerm2(su2double val_discrepancyTerm);
 
   void SetGlobalIndex(unsigned long val_global_index);
-  void SetAnisotropyTensor(CConfig *config, unsigned long val_global_index);
   void SetReynoldsStressMatrix(su2double turb_ke,
 		                       su2double *Mean_PrimVar,
 		                       su2double **Mean_GradPrimVar,
 							   su2double Mean_Eddy_Viscosity);
   void SetPerturbedRSM(su2double turb_ke, CConfig *config, unsigned long val_global_index);
   void GetMeanRateOfStrainMatrix(su2double **S_ij, su2double **Mean_GradPrimVar);
-  void GetRotationMatrix(su2double **RotationMatrix, CConfig *config, unsigned long val_global_index);
 
   /*!
    * \brief Decomposes the symmetric matrix A_ij, into eigenvectors and eigenvalues
@@ -5003,7 +4999,6 @@ public:
    */
   void GetMeanRateOfStrainMatrix(su2double **S_ij, su2double **Mean_GradPrimVar);
 
-  void GetRotationMatrix(su2double **RotationMatrix, CConfig *config, unsigned long val_global_index);
 
 };
 

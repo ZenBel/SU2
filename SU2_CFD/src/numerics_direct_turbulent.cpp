@@ -451,8 +451,8 @@ void CSourcePieceWise_TurbSA::ComputeResidual(su2double *val_residual, su2double
     
     CrossProduction = cb2_sigma*norm2_Grad*Volume;
     
-    su2double beta = discrepancyTerm1;
-//    su2double beta = 1.0;
+//    su2double beta = discrepancyTerm1;
+    su2double beta = 1.0;
 
     val_residual[0] = beta*Production - Destruction + CrossProduction;
 
@@ -1361,151 +1361,76 @@ void CSourcePieceWise_TurbSST::SetPerturbedRSM(su2double turb_ke, CConfig *confi
   unsigned short iDim,jDim, kDim;
 
   su2double **tmp1 = new su2double* [3];
-  for (iDim= 0; iDim< 3; iDim++)
-    tmp1[iDim] = new su2double [3];
+  su2double **tmp2 = new su2double* [3];
+  for (iDim= 0; iDim< 3; iDim++){
+	tmp1[iDim] = new su2double [3];
+	tmp2[iDim] = new su2double [3];
+  }
 
   for (iDim=0; iDim<3; iDim++) {
 	for (jDim=0; jDim<3; jDim++) {
-		tmpA_ij[iDim][jDim] = 0.0;
+		L[iDim][jDim] = 0.0;
+		LR[iDim][jDim] = 0.0;
 		tmp1[iDim][jDim] = 0.0;
+		tmp2[iDim][jDim] = 0.0;
+		MeanPerturbedRSM[iDim][jDim] = 0.0;
 	}
   }
 
-  /*--- Build vector of eigenvalues ---*/
-  /* NOTE: The current script follows the EQiPS implementation by Mishra.
-   * However, here Eig_Val[0] > Eig_Val[1] > Eig_Val[1] and
-   * the same holds for the corresponding eigenvectors.
+  /*--- Build the Cholesky decomposition of Rij and the random matrix G
+   * for which Rij = LR' * LR, with LR: upper-triangular and
+   * for which G = L' * L, with L: upper triangular.
+   * Finally we have [R] = LR' * L' * L * LR, where [R] is Reynolds Stress Tensor.
+   * See Xiao et al. (2017).
    */
 
-  Eig_Val[0] = config->GetEigenValue1(val_global_index);
-  Eig_Val[1] = config->GetEigenValue2(val_global_index);
-  Eig_Val[2] = config->GetEigenValue3(val_global_index);
-//  Eig_Val[2] = - (Eig_Val[0] + Eig_Val[1]);
+  LR[0][0] = config->Get_lr00(val_global_index);
+  LR[0][1] = config->Get_lr01(val_global_index);
+  LR[0][2] = config->Get_lr02(val_global_index);
+  LR[1][1] = config->Get_lr11(val_global_index);
+  LR[1][2] = config->Get_lr12(val_global_index);
+  LR[2][2] = config->Get_lr22(val_global_index);
 
-  /*--- Build matrix of eigenvectors ---*/
-  Eig_Vec[0][0] = config->GetEigenVector1x(val_global_index);
-  Eig_Vec[0][1] = config->GetEigenVector2x(val_global_index);
-  Eig_Vec[0][2] = config->GetEigenVector3x(val_global_index);
-  Eig_Vec[1][0] = config->GetEigenVector1y(val_global_index);
-  Eig_Vec[1][1] = config->GetEigenVector2y(val_global_index);
-  Eig_Vec[1][2] = config->GetEigenVector3y(val_global_index);
-  Eig_Vec[2][0] = config->GetEigenVector1z(val_global_index);
-  Eig_Vec[2][1] = config->GetEigenVector2z(val_global_index);
-  Eig_Vec[2][2] = config->GetEigenVector3z(val_global_index);
+  L[0][0] = config->Get_l00(val_global_index);
+  L[0][1] = config->Get_l01(val_global_index);
+  L[0][2] = config->Get_l02(val_global_index);
+  L[1][1] = config->Get_l11(val_global_index);
+  L[1][2] = config->Get_l12(val_global_index);
+  L[2][2] = config->Get_l22(val_global_index);
 
-  /*--- Perturbation of Barycentric Coordinates ---*/
-  discrepancyTerm1 =  config->GetDiscrTerm1(val_global_index);
-  discrepancyTerm2 =  config->GetDiscrTerm2(val_global_index);
-
-  /* compute convex combination coefficients */
-  su2double c1c = Eig_Val[0] - Eig_Val[1];
-  su2double c2c = 2.0 * (Eig_Val[1] - Eig_Val[2]);
-  su2double c3c = 3.0 * Eig_Val[2] + 1.0;
-
-  /* define barycentric traingle corner points */
-  Corners[0][0] = 1.0;
-  Corners[0][1] = 0.0;
-  Corners[1][0] = 0.0;
-  Corners[1][1] = 0.0;
-  Corners[2][0] = 0.5;
-  Corners[2][1] = sin(60.0*PI_NUMBER/180.0);
-
-  /* define barycentric coordinates */
-  Barycentric_Coord[0] = Corners[0][0] * c1c + Corners[1][0] * c2c + Corners[2][0] * c3c;
-  Barycentric_Coord[1] = Corners[0][1] * c1c + Corners[1][1] * c2c + Corners[2][1] * c3c;
-
-  /* calculate perturbed barycentric coordinates */
-  Barycentric_Coord[0] = Barycentric_Coord[0] + discrepancyTerm1;
-  Barycentric_Coord[1] = Barycentric_Coord[1] + discrepancyTerm2;
-
-  /* rebuild c1c,c2c,c3c based on perturbed barycentric coordinates */
-  c3c = Barycentric_Coord[1] / Corners[2][1];
-  c1c = Barycentric_Coord[0] - Corners[2][0] * c3c;
-  c2c = 1 - c1c - c3c;
-
-  /* build new anisotropy eigenvalues */
-  Eig_Val[2] = (c3c - 1) / 3.0;
-  Eig_Val[1] = 0.5 *c2c + Eig_Val[2];
-  Eig_Val[0] = c1c + Eig_Val[1];
-
-  EigenRecomposition(tmpA_ij, Eig_Vec, Eig_Val, 3);
-
-  /*--- Multiply A_ij by rotation matrix as Q*A_ij*Q.T ---*/
-  GetRotationMatrix(RotationMatrix, config, val_global_index);
-
-  /*--- This does tmp1 = Q*A_ij ---*/
+  /*--- This does [LR]'*[L]' ---*/
   for (iDim=0; iDim<3; iDim++) {
 	for (jDim=0; jDim<3; jDim++) {
 	  for (kDim=0; kDim<3; kDim++) {
-		tmp1[iDim][jDim] += RotationMatrix[iDim][kDim] * tmpA_ij[kDim][jDim];
+		tmp1[iDim][jDim] += LR[kDim][iDim] * L[jDim][kDim];
 	  }
 	}
   }
 
-  /*--- This does A_ij = tmp1*Q.T ---*/
+  /*--- This does  [L]*[LR] ---*/
   for (iDim=0; iDim<3; iDim++) {
 	for (jDim=0; jDim<3; jDim++) {
-	  A_ij[iDim][jDim] = 0.0;
 	  for (kDim=0; kDim<3; kDim++) {
-		A_ij[iDim][jDim] += tmp1[iDim][kDim] * RotationMatrix[jDim][kDim];
+		tmp2[iDim][jDim] += L[iDim][kDim] * LR[kDim][jDim];
 	  }
 	}
   }
 
-  /* compute perturbed Reynolds stress matrix; */
-  for (iDim = 0; iDim< 3; iDim++){
-    for (jDim = 0; jDim < 3; jDim++){
-      MeanPerturbedRSM[iDim][jDim] = 2.0 * turb_ke * (A_ij[iDim][jDim] + 1.0/3.0 * delta3[iDim][jDim]);
-    }
+  /*--- This does [R] = tmp1*tmp2 =  [LR]'*[L]'* [L]*[LR] ---*/
+  for (iDim=0; iDim<3; iDim++) {
+	for (jDim=0; jDim<3; jDim++) {
+	  for (kDim=0; kDim<3; kDim++) {
+		MeanPerturbedRSM[iDim][jDim] += tmp1[iDim][kDim] * tmp2[kDim][jDim];
+	  }
+	}
   }
 
   for (iDim = 0; iDim < 3; iDim++){
-    delete [] tmp1[iDim];
+	delete [] tmp1[iDim];
+	delete [] tmp2[iDim];
   }
   delete [] tmp1;
-
-}
-
-void CSourcePieceWise_TurbSST::GetRotationMatrix(su2double **RotationMatrix, CConfig *config, unsigned long val_global_index){
-
-  su2double theta, n1, n2, n3, hr, hi, hj, hk;
-  su2double norm;
-
-  quaternion_theta =  config->GetQuaternion_theta(val_global_index);
-  quaternion_n1	   =  config->GetQuaternion_n1(val_global_index);
-  quaternion_n2	   =  config->GetQuaternion_n2(val_global_index);
-  if (nDim == 3) {
-	quaternion_n3	 =  config->GetQuaternion_n3(val_global_index);
-	norm  = sqrt(quaternion_n1*quaternion_n1 + quaternion_n2*quaternion_n2 + quaternion_n3*quaternion_n3);
-  }
-
-  if (nDim == 2){
-	theta = quaternion_theta*PI_NUMBER/180.;
-	n1    = 0.0;
-	n2    = 0.0;
-	n3    = sqrt(1.0 - (n1*n1 + n2*n2));
-  }
-  else{
-	theta = quaternion_theta*PI_NUMBER/180.;
-	n1    = quaternion_n1/norm;
-	n2    = quaternion_n2/norm;
-	n3    = quaternion_n3/norm;
-  }
-
-  hr = cos(theta/2.0);
-  hi = n1 * sin(theta/2.0);
-  hj = n2 * sin(theta/2.0);
-  hk = n3 * sin(theta/2.0);
-
-  RotationMatrix[0][0] = 1.0 - 2.0 * (hj*hj + hk*hk);
-  RotationMatrix[0][1] = 2.0 * (hi*hj - hk*hr);
-  RotationMatrix[0][2] = 2.0 * (hi*hk + hj*hr);
-  RotationMatrix[1][0] = 2.0 * (hi*hj + hk*hr);
-  RotationMatrix[1][1] = 1.0 - 2.0 * (hi*hi + hk*hk);
-  RotationMatrix[1][2] = 2.0 * (hj*hk - hi*hr);
-  RotationMatrix[2][0] = 2.0 * (hi*hk - hj*hr);
-  RotationMatrix[2][1] = 2.0 * (hj*hk + hi*hr);
-  RotationMatrix[2][2] = 1.0 - 2.0 * (hi*hi + hj*hj);
+  delete [] tmp2;
 
 }
 
@@ -1523,8 +1448,10 @@ void CSourcePieceWise_TurbSST::SetPerturbedStrainMag(su2double turb_ke, CConfig 
   /* compute perturbed strain rate tensor */
   for (iDim = 0; iDim < nDim; iDim++){
     for (jDim =0; jDim < nDim; jDim++){
-      StrainRate[iDim][jDim] = MeanReynoldsStress[iDim][jDim] * (1.0 - blend)
-    		                   + MeanPerturbedRSM[iDim][jDim] * blend
+//      StrainRate[iDim][jDim] = MeanReynoldsStress[iDim][jDim] * (1.0 - blend)
+//    		                   + MeanPerturbedRSM[iDim][jDim] * blend
+//                               - TWO3 * turb_ke * delta[iDim][jDim];
+      StrainRate[iDim][jDim] = MeanReynoldsStress[iDim][jDim]
                                - TWO3 * turb_ke * delta[iDim][jDim];
       StrainRate[iDim][jDim] = - StrainRate[iDim][jDim] * Density_i / (2 * Eddy_Viscosity_i);
     }

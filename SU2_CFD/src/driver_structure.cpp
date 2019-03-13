@@ -3190,7 +3190,7 @@ void CDriver::Output(unsigned long ExtIter) {
 
   /*--- Delete Discrepancy Term Sensitivities ---*/
   if ( (config_container[ZONE_0]->GetBoolDiscrepancyTerm()) && (config_container[ZONE_0]->GetKind_Solver() == DISC_ADJ_RANS) ){
-	  geometry_container[ZONE_0][MESH_0]->DeleteSens_discrepancyTerm();
+	  geometry_container[ZONE_0][MESH_0]->DeleteSens_randomMatrix();
   }
 
   /*--- Export Surface Solution File for Unsteady Simulations ---*/

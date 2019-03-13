@@ -6955,164 +6955,123 @@ void CConfig::Initialize_ErrorFunc_Variables(unsigned long val_points) {
   TargetQuantity = new su2double[val_points];
 }
 
-void CConfig::SetDiscrTerm1(su2double val_discTerm1, unsigned long val_point){
-  discTerm1[val_point] = val_discTerm1;
+void CConfig::Set_l00(su2double val_l00, unsigned long val_point){
+  l00[val_point] = val_l00;
 }
 
-void CConfig::SetDiscrTerm2(su2double val_discTerm2, unsigned long val_point){
-  discTerm2[val_point] = val_discTerm2;
+void CConfig::Set_l01(su2double val_l01, unsigned long val_point){
+  l01[val_point] = val_l01;
 }
 
-void CConfig::SetQuaternion_theta(su2double val_theta, unsigned long val_point){
-  quat_theta[val_point] = val_theta;
+void CConfig::Set_l02(su2double val_l02, unsigned long val_point){
+  l02[val_point] = val_l02;
 }
 
-void CConfig::SetQuaternion_n1(su2double val_n1, unsigned long val_point){
-  quat_n1[val_point] = val_n1;
+void CConfig::Set_l11(su2double val_l11, unsigned long val_point){
+  l11[val_point] = val_l11;
 }
 
-void CConfig::SetQuaternion_n2(su2double val_n2, unsigned long val_point){
-  quat_n2[val_point] = val_n2;
+void CConfig::Set_l12(su2double val_l12, unsigned long val_point){
+  l12[val_point] = val_l12;
 }
 
-void CConfig::SetQuaternion_n3(su2double val_n3, unsigned long val_point){
-  quat_n3[val_point] = val_n3;
+void CConfig::Set_l22(su2double val_l22, unsigned long val_point){
+  l22[val_point] = val_l22;
 }
 
-
-su2double CConfig::GetDiscrTerm1(unsigned long val_point){
-  return discTerm1[val_point];
+su2double CConfig::Get_l00(unsigned long val_point){
+  return l00[val_point];
 }
 
-su2double CConfig::GetDiscrTerm2(unsigned long val_point){
-  return discTerm2[val_point];
+su2double CConfig::Get_l01(unsigned long val_point){
+  return l01[val_point];
 }
 
-su2double CConfig::GetQuaternion_theta(unsigned long val_point){
-  return quat_theta[val_point];
+su2double CConfig::Get_l02(unsigned long val_point){
+  return l02[val_point];
 }
 
-su2double CConfig::GetQuaternion_n1(unsigned long val_point){
-  return quat_n1[val_point];
+su2double CConfig::Get_l11(unsigned long val_point){
+  return l11[val_point];
 }
 
-su2double CConfig::GetQuaternion_n2(unsigned long val_point){
-  return quat_n2[val_point];
+su2double CConfig::Get_l12(unsigned long val_point){
+  return l12[val_point];
 }
 
-su2double CConfig::GetQuaternion_n3(unsigned long val_point){
-  return quat_n3[val_point];
+su2double CConfig::Get_l22(unsigned long val_point){
+  return l22[val_point];
 }
 
 void CConfig::InitializeDiscrTerm(unsigned long val_point){
-  discTerm1  =  new su2double[val_point];
-  discTerm2  =  new su2double[val_point];
-  quat_theta =  new su2double[val_point];
-  quat_n1    =  new su2double[val_point];
-  quat_n2    =  new su2double[val_point];
-  quat_n3    =  new su2double[val_point];
+  l00 =  new su2double[val_point];
+  l01 =  new su2double[val_point];
+  l02 =  new su2double[val_point];
+  l11 =  new su2double[val_point];
+  l12 =  new su2double[val_point];
+  l22 =  new su2double[val_point];
   BoolDiscTerm = true;
-}
-
-void CConfig::SetEigenVectors(string filename, su2double val_eigvec_x, su2double val_eigvec_y, su2double val_eigvec_z,
-		                      unsigned long val_point){
-
-   if (filename == "eigenvector1.dat"){
-	   eigenvector1[val_point][0] = val_eigvec_x;
-	   eigenvector1[val_point][1] = val_eigvec_y;
-	   eigenvector1[val_point][2] = val_eigvec_z;
-   }
-   if (filename == "eigenvector2.dat"){
-	   eigenvector2[val_point][0] = val_eigvec_x;
-	   eigenvector2[val_point][1] = val_eigvec_y;
-	   eigenvector2[val_point][2] = val_eigvec_z;
-   }
-   if (filename == "eigenvector3.dat"){
-	   eigenvector3[val_point][0] = val_eigvec_x;
-	   eigenvector3[val_point][1] = val_eigvec_y;
-	   eigenvector3[val_point][2] = val_eigvec_z;
-   }
-
-}
-
-void CConfig::SetEigenValues(string filename, su2double val_eigval, unsigned long val_point){
-
-   if (filename == "eigenvalue1.dat"){
-	   eigenvalue1[val_point] = val_eigval;
-   }
-   if (filename == "eigenvalue2.dat"){
-	   eigenvalue2[val_point] = val_eigval;
-   }
-   if (filename == "eigenvalue3.dat"){
-	   eigenvalue3[val_point] = val_eigval;
-   }
-
-}
-
-su2double CConfig::GetEigenValue1(unsigned long val_point){
-	return eigenvalue1[val_point];
-}
-
-su2double CConfig::GetEigenValue2(unsigned long val_point){
-	return eigenvalue2[val_point];
-}
-
-su2double CConfig::GetEigenValue3(unsigned long val_point){
-	return eigenvalue3[val_point];
-}
-
-su2double CConfig::GetEigenVector1x(unsigned long val_point){
-	return eigenvector1[val_point][0];
-}
-
-su2double CConfig::GetEigenVector1y(unsigned long val_point){
-	return eigenvector1[val_point][1];
-}
-
-su2double CConfig::GetEigenVector1z(unsigned long val_point){
-	return eigenvector1[val_point][2];
-}
-
-su2double CConfig::GetEigenVector2x(unsigned long val_point){
-	return eigenvector2[val_point][0];
-}
-
-su2double CConfig::GetEigenVector2y(unsigned long val_point){
-	return eigenvector2[val_point][1];
-}
-
-su2double CConfig::GetEigenVector2z(unsigned long val_point){
-	return eigenvector2[val_point][2];
-}
-
-su2double CConfig::GetEigenVector3x(unsigned long val_point){
-	return eigenvector3[val_point][0];
-}
-
-su2double CConfig::GetEigenVector3y(unsigned long val_point){
-	return eigenvector3[val_point][1];
-}
-
-su2double CConfig::GetEigenVector3z(unsigned long val_point){
-	return eigenvector3[val_point][2];
 }
 
 
 void CConfig::InitializeAnisotropyTensor(unsigned long val_point){
 
-  unsigned long iPoint;
-  eigenvector1 =  new su2double*[val_point];
-  eigenvector2 =  new su2double*[val_point];
-  eigenvector3 =  new su2double*[val_point];
-  for (iPoint=0; iPoint < val_point; iPoint++){
-	  eigenvector1[iPoint] = new su2double[3];
-	  eigenvector2[iPoint] = new su2double[3];
-	  eigenvector3[iPoint] = new su2double[3];
-  }
-  eigenvalue1 =  new su2double[val_point];
-  eigenvalue2 =  new su2double[val_point];
-  eigenvalue3 =  new su2double[val_point];
+  lr00 =  new su2double[val_point];
+  lr01 =  new su2double[val_point];
+  lr02 =  new su2double[val_point];
+  lr11 =  new su2double[val_point];
+  lr12 =  new su2double[val_point];
+  lr22 =  new su2double[val_point];
   BoolAnisotropy = true;
+
+}
+
+void CConfig::Set_lr00(su2double val_l00, unsigned long val_point){
+  lr00[val_point] = val_l00;
+}
+
+void CConfig::Set_lr01(su2double val_l01, unsigned long val_point){
+  lr01[val_point] = val_l01;
+}
+
+void CConfig::Set_lr02(su2double val_l02, unsigned long val_point){
+  lr02[val_point] = val_l02;
+}
+
+void CConfig::Set_lr11(su2double val_l11, unsigned long val_point){
+  lr11[val_point] = val_l11;
+}
+
+void CConfig::Set_lr12(su2double val_l12, unsigned long val_point){
+  lr12[val_point] = val_l12;
+}
+
+void CConfig::Set_lr22(su2double val_l22, unsigned long val_point){
+  lr22[val_point] = val_l22;
+}
+
+su2double CConfig::Get_lr00(unsigned long val_point){
+  return lr00[val_point];
+}
+
+su2double CConfig::Get_lr01(unsigned long val_point){
+  return lr01[val_point];
+}
+
+su2double CConfig::Get_lr02(unsigned long val_point){
+  return lr02[val_point];
+}
+
+su2double CConfig::Get_lr11(unsigned long val_point){
+  return lr11[val_point];
+}
+
+su2double CConfig::Get_lr12(unsigned long val_point){
+  return lr12[val_point];
+}
+
+su2double CConfig::Get_lr22(unsigned long val_point){
+  return lr22[val_point];
 }
 
 void CConfig::SetNUBC_Coord(su2double newVar, unsigned long val_pos, unsigned short val_marker) {

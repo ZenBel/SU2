@@ -818,7 +818,8 @@ void COutput::SetTurbulentSA_CSV(CConfig *config, CGeometry *geometry,
     local_zCoord[Global_Index] = 0.0;
     if (nDim == 3) local_zCoord[Global_Index] = geometry->node[iPoint]->GetCoord(2);
 
-    local_discrTerm[Global_Index] = config->GetDiscrTerm1(Global_Index);
+//    local_discrTerm[Global_Index] = config->GetDiscrTerm1(Global_Index);
+    local_discrTerm[Global_Index] = 0.0;
     local_dist_i[Global_Index] = geometry->node[iPoint]->GetWall_Distance();
 
 //    Vorticity = FlowSolver->node[iPoint]->GetVorticity();
@@ -1690,12 +1691,11 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 
 	  if (config->GetBoolDiscrepancyTerm()){
 
-		  su2double Sens_discrepancyTerm1, Sens_discrepancyTerm2;
-		  su2double Sens_quatTheta, Sens_quatn1, Sens_quatn2, Sens_quatn3;
+		  su2double Sens_L00, Sens_L01, Sens_L02, Sens_L11, Sens_L12, Sens_L22;
 		  su2double x, y, z;
 
-		  SensNUBC_file <<  "\"PointID\",\"x\",\"y\",\"z\",\"Sens_discrepancyTerm1\",\"Sens_discrepancyTerm2\",";
-		  SensNUBC_file << "\"Sens_quatTheta\",\"Sens_quatn1\",\"Sens_quatn2\",\"Sens_quatn3\"";
+		  SensNUBC_file <<  "\"PointID\",\"x\",\"y\",\"z\",\"Sens_L00\",\"Sens_L01\",";
+		  SensNUBC_file << "\"Sens_L02\",\"Sens_L11\",\"Sens_L12\",\"Sens_L22\"";
 		  SensNUBC_file << "\n";
 
 		  for (GlobalIndex = 0; GlobalIndex < nPointGlobal; GlobalIndex++) {
@@ -1704,16 +1704,16 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
 				  y = total_yy[GlobalIndex];
 				  z = 0.0;
 				  if (geometry->GetnDim() == 3) {z = total_zz[GlobalIndex];}
-				  Sens_discrepancyTerm1 = geometry->GetSens_discrepancyTerm1(GlobalIndex);
-				  Sens_discrepancyTerm2 = geometry->GetSens_discrepancyTerm2(GlobalIndex);
-				  Sens_quatTheta = geometry->GetSens_quatTheta(GlobalIndex);
-				  Sens_quatn1 = geometry->GetSens_quatn1(GlobalIndex);
-				  Sens_quatn2 = geometry->GetSens_quatn2(GlobalIndex);
-				  Sens_quatn3 = geometry->GetSens_quatn3(GlobalIndex);
+				  Sens_L00 = geometry->GetSens_l00(GlobalIndex);
+				  Sens_L01 = geometry->GetSens_l01(GlobalIndex);
+				  Sens_L02 = geometry->GetSens_l02(GlobalIndex);
+				  Sens_L11 = geometry->GetSens_l11(GlobalIndex);
+				  Sens_L12 = geometry->GetSens_l12(GlobalIndex);
+				  Sens_L22 = geometry->GetSens_l22(GlobalIndex);
 
 				  SensNUBC_file << scientific << GlobalIndex << ", " << x << ", " << y << ", " << z << ", " <<
-						          Sens_discrepancyTerm1 << ", " << Sens_discrepancyTerm2 << ", " <<
-								  Sens_quatTheta << ", " << Sens_quatn1 << ", " << Sens_quatn2 << ", " << Sens_quatn3;
+						           Sens_L00 << ", " << Sens_L01 << ", " <<
+								   Sens_L02 << ", " << Sens_L11 << ", " << Sens_L12 << ", " << Sens_L22;
 				  SensNUBC_file << "\n";
 			  }
 		  }
@@ -13004,8 +13004,8 @@ void COutput::LoadLocalData_AdjFlow(CConfig *config, CGeometry *geometry, CSolve
     if (config->GetBoolDiscrepancyTerm()){
       nVar_Par += 3;
       Variable_Names.push_back("GlobalIndex");
-      Variable_Names.push_back("Sens_discrepancy1");
-      Variable_Names.push_back("Sens_discrepancy2");
+      Variable_Names.push_back("Sens_L00");
+      Variable_Names.push_back("Sens_L11");
     }
     else{
       nVar_Par += nDim;
@@ -13227,8 +13227,8 @@ void COutput::LoadLocalData_AdjFlow(CConfig *config, CGeometry *geometry, CSolve
           (Kind_Solver == DISC_ADJ_RANS)) {
         if (config->GetBoolDiscrepancyTerm()){
           Local_Data[jPoint][iVar] = GlobalIndex; iVar++;
-          Local_Data[jPoint][iVar] = geometry->GetSens_discrepancyTerm1(GlobalIndex); iVar++;
-          Local_Data[jPoint][iVar] = geometry->GetSens_discrepancyTerm2(GlobalIndex); iVar++;
+          Local_Data[jPoint][iVar] = geometry->GetSens_l00(GlobalIndex); iVar++;
+          Local_Data[jPoint][iVar] = geometry->GetSens_l11(GlobalIndex); iVar++;
         }
         else{
           Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(0); iVar++;
