@@ -9382,7 +9382,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	ifstream Surface_file;
 
 	su2double RefVel2, RefDensity, RefPressure, factor, weight, weight_tot=0.0;
-	su2double dist, *Coord, Target, Computed, Buffer_ErrorFunc, Buffer_Regularization, Volume, Buffer_VolumeTot, AllBound_ErrorFunc;
+	su2double dist, *Coord, Target, Computed, tmp_ErrorFunc, tmp_Regularization, AllBound_ErrorFunc;
 
     nPointLocal = geometry->GetnPoint(); // Total number of mesh points on the decomposed geometry managed by a single processor
 
@@ -9392,8 +9392,8 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
   nPointGlobal = nPointLocal;
 #endif
 
-	Buffer_ErrorFunc   = 0.0;
-	Buffer_Regularization = 0.0;
+	tmp_ErrorFunc      = 0.0;
+	tmp_Regularization = 0.0;
 	AllBound_ErrorFunc = 0.0;
 
 #ifdef HAVE_MPI
@@ -9408,7 +9408,8 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 
     factor = 1.0 / (0.5*RefDensity*RefVel2);
 
-    su2double lambda = config->GetRegularization(); //Tikhonov regularization factor
+    su2double delta = config->GetDispersionParam(); //Dispersion parameters
+    su2double sigma_exp = config->GetSigmaExp();	//Experimental standard deviation
 
     if ( config->GetExtIter() == 0){
 
@@ -9418,8 +9419,9 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
         cout << "Reading TargetCp.dat and storing the information."<< endl;
         cout << "NOTE: The Cp is used as Target quantity!!!" << endl;
         if (config->GetBoolDiscrepancyTerm()){
-    	    cout << "Tikhonov regularization of the OF implemented with lambda = "<< lambda << ". (only for DISCREPANCY_DV)"<< endl;
+    	    cout << "Dispersion parameter of the random matrix: "<< delta << ". (only for DISCREPANCY_DV; should be between 0 and sqrt(2)/2)."<< endl;
         }
+        cout << "Sigma_exp = " << sigma_exp << "." << endl;
       }
 
 	  /*--- Prepare to read the surface pressure files (CSV) ---*/
@@ -9480,46 +9482,43 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
     }
 
     /*--- Loop over all points of a (partitioned) domain ---*/
+    su2double l00, l01, l02, l11, l12, l22;
+    su2double sigma_d, s1, s2, s3;
+
+	sigma_d = delta / 2.0;	// sigma_d = delta/sqrt(d+1), with d=3;
+	s1 = 4.0/(delta*delta); // s_i = d/delta^2+1-i, with d=3;
+	s2 = 4.0/(delta*delta) - 1.0;
+	s3 = 4.0/(delta*delta) - 2.0;
 
     for (iPoint = 0; iPoint < nPointLocal; iPoint++){
       /*--- Filter out the Halo nodes ---*/
 	  if (geometry->node[iPoint]->GetDomain()){
 		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 		if (config->GetTargetPointID(GlobalIndex) == true){
-		  weight = 1.0;
 		  Target = config->GetTargetQuantity(GlobalIndex);
-		  Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
-//		  Computed = Mach = sqrt(solver_container->node[iPoint]->GetVelocity2()) / solver_container->node[iPoint]->GetSoundSpeed();
-		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
+		  Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor; //OF implemented for Cp only
+		  tmp_ErrorFunc += (Target - Computed) * (Target - Computed) / (2.0 * sigma_exp * sigma_exp);
 	    }
-//		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
-//		if (config->GetBoolDiscrepancyTerm()){
-//			Buffer_Regularization += (config->GetDiscrTerm1(GlobalIndex) - 1.0) * (config->GetDiscrTerm1(GlobalIndex) - 1.0);
-//			cout << "Regularization only with DiscrTerm1 !!!" << endl;
-//		}
+
+		l00 = config->Get_l00(GlobalIndex);
+		l01 = config->Get_l01(GlobalIndex);
+		l02 = config->Get_l02(GlobalIndex);
+		l11 = config->Get_l11(GlobalIndex);
+		l12 = config->Get_l12(GlobalIndex);
+		l22 = config->Get_l22(GlobalIndex);
+
+		// NOTE: log is the natural logarithm in C++; Gamma evaluates the gamma function.
+		tmp_Regularization += (l00*l00 + l01*l01 + l02*l02 + l11*l11 + l12*l12 + l22*l22)/(2.0*sigma_d*sigma_d)
+				            - log(8.0 * pow(l00, s1-1.0)/(pow(2.0*sigma_d, s1)*Gamma(0.5*s1))
+				            		  * pow(l11, s2-1.0)/(pow(2.0*sigma_d, s2)*Gamma(0.5*s2))
+									  * pow(l22, s3-1.0)/(pow(2.0*sigma_d, s3)*Gamma(0.5*s3)));
+
 	  }
     }
 
-//    unsigned long InputPoints;
-//    unsigned short nMarker_NonUniform = config->GetnMarkerNonUniform();
-//    unsigned short count;
-//
-//	if	( (config->GetBoolNonUniform()) && (rank = MASTER_NODE) ){ //need to account only once for spline nodes values.
-//	  for (iMarker = 0; iMarker < nMarker_NonUniform; iMarker++){
-//	    InputPoints = config->GetNUBC_nPoints(count);
-//	    string spaceVar = config->GetNUBC_spaceVar(count);
-//	    for (iPos=0; iPos<InputPoints; iPos++){
-//			Buffer_ErrorFunc += lambda * (config->GetNUBC_Var1(iPos, count) - 101300.0) * (config->GetNUBC_Var1(iPos, count) - 101300.0);
-//			Buffer_ErrorFunc += lambda * (config->GetNUBC_Var2(iPos, count) - 288.15) * (config->GetNUBC_Var2(iPos, count) - 288.15);
-//			Buffer_ErrorFunc += lambda * (config->GetNUBC_Var3(iPos, count) - 84000.0) * (config->GetNUBC_Var3(iPos, count) - 84000.0);
-//			Buffer_ErrorFunc += lambda * (config->GetNUBC_Var4(iPos, count) - 0.0) * (config->GetNUBC_Var4(iPos, count) - 0.0);
-//	    }
-//	  }
-//	}
+	AllBound_ErrorFunc += tmp_ErrorFunc + tmp_Regularization;
 
-	AllBound_ErrorFunc += Buffer_ErrorFunc + lambda * Buffer_Regularization;
-
-//	cout << "ErrorFunc = " << Buffer_ErrorFunc << ", Regularization = " << Buffer_Regularization << endl;
+//	cout << "ErrorFunc = " << tmp_ErrorFunc << ", Regularization = " << tmp_Regularization << endl;
 
 #ifdef HAVE_MPI
   /*--- Add AllBound information using all the nodes ---*/
@@ -17708,4 +17707,132 @@ void COutput::SpecialOutput_AnalyzeSurface(CSolver *solver, CGeometry *geometry,
   delete [] Surface_MassFlow_Abs;
   
 }
+
+su2double COutput::LogGamma(su2double x ){
+
+  if (x <= 0.0){
+	cout << "Invalid input argument " << x <<  ". Argument must be positive.";
+	exit(EXIT_FAILURE);
+  }
+
+  if (x < 12.0){
+	return log(fabs(Gamma(x)));
+  }
+
+// Abramowitz and Stegun 6.1.41
+// Asymptotic series should be good to at least 11 or 12 figures
+// For error analysis, see Whittiker and Watson
+// A Course in Modern Analysis (1927), page 252
+
+  static const su2double c[8] = { 1.0/12.0, -1.0/360.0, 1.0/1260.0, -1.0/1680.0, 1.0/1188.0,
+		                          -691.0/360360.0, 1.0/156.0, -3617.0/122400.0};
+
+  su2double z = 1.0/(x*x);
+  su2double sum = c[7];
+  unsigned short i;
+  for (i=6; i >= 0; i--){
+	sum *= z;
+	sum += c[i];
+  }
+  su2double series = sum/x;
+
+  static const su2double halfLogTwoPi = 0.91893853320467274178032973640562;
+  su2double logGamma = (x - 0.5)*log(x) - x + halfLogTwoPi + series;
+  return logGamma;
+
+}
+
+su2double COutput::Gamma( su2double x){
+
+  if (x <= 0.0){
+	cout << "Invalid input argument " << x <<  ". Argument must be positive! Right now we have argument = " << x << "." << endl;
+	exit(EXIT_FAILURE);
+  }
+
+// Split the function domain into three intervals:
+// (0, 0.001), [0.001, 12), and (12, infinity)
+
+///////////////////////////////////////////////////////////////////////////
+// First interval: (0, 0.001)
+//
+// For small x, 1/Gamma(x) has power series x + gamma x^2  - ...
+// So in this range, 1/Gamma(x) = x + gamma x^2 with error on the order of x^3.
+// The relative error over this interval is less than 6e-7.
+
+  su2double gamma = 0.577215664901532860606512090; // Euler's gamma constant
+
+  if (x < 0.001){
+	return 1.0/(x*(1.0 + gamma*x));
+  }
+
+///////////////////////////////////////////////////////////////////////////
+// Second interval: [0.001, 12)
+
+  if (x < 12.0){
+	// The algorithm directly approximates gamma over (1,2) and uses
+	// reduction identities to reduce other arguments to this interval.
+
+	su2double y = x;
+	int n = 0;
+	bool arg_was_less_than_one = (y < 1.0);
+
+	// Add or subtract integers as necessary to bring y into (1,2)
+	// Will correct for this below
+	if (arg_was_less_than_one)	{
+		y += 1.0;
+	}
+	else	{
+		n = static_cast<int> (floor(y)) - 1;  // will use n later
+		y -= n;
+	}
+
+	// numerator coefficients for approximation over the interval (1,2)
+	static const su2double p[8] = { -1.71618513886549492533811E+0, 2.47656508055759199108314E+1, -3.79804256470945635097577E+2,
+		                6.29331155312818442661052E+2, 8.66966202790413211295064E+2,	-3.14512729688483675254357E+4,
+		               -3.61444134186911729807069E+4, 6.64561438202405440627855E+4};
+
+	// denominator coefficients for approximation over the interval (1,2)
+	static const su2double q[8] = { -3.08402300119738975254353E+1, 3.15350626979604161529144E+2, -1.01515636749021914166146E+3,
+		               -3.10777167157231109440444E+3, 2.25381184209801510330112E+4, 4.75584627752788110767815E+3,
+		               -1.34659959864969306392456E+5, -1.15132259675553483497211E+5};
+
+	su2double num = 0.0;
+	su2double den = 1.0;
+	unsigned short i;
+
+	su2double z = y - 1;
+	for (i = 0; i < 8; i++)	{
+	  num = (num + p[i])*z;
+	  den = den*z + q[i];
+	}
+	su2double result = num/den + 1.0;
+
+	// Apply correction if argument was not initially in (1,2)
+	if (arg_was_less_than_one)	{
+		// Use identity gamma(z) = gamma(z+1)/z
+		// The variable "result" now holds gamma of the original y + 1
+		// Thus we use y-1 to get back the orginal y.
+		result /= (y-1.0);
+	}
+	else	{
+		// Use the identity gamma(z+n) = z*(z+1)* ... *(z+n-1)*gamma(z)
+		for (i = 0; i < n; i++)
+			result *= y++;
+	}
+
+	return result;
+  }
+
+///////////////////////////////////////////////////////////////////////////
+// Third interval: [12, infinity)
+
+  if (x > 171.624){
+	// Correct answer too large to display. Force +infinity.
+	su2double temp = 1.7E+308;
+	return temp*2.0;
+  }
+
+  return exp(LogGamma(x));
+}
+
 

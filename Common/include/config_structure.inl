@@ -1157,7 +1157,8 @@ inline bool CConfig::GetEquivArea(void) { return EquivArea; }
 inline bool CConfig::GetInvDesign_Cp(void) { return InvDesign_Cp; }
 
 inline bool CConfig::GetDataAssimilation(void) { return DataAssimilation; }
-inline su2double CConfig::GetRegularization(void) { return Regularization; }
+inline su2double CConfig::GetDispersionParam(void) { return DispersionParam; }
+inline su2double CConfig::GetSigmaExp(void) { return SigmaExp; }
 
 inline bool CConfig::GetInvDesign_HeatFlux(void) { return InvDesign_HeatFlux; }
 

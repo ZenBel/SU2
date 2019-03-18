@@ -1863,7 +1863,8 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addBoolOption("INV_DESIGN_CP", InvDesign_Cp, false);
 
   addBoolOption("DATA_ASSIMILATION", DataAssimilation, false);
-  addDoubleOption("ERROR_FUNC_LAMBDA", Regularization, 0.0);	//regularization parameter of ErrorFunc
+  addDoubleOption("DISPERSION_PARAM", DispersionParam, 0.5);	//regularization parameter of ErrorFunc
+  addDoubleOption("SIGMA_EXP", SigmaExp, 1.0);
 
   /* DESCRIPTION: Evaluate inverse design on the surface  */
   addBoolOption("INV_DESIGN_HEATFLUX", InvDesign_HeatFlux, false);

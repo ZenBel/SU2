@@ -255,6 +255,8 @@ public:
                          unsigned long iExtIter);
   
   void SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CConfig *config);
+  su2double LogGamma(su2double x );
+  su2double Gamma( su2double x);
 
   /*!
    * \brief Writes inverse design.

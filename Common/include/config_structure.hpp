@@ -978,7 +978,7 @@ private:
   su2double *FreeStreamTurboNormal; /*!< \brief Direction to initialize the flow in turbomachinery computation */
 
   bool DataAssimilation;
-  su2double Regularization;
+  su2double DispersionParam, SigmaExp;
   su2double BlendFactor;
   bool BoolBlendFactor, BoolBlendAdapt;
   su2double *default_blend_adapt, *Blend_AdaptParam;
@@ -4644,7 +4644,8 @@ public:
   bool GetInvDesign_Cp(void);
 
   bool GetDataAssimilation(void);
-  su2double GetRegularization(void);
+  su2double GetDispersionParam(void);
+  su2double GetSigmaExp(void);
   
   /*!
    * \brief Information about computing and plotting the equivalent area distribution.
