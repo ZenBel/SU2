@@ -9508,10 +9508,12 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 		l22 = config->Get_l22(GlobalIndex);
 
 		// NOTE: log is the natural logarithm in C++; Gamma evaluates the gamma function.
+//		tmp_Regularization += (l00*l00 + l01*l01 + l02*l02 + l11*l11 + l12*l12 + l22*l22)/(2.0*sigma_d*sigma_d)
+//				            - log(8.0 * pow(l00, s1-1.0)/(pow(2.0*sigma_d, s1)*Gamma(0.5*s1))
+//				            		  * pow(l11, s2-1.0)/(pow(2.0*sigma_d, s2)*Gamma(0.5*s2))
+//									  * pow(l22, s3-1.0)/(pow(2.0*sigma_d, s3)*Gamma(0.5*s3)));
 		tmp_Regularization += (l00*l00 + l01*l01 + l02*l02 + l11*l11 + l12*l12 + l22*l22)/(2.0*sigma_d*sigma_d)
-				            - log(8.0 * pow(l00, s1-1.0)/(pow(2.0*sigma_d, s1)*Gamma(0.5*s1))
-				            		  * pow(l11, s2-1.0)/(pow(2.0*sigma_d, s2)*Gamma(0.5*s2))
-									  * pow(l22, s3-1.0)/(pow(2.0*sigma_d, s3)*Gamma(0.5*s3)));
+				              - log( pow(l00, s1-1.0) * pow(l11, s2-1.0) * pow(l22, s3-1.0) );
 
 	  }
     }
