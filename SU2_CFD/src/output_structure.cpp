@@ -9382,7 +9382,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	ifstream Surface_file;
 
 	su2double RefVel2, RefDensity, RefPressure, factor, weight, weight_tot=0.0;
-	su2double dist, *Coord, Target, Computed, tmp_ErrorFunc, tmp_Regularization, AllBound_ErrorFunc;
+	su2double dist, *Coord, Target, Computed, tmp_ErrorFunc, tmp_Regularization, AllBound_ErrorFunc, AllBound_ErrorTerm;
 
     nPointLocal = geometry->GetnPoint(); // Total number of mesh points on the decomposed geometry managed by a single processor
 
@@ -9395,9 +9395,11 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	tmp_ErrorFunc      = 0.0;
 	tmp_Regularization = 0.0;
 	AllBound_ErrorFunc = 0.0;
+	AllBound_ErrorTerm = 0.0;
 
 #ifdef HAVE_MPI
   su2double MyAllBound_ErrorFunc;
+  su2double MyAllBound_ErrorTerm;
 #endif
 
     RefDensity  = solver_container->GetDensity_Inf();
@@ -9473,7 +9475,6 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	  	    if (dist < tolerance){
 	 		  config->SetTargetPointID(GlobalIndex);
 	 		  config->SetTargetQuantity(pressure_coeff, GlobalIndex);
-//	 		  config->SetTargetQuantity(Mach, GlobalIndex);
 	  	    }
 	      }
 	    }
@@ -9523,9 +9524,13 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
   /*--- Add AllBound information using all the nodes ---*/
   MyAllBound_ErrorFunc	= AllBound_ErrorFunc;
   SU2_MPI::Allreduce(&MyAllBound_ErrorFunc, &AllBound_ErrorFunc, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+  MyAllBound_ErrorTerm = tmp_ErrorFunc;
+  SU2_MPI::Allreduce(&MyAllBound_ErrorTerm, &AllBound_ErrorTerm, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
     solver_container->SetTotal_ErrorFunc(AllBound_ErrorFunc);
+    solver_container->SetTotal_Custom_ObjFunc(AllBound_ErrorTerm, 1.0);
 
 }
 
