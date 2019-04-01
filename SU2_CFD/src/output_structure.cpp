@@ -9507,14 +9507,11 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 		l12 = config->Get_l12(GlobalIndex);
 		l22 = config->Get_l22(GlobalIndex);
 
-		// NOTE: log is the natural logarithm in C++; Gamma evaluates the gamma function.
-//		tmp_Regularization += (l00*l00 + l01*l01 + l02*l02 + l11*l11 + l12*l12 + l22*l22)/(2.0*sigma_d*sigma_d)
-//				            - log(8.0 * pow(l00, s1-1.0)/(pow(2.0*sigma_d, s1)*Gamma(0.5*s1))
-//				            		  * pow(l11, s2-1.0)/(pow(2.0*sigma_d, s2)*Gamma(0.5*s2))
-//									  * pow(l22, s3-1.0)/(pow(2.0*sigma_d, s3)*Gamma(0.5*s3)));
+//		// NOTE: log is the natural logarithm in C++; Gamma evaluates the gamma function.
 		tmp_Regularization += (l00*l00 + l01*l01 + l02*l02 + l11*l11 + l12*l12 + l22*l22)/(2.0*sigma_d*sigma_d)
 				              - log( pow(l00, s1-1.0) * pow(l11, s2-1.0) * pow(l22, s3-1.0) );
-
+//		tmp_Regularization += (exp(2.0*l01)+exp(2.0*l02)+exp(2.0*l12)+exp(2.0*l00)+exp(2.0*l11)+exp(2.0*l22))/(2.0*sigma_d*sigma_d);
+//		tmp_Regularization += -1.0*(l01 + l02 + l12 + s1*l00 + s2*l11 + s3*l22);
 	  }
     }
 
@@ -12151,7 +12148,8 @@ void COutput::SetResult_Files_Parallel(CSolver ****solver_container,
         		}
         		if (config[iZone]->GetKind_Turb_Model() == SST){
         		  SetTurbulentSST_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
-        		}        	}
+        		}
+        	}
         }
 
         break;

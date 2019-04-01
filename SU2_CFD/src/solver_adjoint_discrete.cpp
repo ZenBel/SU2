@@ -797,8 +797,7 @@ void CDiscAdjSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *conf
 		geometry->SetSens_l12(TotalSens_l12[GlobalIndex], GlobalIndex);
 		geometry->SetSens_l22(TotalSens_l22[GlobalIndex], GlobalIndex);
 //		if (rank == MASTER_NODE){
-//			cout << "sens_d1[" << GlobalIndex << "] = " << TotalSens_discrTerm1[GlobalIndex] << endl;
-//			cout << "sens_d2[" << GlobalIndex << "] = " << TotalSens_discrTerm2[GlobalIndex] << endl;
+//			cout << "sens_l22[" << GlobalIndex << "] = " << TotalSens_l22[GlobalIndex] << endl;
 //			cout << "" << endl;
 //		}
 	}
