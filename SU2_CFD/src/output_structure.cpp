@@ -9382,7 +9382,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	ifstream Surface_file;
 
 	su2double RefVel2, RefDensity, RefPressure, factor, weight, weight_tot=0.0;
-	su2double dist, *Coord, Target, Computed, Buffer_ErrorFunc, Buffer_Regularization, Volume, Buffer_VolumeTot, AllBound_ErrorFunc;
+	su2double dist, *Coord, Target, Computed, Buffer_ErrorFunc, Buffer_Regularization, AllBound_ErrorFunc, AllBound_ErrorTerm;
 
     nPointLocal = geometry->GetnPoint(); // Total number of mesh points on the decomposed geometry managed by a single processor
 
@@ -9395,9 +9395,11 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	Buffer_ErrorFunc   = 0.0;
 	Buffer_Regularization = 0.0;
 	AllBound_ErrorFunc = 0.0;
+	AllBound_ErrorTerm = 0.0;
 
 #ifdef HAVE_MPI
   su2double MyAllBound_ErrorFunc;
+  su2double MyAllBound_ErrorTerm;
 #endif
 
     RefDensity  = solver_container->GetDensity_Inf();
@@ -9471,7 +9473,6 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	  	    if (dist < tolerance){
 	 		  config->SetTargetPointID(GlobalIndex);
 	 		  config->SetTargetQuantity(pressure_coeff, GlobalIndex);
-//	 		  config->SetTargetQuantity(Mach, GlobalIndex);
 	  	    }
 	      }
 	    }
@@ -9489,33 +9490,23 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 		  weight = 1.0;
 		  Target = config->GetTargetQuantity(GlobalIndex);
 		  Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
-//		  Computed = Mach = sqrt(solver_container->node[iPoint]->GetVelocity2()) / solver_container->node[iPoint]->GetSoundSpeed();
 		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
 	    }
-//		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
-//		if (config->GetBoolDiscrepancyTerm()){
-//			Buffer_Regularization += (config->GetDiscrTerm1(GlobalIndex) - 1.0) * (config->GetDiscrTerm1(GlobalIndex) - 1.0);
-//			cout << "Regularization only with DiscrTerm1 !!!" << endl;
-//		}
+		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
+		if (config->GetBoolDiscrepancyTerm()){
+
+		  Buffer_Regularization += (config->GetDiscrTerm1(GlobalIndex) - 0.0) * (config->GetDiscrTerm1(GlobalIndex) - 0.0)
+					             + (config->GetDiscrTerm2(GlobalIndex) - 0.0) * (config->GetDiscrTerm2(GlobalIndex) - 0.0)
+								 + (config->GetQuaternion_theta(GlobalIndex) - 0.0) * (config->GetQuaternion_theta(GlobalIndex) - 0.0)
+								 + (config->GetQuaternion_n1(GlobalIndex) - 0.0) * (config->GetQuaternion_n1(GlobalIndex) - 0.0)
+								 + (config->GetQuaternion_n2(GlobalIndex) - 0.0) * (config->GetQuaternion_n2(GlobalIndex) - 0.0);
+
+		  if (geometry->GetnDim() == 3){
+			Buffer_Regularization += (config->GetQuaternion_n3(GlobalIndex) - 0.0) * (config->GetQuaternion_n3(GlobalIndex) - 0.0);
+		  }
+		}
 	  }
     }
-
-//    unsigned long InputPoints;
-//    unsigned short nMarker_NonUniform = config->GetnMarkerNonUniform();
-//    unsigned short count;
-//
-//	if	( (config->GetBoolNonUniform()) && (rank = MASTER_NODE) ){ //need to account only once for spline nodes values.
-//	  for (iMarker = 0; iMarker < nMarker_NonUniform; iMarker++){
-//	    InputPoints = config->GetNUBC_nPoints(count);
-//	    string spaceVar = config->GetNUBC_spaceVar(count);
-//	    for (iPos=0; iPos<InputPoints; iPos++){
-//			Buffer_ErrorFunc += lambda * (config->GetNUBC_Var1(iPos, count) - 101300.0) * (config->GetNUBC_Var1(iPos, count) - 101300.0);
-//			Buffer_ErrorFunc += lambda * (config->GetNUBC_Var2(iPos, count) - 288.15) * (config->GetNUBC_Var2(iPos, count) - 288.15);
-//			Buffer_ErrorFunc += lambda * (config->GetNUBC_Var3(iPos, count) - 84000.0) * (config->GetNUBC_Var3(iPos, count) - 84000.0);
-//			Buffer_ErrorFunc += lambda * (config->GetNUBC_Var4(iPos, count) - 0.0) * (config->GetNUBC_Var4(iPos, count) - 0.0);
-//	    }
-//	  }
-//	}
 
 	AllBound_ErrorFunc += Buffer_ErrorFunc + lambda * Buffer_Regularization;
 
@@ -9525,9 +9516,13 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
   /*--- Add AllBound information using all the nodes ---*/
   MyAllBound_ErrorFunc	= AllBound_ErrorFunc;
   SU2_MPI::Allreduce(&MyAllBound_ErrorFunc, &AllBound_ErrorFunc, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+  MyAllBound_ErrorTerm = Buffer_ErrorFunc;
+  SU2_MPI::Allreduce(&MyAllBound_ErrorTerm, &AllBound_ErrorTerm, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
     solver_container->SetTotal_ErrorFunc(AllBound_ErrorFunc);
+    solver_container->SetTotal_Custom_ObjFunc(AllBound_ErrorTerm, 1.0);
 
 }
 
