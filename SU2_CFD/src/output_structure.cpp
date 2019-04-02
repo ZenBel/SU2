@@ -9495,8 +9495,8 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
 		if (config->GetBoolDiscrepancyTerm()){
 
-		  Buffer_Regularization += (config->GetDiscrTerm1(GlobalIndex) - 0.0) * (config->GetDiscrTerm1(GlobalIndex) - 0.0)
-					             + (config->GetDiscrTerm2(GlobalIndex) - 0.0) * (config->GetDiscrTerm2(GlobalIndex) - 0.0)
+		  Buffer_Regularization += (config->GetDiscrTerm1(GlobalIndex) - 1.0) * (config->GetDiscrTerm1(GlobalIndex) - 1.0)
+					             + (config->GetDiscrTerm2(GlobalIndex) - 1.0) * (config->GetDiscrTerm2(GlobalIndex) - 1.0)
 								 + (config->GetQuaternion_theta(GlobalIndex) - 0.0) * (config->GetQuaternion_theta(GlobalIndex) - 0.0)
 								 + (config->GetQuaternion_n1(GlobalIndex) - 0.0) * (config->GetQuaternion_n1(GlobalIndex) - 0.0)
 								 + (config->GetQuaternion_n2(GlobalIndex) - 0.0) * (config->GetQuaternion_n2(GlobalIndex) - 0.0);

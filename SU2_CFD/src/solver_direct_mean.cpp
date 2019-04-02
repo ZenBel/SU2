@@ -9223,11 +9223,6 @@ void CEulerSolver::BC_Far_Field(CGeometry *geometry, CSolver **solver_container,
         if (config->GetKind_Turb_Model() == SST){
           visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0),
                                               solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
-
-          unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-//          cout << "idx0 = " << GlobalIndex << endl;
-          visc_numerics->SetGlobalIndex(GlobalIndex);
-          visc_numerics->SetAnisotropyTensor(config, GlobalIndex);
         }
         
         /*--- Compute and update viscous residual ---*/
@@ -16774,11 +16769,6 @@ void CNSSolver::Viscous_Residual(CGeometry *geometry, CSolver **solver_container
     if (config->GetKind_Turb_Model() == SST){
       numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0),
                                      solver_container[TURB_SOL]->node[jPoint]->GetSolution(0));
-
-      unsigned long i_GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-//      cout << "idx1 = " << i_GlobalIndex << endl;
-      numerics->SetGlobalIndex(i_GlobalIndex);
-      numerics->SetAnisotropyTensor(config, i_GlobalIndex);
     }
     
     /*--- Compute and update residual ---*/

@@ -1218,14 +1218,14 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
   if (input_file.fail()) {
 	if (config->GetKind_Turb_Model() == SST){
 	  if (rank == MASTER_NODE)
-        cout << "WARNING: There is no input file " << input_filename.data() << ". Setting the discrepancy term to ZERO"<< endl;
+        cout << "WARNING: There is no input file " << input_filename.data() << ". Setting the discrepancy term to UNITY"<< endl;
 	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
-	    config->SetDiscrTerm1(0.0, GlobalIndex); // No perturbation to eigenvalues lambda1
-	    config->SetDiscrTerm2(0.0, GlobalIndex); // No perturbation to eigenvalues lambda2
-	    config->SetQuaternion_theta(0.0, GlobalIndex); // No rotation of eigenvectors
-	    config->SetQuaternion_n1(0.0, GlobalIndex); // No rotation of eigenvectors
-	    config->SetQuaternion_n2(0.0, GlobalIndex); // No rotation of eigenvectors
-	    config->SetQuaternion_n3(0.0, GlobalIndex); // No rotation of eigenvectors
+	    config->SetDiscrTerm1(1.0, GlobalIndex); // No perturbation to production term SST model
+	    config->SetDiscrTerm2(1.0, GlobalIndex);
+	    config->SetQuaternion_theta(0.0, GlobalIndex); // just allocate a value
+	    config->SetQuaternion_n1(0.0, GlobalIndex); // just allocate a value
+	    config->SetQuaternion_n2(0.0, GlobalIndex); // just allocate a value
+	    config->SetQuaternion_n3(0.0, GlobalIndex); // just allocate a value
 	  }
 	}
 	else{
@@ -1234,10 +1234,10 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
 		config->SetDiscrTerm1(1.0, GlobalIndex); // No perturbation to production term SA model
 		config->SetDiscrTerm2(1.0, GlobalIndex);
-	    config->SetQuaternion_theta(0.0, GlobalIndex); // No rotation of eigenvectors
-	    config->SetQuaternion_n1(0.0, GlobalIndex); // No rotation of eigenvectors
-	    config->SetQuaternion_n2(0.0, GlobalIndex); // No rotation of eigenvectors
-	    config->SetQuaternion_n3(0.0, GlobalIndex); // No rotation of eigenvectors
+	    config->SetQuaternion_theta(0.0, GlobalIndex); // just allocate a value
+	    config->SetQuaternion_n1(0.0, GlobalIndex); // just allocate a value
+	    config->SetQuaternion_n2(0.0, GlobalIndex); // just allocate a value
+	    config->SetQuaternion_n3(0.0, GlobalIndex); // just allocate a value
 	  }
 	}
   }
@@ -1247,6 +1247,7 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
     getline (input_file, text_line);
     istringstream point_line(text_line);
     point_line >> InputPoints;
+
 
     if (InputPoints == nPointGlobal){
 
@@ -1258,7 +1259,7 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 	    config->SetQuaternion_theta(quat_theta, GlobalIndex);
 	    config->SetQuaternion_n1(quat_n1, GlobalIndex);
 	    config->SetQuaternion_n2(quat_n2, GlobalIndex);
-	    config->SetQuaternion_n3(quat_n3, GlobalIndex); // No rotation of eigenvectors
+	    config->SetQuaternion_n3(quat_n3, GlobalIndex);
 	  }
       input_file.close();
     }
@@ -1275,118 +1276,118 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 
 }
 
-void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
-
-  /*--- Initialize normalized anisotropy tensor from external input file ---*/
-  string text_line;
-  ifstream input_file;
-
-  string input_eigenvector[3], input_eigenvalue[3];
-  input_eigenvector[0] = "eigenvector1.dat";
-  input_eigenvector[1] = "eigenvector2.dat";
-  input_eigenvector[2] = "eigenvector3.dat";
-  input_eigenvalue[0]  = "eigenvalue1.dat";
-  input_eigenvalue[1]  = "eigenvalue2.dat";
-  input_eigenvalue[2]  = "eigenvalue3.dat";
-
-  unsigned long nPointLocal, nPointGlobal;
-  unsigned long InputPoints, GlobalIndex;
-//  vector<su2double> eigvec_x, eigvec_y, eigvec_z, eigval;
-  su2double vec_x, vec_y, vec_z, eig;
-
-  nPointLocal = nPointDomain;
-#ifdef HAVE_MPI
-  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-#else
-  nPointGlobal = nPointLocal; //Total number of points in the domain (no halo nodes considered)
-#endif
-
-  /*-- Initialize anisotropy eigenvectors and eigenvalues ---*/
-  config->InitializeAnisotropyTensor(nPointGlobal);
-
-  /*--- Read eigenvectors from files ---*/
-  unsigned short ii;
-  for (ii = 0; ii < 3; ii++){
-	input_file.open(input_eigenvector[ii].data(), ios::in);
-	if (input_file.fail()) {
-	  if (rank == MASTER_NODE)
-	    cout << "WARNING: There is no input file " << input_eigenvector[ii].data() << ". Setting all eigenvectors to ZERO!"<< endl;
-      for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
-		config->SetEigenVectors(input_eigenvector[ii], 0.0, 0.0, 0.0, GlobalIndex);
-	}
-	else{
-      /*--- Read head of the file for allocation ---*/
-	  getline (input_file, text_line);
-	  istringstream point_line(text_line);
-	  point_line >> InputPoints;
-
-	  if (InputPoints == nPointGlobal){
-
-		vector<su2double> eigvec_x, eigvec_y, eigvec_z;
-        while (getline (input_file, text_line)) {
-		istringstream point_line(text_line);
-		point_line >> GlobalIndex >> vec_x >> vec_y >> vec_z; //note that we are not saving GlobalIndex because we assume the file is already sorted.
-		eigvec_x.push_back(vec_x);
-		eigvec_y.push_back(vec_y);
-		eigvec_z.push_back(vec_z);
-		}
-		input_file.close();
-
-		for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
-		  config->SetEigenVectors(input_eigenvector[ii], eigvec_x[GlobalIndex],
-				  eigvec_y[GlobalIndex], eigvec_z[GlobalIndex], GlobalIndex);
-	  }
-	  else{
-        if (rank == MASTER_NODE){
-		  cout << "The number of points in " << input_eigenvector[ii].data() << " is different from the total number of points in the mesh." << endl;
-		  cout << "eigPoints = " << InputPoints << ", domainPoints = " << nPointGlobal << endl;
-		  exit(EXIT_FAILURE);
-		}
-	  }
-	}
-	if (rank == MASTER_NODE)
-	  cout << input_eigenvector[ii].data() << " read." << endl;
-  }
-
-  /*--- Read eigenvalues from files ---*/
-  for (ii = 0; ii < 3; ii++){
-  	input_file.open(input_eigenvalue[ii].data(), ios::in);
-  	if (input_file.fail()) {
-  	  if (rank == MASTER_NODE)
-  	    cout << "WARNING: There is no input file " << input_eigenvalue[ii].data() << ". Setting all eigenvalues to ZERO!"<< endl;
-	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
-		  config->SetEigenValues(input_eigenvalue[ii], 0.0, GlobalIndex);
-  	}
-  	else{
-        /*--- Read head of the file for allocation ---*/
-  	  getline (input_file, text_line);
-  	  istringstream point_line(text_line);
-  	  point_line >> InputPoints;
-
-  	  if (InputPoints == nPointGlobal){
-  		vector<su2double> eigval;
-        while (getline (input_file, text_line)) {
-  		istringstream point_line(text_line);
-  		point_line >> GlobalIndex >> eig; //note that we are not saving GlobalIndex because we assume the file is already sorted.
-  		eigval.push_back(eig);
-  		}
-  		input_file.close();
-
-  		for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
-  		  config->SetEigenValues(input_eigenvalue[ii], eigval[GlobalIndex], GlobalIndex);
-  	  }
-  	  else{
-          if (rank == MASTER_NODE){
-  		  cout << "The number of points in " << input_eigenvalue[ii].data() << " is different from the total number of points in the mesh." << endl;
-  		  exit(EXIT_FAILURE);
-  		}
-  	  }
-  	}
-  	if (rank == MASTER_NODE)
-  	  cout << input_eigenvalue[ii].data() << " read." << endl;
-  }
-
-}
+//void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
+//
+//  /*--- Initialize normalized anisotropy tensor from external input file ---*/
+//  string text_line;
+//  ifstream input_file;
+//
+//  string input_eigenvector[3], input_eigenvalue[3];
+//  input_eigenvector[0] = "eigenvector1.dat";
+//  input_eigenvector[1] = "eigenvector2.dat";
+//  input_eigenvector[2] = "eigenvector3.dat";
+//  input_eigenvalue[0]  = "eigenvalue1.dat";
+//  input_eigenvalue[1]  = "eigenvalue2.dat";
+//  input_eigenvalue[2]  = "eigenvalue3.dat";
+//
+//  unsigned long nPointLocal, nPointGlobal;
+//  unsigned long InputPoints, GlobalIndex;
+////  vector<su2double> eigvec_x, eigvec_y, eigvec_z, eigval;
+//  su2double vec_x, vec_y, vec_z, eig;
+//
+//  nPointLocal = nPointDomain;
+//#ifdef HAVE_MPI
+//  SU2_MPI::Allreduce(&nPointLocal, &nPointGlobal, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+//#else
+//  nPointGlobal = nPointLocal; //Total number of points in the domain (no halo nodes considered)
+//#endif
+//
+//  /*-- Initialize anisotropy eigenvectors and eigenvalues ---*/
+//  config->InitializeAnisotropyTensor(nPointGlobal);
+//
+//  /*--- Read eigenvectors from files ---*/
+//  unsigned short ii;
+//  for (ii = 0; ii < 3; ii++){
+//	input_file.open(input_eigenvector[ii].data(), ios::in);
+//	if (input_file.fail()) {
+//	  if (rank == MASTER_NODE)
+//	    cout << "WARNING: There is no input file " << input_eigenvector[ii].data() << ". Setting all eigenvectors to ZERO!"<< endl;
+//      for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
+//		config->SetEigenVectors(input_eigenvector[ii], 0.0, 0.0, 0.0, GlobalIndex);
+//	}
+//	else{
+//      /*--- Read head of the file for allocation ---*/
+//	  getline (input_file, text_line);
+//	  istringstream point_line(text_line);
+//	  point_line >> InputPoints;
+//
+//	  if (InputPoints == nPointGlobal){
+//
+//		vector<su2double> eigvec_x, eigvec_y, eigvec_z;
+//        while (getline (input_file, text_line)) {
+//		istringstream point_line(text_line);
+//		point_line >> GlobalIndex >> vec_x >> vec_y >> vec_z; //note that we are not saving GlobalIndex because we assume the file is already sorted.
+//		eigvec_x.push_back(vec_x);
+//		eigvec_y.push_back(vec_y);
+//		eigvec_z.push_back(vec_z);
+//		}
+//		input_file.close();
+//
+//		for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
+//		  config->SetEigenVectors(input_eigenvector[ii], eigvec_x[GlobalIndex],
+//				  eigvec_y[GlobalIndex], eigvec_z[GlobalIndex], GlobalIndex);
+//	  }
+//	  else{
+//        if (rank == MASTER_NODE){
+//		  cout << "The number of points in " << input_eigenvector[ii].data() << " is different from the total number of points in the mesh." << endl;
+//		  cout << "eigPoints = " << InputPoints << ", domainPoints = " << nPointGlobal << endl;
+//		  exit(EXIT_FAILURE);
+//		}
+//	  }
+//	}
+//	if (rank == MASTER_NODE)
+//	  cout << input_eigenvector[ii].data() << " read." << endl;
+//  }
+//
+//  /*--- Read eigenvalues from files ---*/
+//  for (ii = 0; ii < 3; ii++){
+//  	input_file.open(input_eigenvalue[ii].data(), ios::in);
+//  	if (input_file.fail()) {
+//  	  if (rank == MASTER_NODE)
+//  	    cout << "WARNING: There is no input file " << input_eigenvalue[ii].data() << ". Setting all eigenvalues to ZERO!"<< endl;
+//	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
+//		  config->SetEigenValues(input_eigenvalue[ii], 0.0, GlobalIndex);
+//  	}
+//  	else{
+//        /*--- Read head of the file for allocation ---*/
+//  	  getline (input_file, text_line);
+//  	  istringstream point_line(text_line);
+//  	  point_line >> InputPoints;
+//
+//  	  if (InputPoints == nPointGlobal){
+//  		vector<su2double> eigval;
+//        while (getline (input_file, text_line)) {
+//  		istringstream point_line(text_line);
+//  		point_line >> GlobalIndex >> eig; //note that we are not saving GlobalIndex because we assume the file is already sorted.
+//  		eigval.push_back(eig);
+//  		}
+//  		input_file.close();
+//
+//  		for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
+//  		  config->SetEigenValues(input_eigenvalue[ii], eigval[GlobalIndex], GlobalIndex);
+//  	  }
+//  	  else{
+//          if (rank == MASTER_NODE){
+//  		  cout << "The number of points in " << input_eigenvalue[ii].data() << " is different from the total number of points in the mesh." << endl;
+//  		  exit(EXIT_FAILURE);
+//  		}
+//  	  }
+//  	}
+//  	if (rank == MASTER_NODE)
+//  	  cout << input_eigenvalue[ii].data() << " read." << endl;
+//  }
+//
+//}
 
 CTurbSASolver::CTurbSASolver(void) : CTurbSolver() {
 
@@ -3603,10 +3604,10 @@ CTurbSSTSolver::CTurbSSTSolver(CGeometry *geometry, CConfig *config, unsigned sh
   /*--- Read values of discrepancyTerm from external file ---*/
   ReadDiscrepancyTerm(geometry, config);
 
-  /*--- Read eigenvalues and eigenvectors of anisotropy tensor ---*/
-  if (config->GetBoolBlendFactor()){
-    ReadAnisotrpyTensor(geometry, config);
-  }
+//  /*--- Read eigenvalues and eigenvectors of anisotropy tensor ---*/
+//  if (config->GetBoolBlendFactor()){
+//    ReadAnisotrpyTensor(geometry, config);
+//  }
 
 }
 
@@ -3770,12 +3771,6 @@ void CTurbSSTSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
     /*--- Cross diffusion ---*/
     
     numerics->SetCrossDiff(node[iPoint]->GetCrossDiff(),0.0);
-
-    /*--- Set the value of the turbulent Reynolds stress for computation in the k-equation ---*/
-    unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
-//    cout << "idxSST = " << GlobalIndex << endl;
-    numerics->SetGlobalIndex(GlobalIndex);
-    numerics->SetAnisotropyTensor(config, GlobalIndex);
 
     /*--- Compute the source term ---*/
     numerics->ComputeResidual(Residual, Jacobian_i, NULL, config);

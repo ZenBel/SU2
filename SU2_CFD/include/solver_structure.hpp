@@ -8858,7 +8858,7 @@ public:
 
   void ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config);
 
-  void ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config);
+//  void ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config);
 
 };
 

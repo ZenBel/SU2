@@ -1,0 +1,2 @@
+export CXXFLAGS="-g -O3"
+./preconfigure.py --prefix=/home/zeno/SU2/SU2_DA_beta --enable-mpi  --with-cc=/usr/bin/mpicc --with-cxx=/usr/bin/mpicxx --enable-autodiff 
