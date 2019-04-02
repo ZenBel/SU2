@@ -528,7 +528,7 @@ def scipy_powell(project,x0=None,xb=None,its=100,accu=1e-10,grads=False):
 #  Scipy SD
 # -------------------------------------------------------------------
 
-def scipy_steepest_descent(project,x0=None,xb=None,its=100,accu=1e-10,grads=True):
+def scipy_steepest_descent(project,x0=None,xb=None,its=100,accu=1e-10,step_size=1e-5,grads=True):
     """ result = scipy_cg(project,x0=[],xb=[],its=100,accu=1e-10)
 
         Runs the Scipy implementation of Steepest Descent with
@@ -581,7 +581,8 @@ def scipy_steepest_descent(project,x0=None,xb=None,its=100,accu=1e-10,grads=True
     eps = 1.0e-04
 
     # optimizer summary
-    sys.stdout.write('Conjugate gradient (CG) parameters:\n')
+    sys.stdout.write('Steepest Descent (SD) parameters:\n')
+    sys.stdout.write('Step size (alpha_k): ' +  str(step_size) + '\n' )
     sys.stdout.write('Number of design variables: ' + str(n_dv) + '\n')
     sys.stdout.write('Objective function scaling factor: ' + str(obj_scale) + '\n')
     sys.stdout.write('Maximum number of iterations: ' + str(its) + '\n')
@@ -612,6 +613,7 @@ def scipy_steepest_descent(project,x0=None,xb=None,its=100,accu=1e-10,grads=True
                        gtol           = accu           ,
                        epsilon        = eps            ,
                        maxiter        = its            ,
+                       alpha_k        = step_size      ,
                        full_output    = True           ,
                        disp           = True           ,
                        retall         = True           )
