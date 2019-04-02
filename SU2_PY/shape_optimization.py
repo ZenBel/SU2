@@ -37,6 +37,7 @@
 
 import os, sys, shutil
 from optparse import OptionParser
+from scipy.optimize._lsq.common import step_size_to_bound
 sys.path.append(os.environ['SU2_RUN'])
 import SU2
 import numpy
@@ -62,6 +63,8 @@ def main():
                       help="True/False Quiet all SU2 output (optimizer output only)", metavar="QUIET")
     parser.add_option("-z", "--zones", dest="nzones", default="1",
                       help="Number of Zones", metavar="ZONES")
+    parser.add_option("-a", "--alpha_k", dest="step_size", default="1e-5",
+                      help="Step size only for steepest descent algorithm", metavar="STEPSIZE")
 
 
     (options, args)=parser.parse_args()
@@ -71,6 +74,7 @@ def main():
     options.quiet       = options.quiet.upper() == 'TRUE'
     options.gradient    = options.gradient.upper()
     options.nzones      = int( options.nzones )
+    options.step_size   = float( options.step_size ) 
     
     sys.stdout.write('\n-------------------------------------------------------------------------\n')
     sys.stdout.write('|    ___ _   _ ___                                                      |\n')
@@ -116,7 +120,8 @@ def main():
                         options.gradient    ,
                         options.optimization ,
                         options.quiet       ,
-                        options.nzones      )
+                        options.nzones      ,
+                        options.step_size   )
     
 #: main()
 
@@ -126,7 +131,8 @@ def shape_optimization( filename                           ,
                         gradient    = 'CONTINUOUS_ADJOINT' ,
                         optimization = 'SLSQP'             ,
                         quiet       = False                ,
-                        nzones      = 1                    ):
+                        nzones      = 1                    ,
+                        step_size   = 1e-5                 ):
   
     # Config
     config = SU2.io.Config(filename)
@@ -211,7 +217,7 @@ def shape_optimization( filename                           ,
     if optimization == 'POWELL':
         SU2.opt.POWELL(project,x0,xb,its,accu)
     if optimization == 'SD':
-        SU2.opt.SD(project,x0,xb,its,accu)
+        SU2.opt.SD(project,x0,xb,its,accu,step_size)
     if optimization == 'LBFGSB':
         SU2.opt.LBFGSB(project,x0,xb,its,accu)
     
