@@ -1221,11 +1221,6 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
         cout << "WARNING: There is no input file " << input_filename.data() << ". Setting the discrepancy term to UNITY"<< endl;
 	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
 	    config->SetDiscrTerm1(1.0, GlobalIndex); // No perturbation to production term SST model
-	    config->SetDiscrTerm2(1.0, GlobalIndex);
-	    config->SetQuaternion_theta(0.0, GlobalIndex); // just allocate a value
-	    config->SetQuaternion_n1(0.0, GlobalIndex); // just allocate a value
-	    config->SetQuaternion_n2(0.0, GlobalIndex); // just allocate a value
-	    config->SetQuaternion_n3(0.0, GlobalIndex); // just allocate a value
 	  }
 	}
 	else{
@@ -1233,11 +1228,6 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 		cout << "WARNING: There is no input file " << input_filename.data() << ". Setting the discrepancy term to UNITY"<< endl;
 	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
 		config->SetDiscrTerm1(1.0, GlobalIndex); // No perturbation to production term SA model
-		config->SetDiscrTerm2(1.0, GlobalIndex);
-	    config->SetQuaternion_theta(0.0, GlobalIndex); // just allocate a value
-	    config->SetQuaternion_n1(0.0, GlobalIndex); // just allocate a value
-	    config->SetQuaternion_n2(0.0, GlobalIndex); // just allocate a value
-	    config->SetQuaternion_n3(0.0, GlobalIndex); // just allocate a value
 	  }
 	}
   }
@@ -1253,13 +1243,8 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 
       while (getline (input_file, text_line)) {
 	    istringstream point_line(text_line);
-	    point_line >> GlobalIndex >> dTerm1 >> dTerm2 >> quat_theta >> quat_n1 >> quat_n2 >> quat_n3;
+	    point_line >> GlobalIndex >> dTerm1 ;
 	    config->SetDiscrTerm1(dTerm1, GlobalIndex);
-	    config->SetDiscrTerm2(dTerm2, GlobalIndex);
-	    config->SetQuaternion_theta(quat_theta, GlobalIndex);
-	    config->SetQuaternion_n1(quat_n1, GlobalIndex);
-	    config->SetQuaternion_n2(quat_n2, GlobalIndex);
-	    config->SetQuaternion_n3(quat_n3, GlobalIndex);
 	  }
       input_file.close();
     }
