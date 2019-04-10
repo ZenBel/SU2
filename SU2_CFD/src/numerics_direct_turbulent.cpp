@@ -1211,14 +1211,14 @@ void CSourcePieceWise_TurbSST::ComputeResidual(su2double *val_residual, su2doubl
   su2double diverg, pk, pw, zeta;
   
   if (incompressible) {
-    AD::SetPreaccIn(V_i, nDim+5);
+//    AD::SetPreaccIn(V_i, nDim+5);
 
     Density_i = V_i[nDim+1];
     Laminar_Viscosity_i = V_i[nDim+3];
     Eddy_Viscosity_i = V_i[nDim+4];
   }
   else {
-    AD::SetPreaccIn(V_i, nDim+7);
+//    AD::SetPreaccIn(V_i, nDim+7);
 
     Density_i = V_i[nDim+2];
     Laminar_Viscosity_i = V_i[nDim+5];
@@ -1248,10 +1248,10 @@ void CSourcePieceWise_TurbSST::ComputeResidual(su2double *val_residual, su2doubl
 
     zeta = max(TurbVar_i[1], StrainMag_i*F2_i/a1);
     pw = StrainMag_i*StrainMag_i - 2.0/3.0*zeta*diverg;
-    pw = beta * max(pw,0.0);
+    pw = max(pw,0.0);
     
     val_residual[0] += pk*Volume;
-    val_residual[1] += alfa_blended*Density_i*pw*Volume;
+    val_residual[1] += alfa_blended*Density_i*beta*pw*Volume;
     
     /*--- Dissipation ---*/
     

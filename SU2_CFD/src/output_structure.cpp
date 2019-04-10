@@ -9381,7 +9381,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	char buffer[50], cstr[200];
 	ifstream Surface_file;
 
-	su2double RefVel2, RefDensity, RefPressure, factor, weight, weight_tot=0.0;
+	su2double RefVel2, RefDensity, RefPressure, factor;
 	su2double dist, *Coord, Target, Computed, Buffer_ErrorFunc, Buffer_Regularization, AllBound_ErrorFunc, AllBound_ErrorTerm;
 
     nPointLocal = geometry->GetnPoint(); // Total number of mesh points on the decomposed geometry managed by a single processor
@@ -9487,10 +9487,10 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	  if (geometry->node[iPoint]->GetDomain()){
 		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 		if (config->GetTargetPointID(GlobalIndex) == true){
-		  weight = 1.0;
 		  Target = config->GetTargetQuantity(GlobalIndex);
 		  Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
-		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
+		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed);
+//		  Buffer_ErrorFunc += (Target - Computed) ; // ONLY FOR HESSIAN APPROXIMATION
 	    }
 		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
 		if (config->GetBoolDiscrepancyTerm()){
@@ -9500,6 +9500,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
     }
 
 	AllBound_ErrorFunc += Buffer_ErrorFunc + lambda * Buffer_Regularization;
+//    AllBound_ErrorFunc += Buffer_ErrorFunc; // ONLY FOR HESSIAN APPROXIMATION
 
 //	cout << "ErrorFunc = " << Buffer_ErrorFunc << ", Regularization = " << Buffer_Regularization << endl;
 

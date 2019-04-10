@@ -1216,19 +1216,10 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
   input_file.open(input_filename.data(), ios::in);
 
   if (input_file.fail()) {
-	if (config->GetKind_Turb_Model() == SST){
-	  if (rank == MASTER_NODE)
-        cout << "WARNING: There is no input file " << input_filename.data() << ". Setting the discrepancy term to UNITY"<< endl;
-	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
-	    config->SetDiscrTerm1(1.0, GlobalIndex); // No perturbation to production term SST model
-	  }
-	}
-	else{
-	  if (rank == MASTER_NODE)
-		cout << "WARNING: There is no input file " << input_filename.data() << ". Setting the discrepancy term to UNITY"<< endl;
-	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
-		config->SetDiscrTerm1(1.0, GlobalIndex); // No perturbation to production term SA model
-	  }
+    if (rank == MASTER_NODE)
+	  cout << "WARNING: There is no input file " << input_filename.data() << ". Setting the discrepancy term to UNITY"<< endl;
+	for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
+	  config->SetDiscrTerm1(1.0, GlobalIndex); // No perturbation to production term SA model
 	}
   }
   else{
@@ -1237,7 +1228,6 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
     getline (input_file, text_line);
     istringstream point_line(text_line);
     point_line >> InputPoints;
-
 
     if (InputPoints == nPointGlobal){
 
@@ -3753,6 +3743,10 @@ void CTurbSSTSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
     
     numerics->SetStrainMag(solver_container[FLOW_SOL]->node[iPoint]->GetStrainMag(), 0.0);
     
+    /*--- Set the discrepancy term ---*/
+    unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+    numerics->SetDiscrepancyTerm1(config->GetDiscrTerm1(GlobalIndex));
+
     /*--- Cross diffusion ---*/
     
     numerics->SetCrossDiff(node[iPoint]->GetCrossDiff(),0.0);
