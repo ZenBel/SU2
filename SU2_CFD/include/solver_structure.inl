@@ -1102,6 +1102,24 @@ inline void CSolver::SetRoe_Dissipation(CGeometry *geometry, CConfig *config) {}
 
 inline void CSolver::SetDES_LengthScale(CSolver** solver, CGeometry *geometry, CConfig *config) { }
 
+inline void CSolver::GetMeanPerturbedRSM(CConfig *config,
+		                                 CNumerics *numerics,
+										 su2double turb_ke,
+										 unsigned long val_global_index,
+										 su2double **pert_rsm ) { }
+										 
+inline void CSolver::GetMeanRSM(su2double muT,
+								su2double density,
+								su2double turb_ke,
+								su2double **S_ij,
+								su2double **rsm) { }
+								
+inline void CSolver::ComputeOutputRSM(CGeometry *geometry,
+		                CSolver **solver_container,
+						CNumerics *numerics,
+						CConfig *config,
+						unsigned short iMesh) { }
+
 inline su2double CEulerSolver::GetDensity_Inf(void) { return Density_Inf; }
 
 inline su2double CEulerSolver::GetModVelocity_Inf(void) { 

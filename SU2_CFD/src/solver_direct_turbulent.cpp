@@ -4507,3 +4507,165 @@ void CTurbSSTSolver::SetInlet(CConfig* config) {
   }
 
 }
+
+void CTurbSSTSolver::GetMeanPerturbedRSM(CConfig *config,
+		                                 CNumerics *numerics,
+										 su2double turb_ke,
+										 unsigned long val_global_index,
+										 su2double **pert_rsm ) {
+
+  unsigned short iDim,jDim, kDim;
+  su2double **tmp1 = new su2double* [3];
+  su2double **tmp2 = new su2double* [3];
+  su2double **LR = new su2double* [3];
+  su2double **L = new su2double* [3];
+
+  su2double delta3[3][3] = {{1.0, 0.0, 0.0},{0.0,1.0,0.0},{0.0,0.0,1.0}};
+
+  for (iDim=0; iDim<3; iDim++) {
+	tmp1[iDim] = new su2double [3];
+	tmp2[iDim] = new su2double [3];
+	L[iDim] = new su2double [3];
+	LR[iDim] = new su2double [3];
+	for (jDim=0; jDim<3; jDim++) {
+		tmp2[iDim][jDim] = 0.0;
+		L[iDim][jDim] = 0.0;
+		tmp1[iDim][jDim] = 0.0;
+		LR[iDim][jDim] = 0.0;
+	}
+  }
+
+  /*--- Build the Cholesky decomposition of Rij and the random matrix G
+     * for which Rij = LR' * LR, with LR: upper-triangular and
+     * for which G = L' * L, with L: upper triangular.
+     * Finally we have [R] = LR' * L' * L * LR, where [R] is Reynolds Stress Tensor.
+     * See Xiao et al. (2017).
+     */
+
+  LR[0][0] = config->Get_lr00(val_global_index);
+  LR[0][1] = config->Get_lr01(val_global_index);
+  LR[0][2] = config->Get_lr02(val_global_index);
+  LR[1][1] = config->Get_lr11(val_global_index);
+  LR[1][2] = config->Get_lr12(val_global_index);
+  LR[2][2] = config->Get_lr22(val_global_index);
+
+  L[0][0] = config->Get_l00(val_global_index);
+  L[0][1] = config->Get_l01(val_global_index);
+  L[0][2] = config->Get_l02(val_global_index);
+  L[1][1] = config->Get_l11(val_global_index);
+  L[1][2] = config->Get_l12(val_global_index);
+  L[2][2] = config->Get_l22(val_global_index);
+
+  /*--- This does [LR]'*[L]' ---*/
+  for (iDim=0; iDim<3; iDim++) {
+    for (jDim=0; jDim<3; jDim++) {
+  	  for (kDim=0; kDim<3; kDim++) {
+  	    tmp1[iDim][jDim] += LR[kDim][iDim] * L[jDim][kDim];
+  	  }
+  	}
+  }
+
+  /*--- This does  [L]*[LR] ---*/
+  for (iDim=0; iDim<3; iDim++) {
+    for (jDim=0; jDim<3; jDim++) {
+  	  for (kDim=0; kDim<3; kDim++) {
+  	    tmp2[iDim][jDim] += L[iDim][kDim] * LR[kDim][jDim];
+  	  }
+  	}
+  }
+
+  /* compute perturbed Reynolds stress matrix; */
+  for (iDim=0; iDim<3; iDim++) {
+	for (jDim=0; jDim<3; jDim++) {
+	  for (kDim=0; kDim<3; kDim++) {
+	  pert_rsm[iDim][jDim] += tmp1[iDim][kDim] * tmp2[kDim][jDim];
+	  }
+	}
+  }
+
+  for (iDim = 0; iDim < 3; iDim++){
+	delete [] tmp1[iDim];
+	delete [] tmp2[iDim];
+	delete [] L[iDim];
+	delete [] LR[iDim];
+  }
+  delete [] tmp1;
+  delete [] tmp2;
+  delete [] L;
+  delete [] LR;
+
+
+
+}
+
+void CTurbSSTSolver::GetMeanRSM(su2double muT,
+								su2double density,
+								su2double turb_ke,
+								su2double **S_ij,
+								su2double **rsm) {
+
+  unsigned short iDim, jDim;
+  su2double divVel = 0;
+  su2double TWO3 = 2.0/3.0;
+
+  su2double delta3[3][3] = {{1.0, 0.0, 0.0},{0.0,1.0,0.0},{0.0,0.0,1.0}};
+
+  /* --- Using rate of strain matrix, calculate Reynolds stress tensor --- */
+
+  for (iDim = 0; iDim < 3; iDim++){
+	divVel += S_ij[iDim][iDim];
+  }
+
+  for (iDim = 0; iDim < 3; iDim++){
+	for (jDim = 0; jDim < 3; jDim++){
+	  rsm[iDim][jDim] = TWO3 * turb_ke * delta3[iDim][jDim]
+	  - muT / density * (2 * S_ij[iDim][jDim] - TWO3 * divVel * delta3[iDim][jDim]);
+	}
+  }
+
+}
+
+void CTurbSSTSolver::ComputeOutputRSM(CGeometry *geometry,
+		                              CSolver **solver_container,
+									  CNumerics *numerics,
+									  CConfig *config,
+									  unsigned short iMesh) {
+
+  unsigned long iPoint;
+
+  for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
+
+    unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+
+    su2double **pert_rsm = new su2double* [3];
+    su2double **rsm = new su2double* [3];
+    su2double **Mean_GradPrimVar = new su2double* [3];
+    su2double **S_ij = new su2double* [3];
+    unsigned short iDim, jDim;
+
+    for (iDim=0; iDim<3; iDim++) {
+  	  pert_rsm[iDim] = new su2double [3];
+  	  rsm[iDim] = new su2double [3];
+  	  Mean_GradPrimVar[iDim] = new su2double [3];
+  	  S_ij[iDim] = new su2double [3];
+  	  for (jDim=0; jDim<3; jDim++) {
+  		pert_rsm[iDim][jDim] = 0.0;
+  		rsm[iDim][jDim] = 0.0;
+  		Mean_GradPrimVar[iDim][jDim] = solver_container[FLOW_SOL]->node[iPoint]->GetGradient_Primitive(iDim+1, jDim);
+  		S_ij[iDim][jDim] = 0.0;
+  	  }
+    }
+
+    su2double turb_ke = solver_container[TURB_SOL]->node[iPoint]->GetSolution(0);
+    GetMeanPerturbedRSM(config, numerics, turb_ke, GlobalIndex, pert_rsm );
+    node[iPoint]->SetPerturbedRSM_out(pert_rsm);
+
+    su2double muT = solver_container[TURB_SOL]->node[iPoint]->GetmuT();
+    su2double density = solver_container[FLOW_SOL]->node[iPoint]->GetDensity();
+    numerics->GetMeanRateOfStrainMatrix(S_ij, solver_container[FLOW_SOL]->node[iPoint]->GetGradient_Primitive());
+    GetMeanRSM(muT, density, turb_ke, S_ij, rsm);
+    node[iPoint]->SetRSM_out(rsm);
+
+  }
+
+}

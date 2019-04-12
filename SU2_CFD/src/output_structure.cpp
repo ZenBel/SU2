@@ -1006,7 +1006,7 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
   unsigned short iMarker, iDim, jDim;
   unsigned long iPoint, jPoint, iVertex, Global_Index, nPointDomain, nPointGlobal;
   su2double *local_xCoord, *local_yCoord, *local_zCoord, *local_dist_i, *local_density,
-            *local_nu, *local_eddy_visc, *local_tke, ***local_Grad_Vel, ***local_tau_ev;
+            *local_nu, *local_eddy_visc, *local_tke, ***local_Grad_Vel, ***local_tau_ev, ***local_pert_rsm, ***local_rsm;
   char cstr[200];
   char buffer [50];
   ofstream SurfFlow_file;
@@ -1020,7 +1020,7 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
   local_xCoord = new su2double[nPointGlobal]; local_yCoord = new su2double[nPointGlobal]; local_zCoord = new su2double[nPointGlobal];
   local_eddy_visc = new su2double[nPointGlobal]; local_dist_i = new su2double[nPointGlobal]; local_nu = new su2double[nPointGlobal];
   local_Grad_Vel = new su2double**[nPointGlobal]; local_tau_ev = new su2double**[nPointGlobal]; local_tke = new su2double[nPointGlobal];
-  local_density = new su2double[nPointGlobal];
+  local_density = new su2double[nPointGlobal]; local_pert_rsm = new su2double**[nPointGlobal]; local_rsm = new su2double**[nPointGlobal];
 
   su2double delta[3][3] = {{1.0, 0.0, 0.0},{0.0,1.0,0.0},{0.0,0.0,1.0}};
 
@@ -1032,12 +1032,18 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
 
 	  local_Grad_Vel[iPoint] = new su2double*[3];
 	  local_tau_ev[iPoint] = new su2double*[3];
+	  local_pert_rsm[iPoint] = new su2double*[3];
+	  local_rsm[iPoint] = new su2double*[3];
 	  for (iDim=0; iDim< 3; iDim++){
 		  local_Grad_Vel[iPoint][iDim] = new su2double[3];
 		  local_tau_ev[iPoint][iDim] = new su2double[3];
+		  local_pert_rsm[iPoint][iDim] = new su2double[3];
+		  local_rsm[iPoint][iDim] = new su2double[3];
 		  for (jDim=0; jDim< 3; jDim++){
 			  local_Grad_Vel[iPoint][iDim][jDim] = 0.0;
 			  local_tau_ev[iPoint][iDim][jDim] = 0.0;
+			  local_pert_rsm[iPoint][iDim][jDim] = 0.0;
+			  local_rsm[iPoint][iDim][jDim] = 0.0;
 		  }
 	  }
   }
@@ -1068,6 +1074,10 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
       for (jDim = 0 ; jDim < nDim; jDim++)
     	  local_Grad_Vel[Global_Index][iDim][jDim] = FlowSolver->node[iPoint]->GetGradient_Primitive(iDim+1, jDim);
 
+
+    TurbSolver->node[iPoint]->GetPerturbedRSM_out(local_pert_rsm[Global_Index]);
+    TurbSolver->node[iPoint]->GetRSM_out(local_rsm[Global_Index]);
+
     su2double div_vel = 0.0, TWO3=2.0/3.0;
     for (iDim = 0 ; iDim < nDim; iDim++)
       div_vel += local_Grad_Vel[Global_Index][iDim][iDim];
@@ -1076,18 +1086,21 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
   	    local_tau_ev[Global_Index][iDim][jDim] = local_eddy_visc[Global_Index] * ( local_Grad_Vel[Global_Index][jDim][iDim] +  local_Grad_Vel[Global_Index][iDim][jDim] )
   	                           - TWO3*local_eddy_visc[Global_Index]*div_vel*delta[iDim][jDim]
 							   - TWO3*local_density[Global_Index]*local_tke[Global_Index]*delta[iDim][jDim];
+
       }
     }
   }
 
   /*---Initialize Global quantities ---*/
   su2double *xCoord, *yCoord, *zCoord, *dist_i, *density,
-            *nu, ***Grad_Vel, ***tau_ev, *eddy_visc, *tke;
+            *nu, ***Grad_Vel, ***tau_ev, *eddy_visc, *tke,
+			***rsm, ***pert_rsm;
 
   xCoord = new su2double[nPointGlobal]; yCoord = new su2double[nPointGlobal]; zCoord = new su2double[nPointGlobal];
   dist_i = new su2double[nPointGlobal]; nu = new su2double[nPointGlobal];
   Grad_Vel = new su2double**[nPointGlobal]; tau_ev = new su2double**[nPointGlobal]; eddy_visc = new su2double[nPointGlobal];
   tke = new su2double[nPointGlobal]; density = new su2double[nPointGlobal];
+  rsm = new su2double**[nPointGlobal]; pert_rsm = new su2double**[nPointGlobal];
 
   for (iPoint=0; iPoint< nPointGlobal; iPoint++){
 
@@ -1097,12 +1110,18 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
 
 	  Grad_Vel[iPoint] = new su2double*[3];
 	  tau_ev[iPoint] = new su2double*[3];
+	  rsm[iPoint] = new su2double*[3];
+	  pert_rsm[iPoint] = new su2double*[3];
 	  for (iDim=0; iDim< 3; iDim++){
 		  Grad_Vel[iPoint][iDim] = new su2double[3];
 		  tau_ev[iPoint][iDim] = new su2double[3];
+		  rsm[iPoint][iDim] = new su2double[3];
+		  pert_rsm[iPoint][iDim] = new su2double[3];
 		  for (jDim=0; jDim< 3; jDim++){
 			  Grad_Vel[iPoint][iDim][jDim] = 0.0;
 			  tau_ev[iPoint][iDim][jDim] = 0.0;
+			  rsm[iPoint][iDim][jDim] = 0.0;
+			  pert_rsm[iPoint][iDim][jDim] = 0.0;
 		  }
 	  }
   }
@@ -1121,13 +1140,15 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
 	  for (iDim=0; iDim< 3; iDim++){
 		  SU2_MPI::Allreduce(local_Grad_Vel[iPoint][iDim], Grad_Vel[iPoint][iDim], 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 		  SU2_MPI::Allreduce(local_tau_ev[iPoint][iDim], tau_ev[iPoint][iDim], 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		  SU2_MPI::Allreduce(local_rsm[iPoint][iDim], rsm[iPoint][iDim], 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		  SU2_MPI::Allreduce(local_pert_rsm[iPoint][iDim], pert_rsm[iPoint][iDim], 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	  }
   }
 #else
   xCoord = local_xCoord; yCoord = local_yCoord; zCoord = local_zCoord;
   dist_i = local_dist_i; nu = local_nu;
   Grad_Vel = local_Grad_Vel; tau_ev = local_tau_ev; eddy_visc = local_eddy_visc;
-  tke = local_tke; density = local_density;
+  tke = local_tke; density = local_density; rsm = local_rsm; pert_rsm = local_pert_rsm;
 #endif
 
   if (rank == MASTER_NODE){
@@ -1142,6 +1163,8 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
 	  SurfFlow_file << "\"Global_Index\", \"x_coord\", \"y_coord\", \"z_coord\", ";
 	  SurfFlow_file << "\"muT\", \"tke\", \"density\", ";
 	  SurfFlow_file << "\"tau_xx\", \"tau_xy\", \"tau_xz\", \"tau_yx\", \"tau_yy\", \"tau_yz\", \"tau_zx\", \"tau_zy\", \"tau_zz\", ";
+	  SurfFlow_file << "\"rsm_xx\", \"rsm_xy\", \"rsm_xz\", \"rsm_yx\", \"rsm_yy\", \"rsm_yz\", \"rsm_zx\", \"rsm_zy\", \"rsm_zz\", ";
+	  SurfFlow_file << "\"pert_rsm_xx\", \"pert_rsm_xy\", \"pert_rsm_xz\", \"pert_rsm_yx\", \"pert_rsm_yy\", \"pert_rsm_yz\", \"pert_rsm_zx\", \"pert_rsm_zy\", \"pert_rsm_zz\", ";
 	  SurfFlow_file << "\"dudx\", \"dudy\", \"dudz\", \"dvdx\", \"dvdy\", \"dvdz\", \"dwdx\", \"dwdy\", \"dwdz\""<< "\n";
 
 	  for (Global_Index = 0; Global_Index < nPointGlobal; Global_Index++ ){
@@ -1151,6 +1174,12 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
 		  SurfFlow_file	<< tau_ev[Global_Index][0][0]<< ", " << tau_ev[Global_Index][0][1] << ", " << tau_ev[Global_Index][0][2] << ", ";
 		  SurfFlow_file	<< tau_ev[Global_Index][1][0]<< ", " << tau_ev[Global_Index][1][1] << ", " << tau_ev[Global_Index][1][2] << ", ";
 		  SurfFlow_file	<< tau_ev[Global_Index][2][0]<< ", " << tau_ev[Global_Index][2][1] << ", " << tau_ev[Global_Index][2][2] << ", ";
+		  SurfFlow_file	<< rsm[Global_Index][0][0]<< ", " << rsm[Global_Index][0][1] << ", " << rsm[Global_Index][0][2] << ", ";
+		  SurfFlow_file	<< rsm[Global_Index][1][0]<< ", " << rsm[Global_Index][1][1] << ", " << rsm[Global_Index][1][2] << ", ";
+		  SurfFlow_file	<< rsm[Global_Index][2][0]<< ", " << rsm[Global_Index][2][1] << ", " << rsm[Global_Index][2][2] << ", ";
+		  SurfFlow_file	<< pert_rsm[Global_Index][0][0]<< ", " << pert_rsm[Global_Index][0][1] << ", " << pert_rsm[Global_Index][0][2] << ", ";
+		  SurfFlow_file	<< pert_rsm[Global_Index][1][0]<< ", " << pert_rsm[Global_Index][1][1] << ", " << pert_rsm[Global_Index][1][2] << ", ";
+		  SurfFlow_file	<< pert_rsm[Global_Index][2][0]<< ", " << pert_rsm[Global_Index][2][1] << ", " << pert_rsm[Global_Index][2][2] << ", ";
 		  SurfFlow_file	<< Grad_Vel[Global_Index][0][0]<< ", " << Grad_Vel[Global_Index][0][1] << ", " << Grad_Vel[Global_Index][0][2] << ", ";
 		  SurfFlow_file	<< Grad_Vel[Global_Index][1][0]<< ", " << Grad_Vel[Global_Index][1][1] << ", " << Grad_Vel[Global_Index][1][2] << ", ";
 		  SurfFlow_file	<< Grad_Vel[Global_Index][2][0]<< ", " << Grad_Vel[Global_Index][2][1] << ", " << Grad_Vel[Global_Index][2][2] << "\n";
@@ -1175,16 +1204,28 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
       delete [] local_Grad_Vel[iPoint][iDim];
       delete [] tau_ev[iPoint][iDim];
       delete [] local_tau_ev[iPoint][iDim];
+      delete [] rsm[iPoint][iDim];
+      delete [] local_rsm[iPoint][iDim];
+      delete [] pert_rsm[iPoint][iDim];
+      delete [] local_pert_rsm[iPoint][iDim];
     }
     delete [] Grad_Vel[iPoint];
     delete [] local_Grad_Vel[iPoint];
     delete [] tau_ev[iPoint];
     delete [] local_tau_ev[iPoint];
+    delete [] rsm[iPoint];
+    delete [] local_rsm[iPoint];
+    delete [] pert_rsm[iPoint];
+    delete [] local_pert_rsm[iPoint];
   }
   delete [] Grad_Vel;
   delete [] local_Grad_Vel;
   delete [] tau_ev;
   delete [] local_tau_ev;
+  delete [] rsm;
+  delete [] local_rsm;
+  delete [] pert_rsm;
+  delete [] local_pert_rsm;
 
 
 }

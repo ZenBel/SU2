@@ -4077,6 +4077,23 @@ public:
    */
   virtual void SetDES_LengthScale(CSolver** solver, CGeometry *geometry, CConfig *config);
 
+  virtual void GetMeanPerturbedRSM(CConfig *config,
+  		                           CNumerics *numerics,
+  								   su2double turb_ke,
+  								   unsigned long val_global_index,
+  								   su2double **pert_rsm );
+
+  virtual void GetMeanRSM(su2double muT,
+  				          su2double density,
+  				          su2double turb_ke,
+  				          su2double **S_ij,
+  				          su2double **rsm);
+
+  virtual void ComputeOutputRSM(CGeometry *geometry,
+		                CSolver **solver_container,
+						CNumerics *numerics,
+						CConfig *config,
+						unsigned short iMesh);
 
 };
 
@@ -9327,6 +9344,24 @@ public:
    */
   void SetInlet(CConfig *config);
   
+  void GetMeanPerturbedRSM(CConfig *config,
+  		                   CNumerics *numerics,
+  						   su2double turb_ke,
+  						   unsigned long val_global_index,
+  						   su2double **pert_rsm );
+
+  void GetMeanRSM(su2double muT,
+  				  su2double density,
+  				  su2double turb_ke,
+  				  su2double **S_ij,
+  				  su2double **rsm);
+
+  void ComputeOutputRSM(CGeometry *geometry,
+		                CSolver **solver_container,
+						CNumerics *numerics,
+						CConfig *config,
+						unsigned short iMesh);
+
 };
 
 /*!

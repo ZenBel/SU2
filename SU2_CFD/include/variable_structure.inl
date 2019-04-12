@@ -505,6 +505,12 @@ inline su2double CVariable::GetF1blending(void) { return 0; }
 
 inline su2double CVariable::GetF2blending(void) { return 0; }
 
+inline void CVariable::SetPerturbedRSM_out(su2double **pert_rsm) { }
+inline void CVariable::GetPerturbedRSM_out(su2double **pert_rsm) { }
+
+inline void CVariable::SetRSM_out(su2double **rsm) { }
+inline void CVariable::GetRSM_out(su2double **rsm) { }
+
 inline su2double CVariable::GetmuT() { return 0;}
 
 inline void CVariable::SetmuT(su2double val_muT) { }
