@@ -1751,6 +1751,12 @@ public:
    */
   virtual void SetBlendingFunc(su2double val_viscosity, su2double val_dist, su2double val_density);
   
+  virtual void SetPerturbedRSM_out(su2double **pert_rsm);
+  virtual void GetPerturbedRSM_out(su2double **pert_rsm);
+
+  virtual void SetRSM_out(su2double **rsm);
+  virtual void GetRSM_out(su2double **rsm);
+
   /*!
    * \brief Get the first blending function of the SST model.
    */
@@ -4193,6 +4199,9 @@ protected:
   su2double Production, Destruction;
   su2double OmegaTurb;
 
+  su2double **MeanPerturbedRSM_out, **MeanRSM_out;
+
+
 public:
   /*!
    * \brief Constructor of the class.
@@ -4416,6 +4425,12 @@ public:
    */
   void SetBlendingFunc(su2double val_viscosity, su2double val_dist, su2double val_density);
   
+  void SetPerturbedRSM_out(su2double **pert_rsm);
+  void GetPerturbedRSM_out(su2double **pert_rsm);
+
+  void SetRSM_out(su2double **rsm);
+  void GetRSM_out(su2double **rsm);
+
   /*!
    * \brief Get the first blending function.
    */

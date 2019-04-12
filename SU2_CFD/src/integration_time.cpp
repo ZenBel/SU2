@@ -770,6 +770,7 @@ void CSingleGridIntegration::SingleGrid_Iteration(CGeometry ***geometry, CSolver
   unsigned short iMesh;
   su2double monitor = 0.0;
   
+
   unsigned short SolContainer_Position = config[iZone]->GetContainerPosition(RunTime_EqSystem);
 
   unsigned short FinestMesh = config[iZone]->GetFinestMesh();
@@ -820,7 +821,12 @@ void CSingleGridIntegration::SingleGrid_Iteration(CGeometry ***geometry, CSolver
       SetRestricted_Solution(RunTime_EqSystem, solver_container[iZone][iMesh][SolContainer_Position], solver_container[iZone][iMesh+1][SolContainer_Position], geometry[iZone][iMesh], geometry[iZone][iMesh+1], config[iZone]);
       SetRestricted_EddyVisc(RunTime_EqSystem, solver_container[iZone][iMesh][SolContainer_Position], solver_container[iZone][iMesh+1][SolContainer_Position], geometry[iZone][iMesh], geometry[iZone][iMesh+1], config[iZone]);
     }
+
+    solver_container[iZone][FinestMesh][SolContainer_Position]->ComputeOutputRSM(geometry[iZone][FinestMesh], solver_container[iZone][FinestMesh],
+    		                                                                     numerics_container[iZone][FinestMesh][SolContainer_Position][SOURCE_FIRST_TERM],
+    		                                                                     config[iZone], FinestMesh);
   }
+
 }
 
 void CSingleGridIntegration::SetRestricted_Solution(unsigned short RunTime_EqSystem, CSolver *sol_fine, CSolver *sol_coarse, CGeometry *geo_fine, CGeometry *geo_coarse, CConfig *config) {

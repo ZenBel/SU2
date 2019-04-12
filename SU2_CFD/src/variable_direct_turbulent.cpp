@@ -41,6 +41,8 @@ CTurbVariable::CTurbVariable(void) : CVariable() {
   
   /*--- Array initialization ---*/
   HB_Source = NULL;
+  MeanPerturbedRSM_out = NULL;
+  MeanRSM_out = NULL;
 }
 
 CTurbVariable::CTurbVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *config)
@@ -73,7 +75,19 @@ CTurbVariable::CTurbVariable(unsigned short val_nDim, unsigned short val_nvar, C
     Solution_Max[iVar] = 0.0;
     Solution_Min[iVar] = 0.0;
   }
-  
+
+  unsigned short iDim, jDim;
+  MeanPerturbedRSM_out = new su2double* [3];
+  MeanRSM_out = new su2double* [3];
+  for (iDim=0; iDim<3; iDim++) {
+    MeanPerturbedRSM_out[iDim] = new su2double [3];
+    MeanRSM_out[iDim] = new su2double [3];
+	for (jDim=0; jDim<3; jDim++) {
+	  MeanPerturbedRSM_out[iDim][jDim] = 0.0;
+	  MeanRSM_out[iDim][jDim] = 0.0;
+	}
+  }
+
 }
 
 CTurbVariable::~CTurbVariable(void) { }
@@ -234,4 +248,48 @@ void CTurbSSTVariable::SetBlendingFunc(su2double val_viscosity, su2double val_di
   AD::SetPreaccOut(F1); AD::SetPreaccOut(F2); AD::SetPreaccOut(CDkw);
   AD::EndPreacc();
   
+}
+
+void CTurbSSTVariable::SetPerturbedRSM_out(su2double **pert_rsm){
+
+	unsigned short iDim, jDim;
+
+    for (iDim=0; iDim<3; iDim++) {
+  	  for (jDim=0; jDim<3; jDim++) {
+  		MeanPerturbedRSM_out[iDim][jDim] = pert_rsm[iDim][jDim];
+  	  }
+    }
+}
+
+void CTurbSSTVariable::GetPerturbedRSM_out(su2double **pert_rsm){
+
+	unsigned short iDim, jDim;
+
+    for (iDim=0; iDim<3; iDim++) {
+  	  for (jDim=0; jDim<3; jDim++) {
+  		pert_rsm[iDim][jDim] = MeanPerturbedRSM_out[iDim][jDim];
+  	  }
+    }
+}
+
+void CTurbSSTVariable::SetRSM_out(su2double **rsm){
+
+	unsigned short iDim, jDim;
+
+    for (iDim=0; iDim<3; iDim++) {
+  	  for (jDim=0; jDim<3; jDim++) {
+  		MeanRSM_out[iDim][jDim] = rsm[iDim][jDim];
+  	  }
+    }
+}
+
+void CTurbSSTVariable::GetRSM_out(su2double **rsm){
+
+	unsigned short iDim, jDim;
+
+    for (iDim=0; iDim<3; iDim++) {
+  	  for (jDim=0; jDim<3; jDim++) {
+  		rsm[iDim][jDim] = MeanRSM_out[iDim][jDim];
+  	  }
+    }
 }

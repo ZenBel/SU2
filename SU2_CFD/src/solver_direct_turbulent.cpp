@@ -3779,14 +3779,14 @@ void CTurbSSTSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
 
     /*--- Compute the source term ---*/
     numerics->ComputeResidual(Residual, Jacobian_i, NULL, config);
-    
+
     /*--- Subtract residual and the Jacobian ---*/
-    
+
     LinSysRes.SubtractBlock(iPoint, Residual);
     Jacobian.SubtractBlock(iPoint, iPoint, Jacobian_i);
-    
+
   }
-  
+
 }
 
 void CTurbSSTSolver::Source_Template(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics,
@@ -4567,3 +4567,221 @@ void CTurbSSTSolver::SetInlet(CConfig* config) {
   }
 
 }
+
+void CTurbSSTSolver::GetMeanPerturbedRSM(CConfig *config,
+		                                 CNumerics *numerics,
+										 su2double turb_ke,
+										 unsigned long val_global_index,
+										 su2double **pert_rsm ) {
+
+  unsigned short iDim,jDim, kDim;
+  su2double **tmp1 = new su2double* [3];
+  su2double **tmpA_ij = new su2double* [3];
+  su2double *Eig_Val = new su2double [3];
+  su2double **Eig_Vec = new su2double* [3];
+  su2double **Corners = new su2double* [3];
+  su2double *Barycentric_Coord = new su2double [2];
+  su2double **RotationMatrix = new su2double* [3];
+  su2double **A_ij = new su2double* [3];
+
+  su2double discrepancyTerm1, discrepancyTerm2;
+
+  su2double delta3[3][3] = {{1.0, 0.0, 0.0},{0.0,1.0,0.0},{0.0,0.0,1.0}};
+
+  for (iDim=0; iDim<3; iDim++) {
+	tmp1[iDim] = new su2double [3];
+	tmpA_ij[iDim] = new su2double [3];
+	A_ij[iDim] = new su2double [3];
+	Eig_Vec[iDim] = new su2double [3];
+	Corners[iDim] = new su2double [2];
+	Eig_Val[iDim] = 0.0;
+	Barycentric_Coord[iDim] = 0.0;
+	RotationMatrix[iDim] = new su2double [3];
+	for (jDim=0; jDim<3; jDim++) {
+		tmpA_ij[iDim][jDim] = 0.0;
+		A_ij[iDim][jDim] = 0.0;
+		tmp1[iDim][jDim] = 0.0;
+		Eig_Vec[iDim][jDim] = 0.0;
+		RotationMatrix[iDim][jDim] = 0.0;
+	}
+  }
+
+  /*--- Build vector of eigenvalues ---*/
+  /* NOTE: The current script follows the EQiPS implementation by Mishra.
+   * However, here Eig_Val[0] > Eig_Val[1] > Eig_Val[1] and
+   * the same holds for the corresponding eigenvectors.
+   */
+
+  Eig_Val[0] = config->GetEigenValue1(val_global_index);
+  Eig_Val[1] = config->GetEigenValue2(val_global_index);
+  Eig_Val[2] = config->GetEigenValue3(val_global_index);
+//  Eig_Val[2] = - (Eig_Val[0] + Eig_Val[1]);
+
+  /*--- Build matrix of eigenvectors ---*/
+  Eig_Vec[0][0] = config->GetEigenVector1x(val_global_index);
+  Eig_Vec[0][1] = config->GetEigenVector2x(val_global_index);
+  Eig_Vec[0][2] = config->GetEigenVector3x(val_global_index);
+  Eig_Vec[1][0] = config->GetEigenVector1y(val_global_index);
+  Eig_Vec[1][1] = config->GetEigenVector2y(val_global_index);
+  Eig_Vec[1][2] = config->GetEigenVector3y(val_global_index);
+  Eig_Vec[2][0] = config->GetEigenVector1z(val_global_index);
+  Eig_Vec[2][1] = config->GetEigenVector2z(val_global_index);
+  Eig_Vec[2][2] = config->GetEigenVector3z(val_global_index);
+
+  /*--- Perturbation of Barycentric Coordinates ---*/
+  discrepancyTerm1 =  config->GetDiscrTerm1(val_global_index);
+  discrepancyTerm2 =  config->GetDiscrTerm2(val_global_index);
+
+  /* compute convex combination coefficients */
+  su2double c1c = Eig_Val[0] - Eig_Val[1];
+  su2double c2c = 2.0 * (Eig_Val[1] - Eig_Val[2]);
+  su2double c3c = 3.0 * Eig_Val[2] + 1.0;
+
+  /* define barycentric traingle corner points */
+  Corners[0][0] = 1.0;
+  Corners[0][1] = 0.0;
+  Corners[1][0] = 0.0;
+  Corners[1][1] = 0.0;
+  Corners[2][0] = 0.5;
+  Corners[2][1] = sin(60.0*PI_NUMBER/180.0);
+
+  /* define barycentric coordinates */
+  Barycentric_Coord[0] = Corners[0][0] * c1c + Corners[1][0] * c2c + Corners[2][0] * c3c;
+  Barycentric_Coord[1] = Corners[0][1] * c1c + Corners[1][1] * c2c + Corners[2][1] * c3c;
+
+  /* calculate perturbed barycentric coordinates */
+  Barycentric_Coord[0] = Barycentric_Coord[0] + discrepancyTerm1;
+  Barycentric_Coord[1] = Barycentric_Coord[1] + discrepancyTerm2;
+
+  /* rebuild c1c,c2c,c3c based on perturbed barycentric coordinates */
+  c3c = Barycentric_Coord[1] / Corners[2][1];
+  c1c = Barycentric_Coord[0] - Corners[2][0] * c3c;
+  c2c = 1 - c1c - c3c;
+
+  /* build new anisotropy eigenvalues */
+  Eig_Val[2] = (c3c - 1) / 3.0;
+  Eig_Val[1] = 0.5 *c2c + Eig_Val[2];
+  Eig_Val[0] = c1c + Eig_Val[1];
+
+  numerics->EigenRecomposition(tmpA_ij, Eig_Vec, Eig_Val, 3);
+
+  /*--- Multiply A_ij by rotation matrix as Q*A_ij*Q.T ---*/
+  numerics->GetRotationMatrix(RotationMatrix, config, val_global_index);
+
+  /*--- This does tmp1 = Q*A_ij ---*/
+  for (iDim=0; iDim<3; iDim++) {
+	for (jDim=0; jDim<3; jDim++) {
+	  for (kDim=0; kDim<3; kDim++) {
+		tmp1[iDim][jDim] += RotationMatrix[iDim][kDim] * tmpA_ij[kDim][jDim];
+	  }
+	}
+  }
+
+  /*--- This does A_ij = tmp1*Q.T ---*/
+  for (iDim=0; iDim<3; iDim++) {
+	for (jDim=0; jDim<3; jDim++) {
+	  A_ij[iDim][jDim] = 0.0;
+	  for (kDim=0; kDim<3; kDim++) {
+		A_ij[iDim][jDim] += tmp1[iDim][kDim] * RotationMatrix[jDim][kDim];
+	  }
+	}
+  }
+
+  /* compute perturbed Reynolds stress matrix; */
+  for (iDim = 0; iDim< 3; iDim++){
+	for (jDim = 0; jDim < 3; jDim++){
+	  pert_rsm[iDim][jDim] = 2.0 * turb_ke * (A_ij[iDim][jDim] + 1.0/3.0 * delta3[iDim][jDim]);
+	}
+  }
+
+  for (iDim = 0; iDim < 3; iDim++){
+	delete [] tmp1[iDim];
+	delete [] tmpA_ij[iDim];
+	delete [] A_ij[iDim];
+	delete [] Eig_Vec[iDim];
+	delete [] Corners[iDim];
+	delete [] RotationMatrix[iDim];
+  }
+  delete [] tmp1;
+  delete [] tmpA_ij;
+  delete [] A_ij;
+  delete [] Eig_Vec;
+  delete [] Corners;
+  delete [] RotationMatrix;
+  delete [] Eig_Val;
+  delete [] Barycentric_Coord;
+
+}
+
+void CTurbSSTSolver::GetMeanRSM(su2double muT,
+								su2double density,
+								su2double turb_ke,
+								su2double **S_ij,
+								su2double **rsm) {
+
+  unsigned short iDim, jDim;
+  su2double divVel = 0;
+  su2double TWO3 = 2.0/3.0;
+
+  su2double delta3[3][3] = {{1.0, 0.0, 0.0},{0.0,1.0,0.0},{0.0,0.0,1.0}};
+
+  /* --- Using rate of strain matrix, calculate Reynolds stress tensor --- */
+
+  for (iDim = 0; iDim < 3; iDim++){
+	divVel += S_ij[iDim][iDim];
+  }
+
+  for (iDim = 0; iDim < 3; iDim++){
+	for (jDim = 0; jDim < 3; jDim++){
+	  rsm[iDim][jDim] = TWO3 * turb_ke * delta3[iDim][jDim]
+	  - muT / density * (2 * S_ij[iDim][jDim] - TWO3 * divVel * delta3[iDim][jDim]);
+	}
+  }
+
+}
+
+void CTurbSSTSolver::ComputeOutputRSM(CGeometry *geometry,
+		                              CSolver **solver_container,
+									  CNumerics *numerics,
+									  CConfig *config,
+									  unsigned short iMesh) {
+
+  unsigned long iPoint;
+
+  for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
+
+    unsigned long GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+
+    su2double **pert_rsm = new su2double* [3];
+    su2double **rsm = new su2double* [3];
+    su2double **Mean_GradPrimVar = new su2double* [3];
+    su2double **S_ij = new su2double* [3];
+    unsigned short iDim, jDim;
+
+    for (iDim=0; iDim<3; iDim++) {
+  	  pert_rsm[iDim] = new su2double [3];
+  	  rsm[iDim] = new su2double [3];
+  	  Mean_GradPrimVar[iDim] = new su2double [3];
+  	  S_ij[iDim] = new su2double [3];
+  	  for (jDim=0; jDim<3; jDim++) {
+  		pert_rsm[iDim][jDim] = 0.0;
+  		rsm[iDim][jDim] = 0.0;
+  		Mean_GradPrimVar[iDim][jDim] = solver_container[FLOW_SOL]->node[iPoint]->GetGradient_Primitive(iDim+1, jDim);
+  		S_ij[iDim][jDim] = 0.0;
+  	  }
+    }
+
+    su2double turb_ke = solver_container[TURB_SOL]->node[iPoint]->GetSolution(0);
+    GetMeanPerturbedRSM(config, numerics, turb_ke, GlobalIndex, pert_rsm );
+    node[iPoint]->SetPerturbedRSM_out(pert_rsm);
+
+    su2double muT = solver_container[TURB_SOL]->node[iPoint]->GetmuT();
+    su2double density = solver_container[FLOW_SOL]->node[iPoint]->GetDensity();
+    numerics->GetMeanRateOfStrainMatrix(S_ij, solver_container[FLOW_SOL]->node[iPoint]->GetGradient_Primitive());
+    GetMeanRSM(muT, density, turb_ke, S_ij, rsm);
+    node[iPoint]->SetRSM_out(rsm);
+
+  }
+
+}
+
