@@ -294,7 +294,7 @@ private:
   bool BoolDiscTerm;
   bool BoolAnisotropy;
 
-  su2double *TargetQuantity;
+  su2double *TargetQuantity1, *TargetQuantity2;
   bool *TargetPointID;
 
   su2double *Giles_Var1, *Giles_Var2, *RelaxFactorAverage, *RelaxFactorFourier;    /*!< \brief Specified values for Giles BC. */
@@ -5992,9 +5992,10 @@ public:
   su2double GetRiemann_Var2(string val_marker);
   void SetRiemann_Var2(su2double newVar2, string val_marker) ;
   
-  void SetTargetQuantity(su2double target_quantity, unsigned long val_pos);
+  void SetTargetQuantity(su2double target_quantity1, su2double target_quantity2, unsigned long val_pos);
   void SetTargetPointID(unsigned long global_index);
-  su2double GetTargetQuantity(unsigned long val_pos);
+  su2double GetTargetQuantity1(unsigned long val_pos);
+  su2double GetTargetQuantity2(unsigned long val_pos);
   unsigned long GetTargetPointID(unsigned long val_pos);
   void Initialize_ErrorFunc_Variables(unsigned long val_points);
 

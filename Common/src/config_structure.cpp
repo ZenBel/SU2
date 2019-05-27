@@ -6932,16 +6932,21 @@ void CConfig::SetRiemann_Var2(su2double newVar2, string val_marker) {
   Riemann_Var2[iMarker_Riemann] = newVar2;
 }
 
-void CConfig::SetTargetQuantity(su2double target_quantity, unsigned long val_pos) {
-  TargetQuantity[val_pos] = target_quantity;
+void CConfig::SetTargetQuantity(su2double target_quantity1, su2double target_quantity2, unsigned long val_pos) {
+  TargetQuantity1[val_pos] = target_quantity1;
+  TargetQuantity2[val_pos] = target_quantity2;
 }
 
 void CConfig::SetTargetPointID(unsigned long global_index) {
   TargetPointID[global_index] = true;
 }
 
-su2double CConfig::GetTargetQuantity(unsigned long val_pos) {
-  return TargetQuantity[val_pos];
+su2double CConfig::GetTargetQuantity1(unsigned long val_pos) {
+  return TargetQuantity1[val_pos];
+}
+
+su2double CConfig::GetTargetQuantity2(unsigned long val_pos) {
+  return TargetQuantity2[val_pos];
 }
 
 unsigned long CConfig::GetTargetPointID(unsigned long val_pos) {
@@ -6952,7 +6957,8 @@ void CConfig::Initialize_ErrorFunc_Variables(unsigned long val_points) {
   TargetPointID = new bool[val_points];
   for (unsigned long i =0; i<val_points; i++)
 	  TargetPointID[i] = false;
-  TargetQuantity = new su2double[val_points];
+  TargetQuantity1 = new su2double[val_points];
+  TargetQuantity2 = new su2double[val_points];
 }
 
 void CConfig::SetDiscrTerm1(su2double val_discTerm1, unsigned long val_point){

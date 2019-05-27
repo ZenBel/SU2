@@ -9450,8 +9450,10 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 
 	    stringstream  point_line(text_line);
 
-	    if (geometry->GetnDim() == 2) point_line >> PointID >> x_coord >> y_coord >> pressure >> pressure_coeff >> Mach;
-	    if (geometry->GetnDim() == 3) point_line >> PointID >> x_coord >> y_coord >> z_coord >> pressure >> pressure_coeff;
+//	    if (geometry->GetnDim() == 2) point_line >> PointID >> x_coord >> y_coord >> pressure >> pressure_coeff >> Mach;
+//	    if (geometry->GetnDim() == 3) point_line >> PointID >> x_coord >> y_coord >> z_coord >> pressure >> pressure_coeff;
+	    su2double vel_x, vel_y;
+		if (geometry->GetnDim() == 2) point_line >> PointID >> x_coord >> y_coord >> vel_x >> vel_y;
 
 	    /*--- Loop over all points of a (partitioned) domain ---*/
 	    for (iPoint = 0; iPoint < nPointLocal; iPoint++) {
@@ -9472,7 +9474,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	  	    /*--- Save Point ID and Target quantity for quick retrieval ---*/
 	  	    if (dist < tolerance){
 	 		  config->SetTargetPointID(GlobalIndex);
-	 		  config->SetTargetQuantity(pressure_coeff, GlobalIndex);
+	 		  config->SetTargetQuantity(vel_x, vel_y, GlobalIndex);
 	  	    }
 	      }
 	    }
@@ -9481,17 +9483,22 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
     }
 
     /*--- Loop over all points of a (partitioned) domain ---*/
-
     for (iPoint = 0; iPoint < nPointLocal; iPoint++){
+
       /*--- Filter out the Halo nodes ---*/
 	  if (geometry->node[iPoint]->GetDomain()){
+
 		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+
 		if (config->GetTargetPointID(GlobalIndex) == true){
-		  Target = config->GetTargetQuantity(GlobalIndex);
-		  Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
+
+		  Target = config->GetTargetQuantity1(GlobalIndex);
+//		  Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
+		  Computed = solver_container->node[iPoint]->GetVelocity(0)/sqrt(RefVel2);
 		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed);
 //		  Buffer_ErrorFunc += (Target - Computed) ; // ONLY FOR HESSIAN APPROXIMATION
 	    }
+
 		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
 		if (config->GetBoolDiscrepancyTerm()){
 		  Buffer_Regularization += (config->GetDiscrTerm1(GlobalIndex) - 1.0) * (config->GetDiscrTerm1(GlobalIndex) - 1.0);
