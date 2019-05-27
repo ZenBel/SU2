@@ -9441,6 +9441,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 
 	  getline(Surface_file, text_line);
 	  istringstream point_line(text_line);
+	  unsigned long jj=0;
 
 	  while (getline(Surface_file, text_line)) {
 	    for (icommas = 0; icommas < 50; icommas++) {
@@ -9454,6 +9455,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	    if (geometry->GetnDim() == 3) point_line >> PointID >> x_coord >> y_coord >> z_coord >> pressure >> pressure_coeff;
 
 	    /*--- Loop over all points of a (partitioned) domain ---*/
+
 	    for (iPoint = 0; iPoint < nPointLocal; iPoint++) {
 
 	      /*--- Filter out the Halo nodes ---*/
@@ -9473,12 +9475,15 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	  	    if (dist < tolerance){
 	 		  config->SetTargetPointID(GlobalIndex);
 	 		  config->SetTargetQuantity(pressure_coeff, GlobalIndex);
+	 		  jj +=1 ;
 	  	    }
 	      }
 	    }
 	  }
 	  Surface_file.close();
+	  cout << jj << " target points have been set for the OF." << endl;
     }
+
 
     /*--- Loop over all points of a (partitioned) domain ---*/
 
