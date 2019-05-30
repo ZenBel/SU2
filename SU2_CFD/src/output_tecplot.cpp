@@ -930,7 +930,7 @@ void COutput::WriteTecplotASCII_Parallel(CConfig *config, CGeometry *geometry, C
   Tecplot_File.open(cstr, ios::out | ios::app);
   
   /*--- Write surface and volumetric solution data. ---*/
-  
+
   for (iProcessor = 0; iProcessor < size; iProcessor++) {
     if (rank == iProcessor) {
       
@@ -946,9 +946,9 @@ void COutput::WriteTecplotASCII_Parallel(CConfig *config, CGeometry *geometry, C
         } else {
           
            for (iPoint = 0; iPoint < nParallel_Poin; iPoint++) {
-          for (iVar = 0; iVar < nVar_Par; iVar++)
-            Tecplot_File << scientific << Parallel_Data[iVar][iPoint] << "\t";
-          Tecplot_File << endl;
+            for (iVar = 0; iVar < nVar_Par; iVar++)
+              Tecplot_File << scientific << Parallel_Data[iVar][iPoint] << "\t";
+            Tecplot_File << endl;
         }
       }
     }

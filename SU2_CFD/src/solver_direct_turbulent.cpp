@@ -4783,5 +4783,7 @@ void CTurbSSTSolver::ComputeOutputRSM(CGeometry *geometry,
 
   }
 
+  /* NOTE: look in the code where this routine is called and un-comment it only if this special output is needed.*/
+
 }
 

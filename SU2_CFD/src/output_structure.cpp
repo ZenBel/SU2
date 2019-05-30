@@ -1156,8 +1156,8 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
 	  strcpy (cstr, "TurbulentQuantitiesSST");
 	  SPRINTF (buffer, ".csv");
 	  strcat(cstr, buffer);
-	  SurfFlow_file.precision(15);
 	  SurfFlow_file.open(cstr, ios::out);
+	  SurfFlow_file.precision(15);
 
 	  SurfFlow_file << "\"Global_Index\", \"x_coord\", \"y_coord\", \"z_coord\", ";
 	  SurfFlow_file << "\"muT\", \"tke\", \"density\", ";
@@ -1166,27 +1166,26 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
 	  SurfFlow_file << "\"pert_rsm_xx\", \"pert_rsm_xy\", \"pert_rsm_xz\", \"pert_rsm_yx\", \"pert_rsm_yy\", \"pert_rsm_yz\", \"pert_rsm_zx\", \"pert_rsm_zy\", \"pert_rsm_zz\", ";
 	  SurfFlow_file << "\"dudx\", \"dudy\", \"dudz\", \"dvdx\", \"dvdy\", \"dvdz\", \"dwdx\", \"dwdy\", \"dwdz\""<< "\n";
 
+
 	  for (Global_Index = 0; Global_Index < nPointGlobal; Global_Index++ ){
 
-		  SurfFlow_file << scientific << Global_Index << ", " << xCoord[Global_Index] << ", " << yCoord[Global_Index] << ", " << zCoord[Global_Index] << ", ";
-		  SurfFlow_file << scientific << eddy_visc[Global_Index] << ", " << tke[Global_Index] << ", " << density[Global_Index] << ", ";
-		  SurfFlow_file	<< tau_ev[Global_Index][0][0]<< ", " << tau_ev[Global_Index][0][1] << ", " << tau_ev[Global_Index][0][2] << ", ";
-		  SurfFlow_file	<< tau_ev[Global_Index][1][0]<< ", " << tau_ev[Global_Index][1][1] << ", " << tau_ev[Global_Index][1][2] << ", ";
-		  SurfFlow_file	<< tau_ev[Global_Index][2][0]<< ", " << tau_ev[Global_Index][2][1] << ", " << tau_ev[Global_Index][2][2] << ", ";
-		  SurfFlow_file	<< rsm[Global_Index][0][0]<< ", " << rsm[Global_Index][0][1] << ", " << rsm[Global_Index][0][2] << ", ";
-		  SurfFlow_file	<< rsm[Global_Index][1][0]<< ", " << rsm[Global_Index][1][1] << ", " << rsm[Global_Index][1][2] << ", ";
-		  SurfFlow_file	<< rsm[Global_Index][2][0]<< ", " << rsm[Global_Index][2][1] << ", " << rsm[Global_Index][2][2] << ", ";
-		  SurfFlow_file	<< pert_rsm[Global_Index][0][0]<< ", " << pert_rsm[Global_Index][0][1] << ", " << pert_rsm[Global_Index][0][2] << ", ";
-		  SurfFlow_file	<< pert_rsm[Global_Index][1][0]<< ", " << pert_rsm[Global_Index][1][1] << ", " << pert_rsm[Global_Index][1][2] << ", ";
-		  SurfFlow_file	<< pert_rsm[Global_Index][2][0]<< ", " << pert_rsm[Global_Index][2][1] << ", " << pert_rsm[Global_Index][2][2] << ", ";
-		  SurfFlow_file	<< Grad_Vel[Global_Index][0][0]<< ", " << Grad_Vel[Global_Index][0][1] << ", " << Grad_Vel[Global_Index][0][2] << ", ";
-		  SurfFlow_file	<< Grad_Vel[Global_Index][1][0]<< ", " << Grad_Vel[Global_Index][1][1] << ", " << Grad_Vel[Global_Index][1][2] << ", ";
-		  SurfFlow_file	<< Grad_Vel[Global_Index][2][0]<< ", " << Grad_Vel[Global_Index][2][1] << ", " << Grad_Vel[Global_Index][2][2] << "\n";
+		SurfFlow_file << scientific << Global_Index << ", " << xCoord[Global_Index] << ", " << yCoord[Global_Index] << ", " << zCoord[Global_Index] << ", ";
+		SurfFlow_file << scientific << eddy_visc[Global_Index] << ", " << tke[Global_Index] << ", " << density[Global_Index] << ", ";
+		SurfFlow_file	<< tau_ev[Global_Index][0][0]<< ", " << tau_ev[Global_Index][0][1] << ", " << tau_ev[Global_Index][0][2] << ", ";
+		SurfFlow_file	<< tau_ev[Global_Index][1][0]<< ", " << tau_ev[Global_Index][1][1] << ", " << tau_ev[Global_Index][1][2] << ", ";
+		SurfFlow_file	<< tau_ev[Global_Index][2][0]<< ", " << tau_ev[Global_Index][2][1] << ", " << tau_ev[Global_Index][2][2] << ", ";
+		SurfFlow_file	<< rsm[Global_Index][0][0]<< ", " << rsm[Global_Index][0][1] << ", " << rsm[Global_Index][0][2] << ", ";
+		SurfFlow_file	<< rsm[Global_Index][1][0]<< ", " << rsm[Global_Index][1][1] << ", " << rsm[Global_Index][1][2] << ", ";
+		SurfFlow_file	<< rsm[Global_Index][2][0]<< ", " << rsm[Global_Index][2][1] << ", " << rsm[Global_Index][2][2] << ", ";
+		SurfFlow_file	<< pert_rsm[Global_Index][0][0]<< ", " << pert_rsm[Global_Index][0][1] << ", " << pert_rsm[Global_Index][0][2] << ", ";
+		SurfFlow_file	<< pert_rsm[Global_Index][1][0]<< ", " << pert_rsm[Global_Index][1][1] << ", " << pert_rsm[Global_Index][1][2] << ", ";
+		SurfFlow_file	<< pert_rsm[Global_Index][2][0]<< ", " << pert_rsm[Global_Index][2][1] << ", " << pert_rsm[Global_Index][2][2] << ", ";
+		SurfFlow_file	<< Grad_Vel[Global_Index][0][0]<< ", " << Grad_Vel[Global_Index][0][1] << ", " << Grad_Vel[Global_Index][0][2] << ", ";
+		SurfFlow_file	<< Grad_Vel[Global_Index][1][0]<< ", " << Grad_Vel[Global_Index][1][1] << ", " << Grad_Vel[Global_Index][1][2] << ", ";
+		SurfFlow_file	<< Grad_Vel[Global_Index][2][0]<< ", " << Grad_Vel[Global_Index][2][1] << ", " << Grad_Vel[Global_Index][2][2] << "\n";
 	  }
-
 	  SurfFlow_file.close();
   }
-
 
   /*---Release Memory---*/
   delete [] local_xCoord; delete [] local_yCoord; delete [] local_zCoord;
@@ -8224,14 +8223,6 @@ void COutput::SetResult_Files(CSolver ****solver_container, CGeometry ***geometr
         
         if (Wrt_Csv){
         	SetSurfaceCSV_Flow(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
-        	if (config[iZone]->GetKind_Solver() == RANS){
-        		if (config[iZone]->GetKind_Turb_Model() == SA){
-        		  SetTurbulentSA_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
-        		}
-        		if (config[iZone]->GetKind_Turb_Model() == SST){
-        		  SetTurbulentSST_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
-        		}
-        	}
         }
         break;
         
@@ -8282,6 +8273,17 @@ void COutput::SetResult_Files(CSolver ****solver_container, CGeometry ***geometr
     if (rank == MASTER_NODE) cout << "Merging solution in the Master node." << endl;
     MergeSolution(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0], iZone);
     
+
+    /*--- Write Special Output for with more info on flow (originally written for data assimilation) ---*/
+	if (config[iZone]->GetKind_Solver() == RANS){
+	  if (config[iZone]->GetKind_Turb_Model() == SA){
+	    SetTurbulentSA_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
+	  }
+	  if (config[iZone]->GetKind_Turb_Model() == SST){
+		SetTurbulentSST_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
+	  }
+	}
+
     /*--- Write restart, or Tecplot files using the merged data.
      This data lives only on the master, and these routines are currently
      executed by the master proc alone (as if in serial). ---*/
@@ -12180,13 +12182,6 @@ void COutput::SetResult_Files_Parallel(CSolver ****solver_container,
       case EULER : case NAVIER_STOKES : case RANS :
         if (Wrt_Csv) {
         	SetSurfaceCSV_Flow(config[iZone], geometry[iZone][MESH_0],solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
-        	if (config[iZone]->GetKind_Solver() == RANS){
-        		if (config[iZone]->GetKind_Turb_Model() == SA){
-        		  SetTurbulentSA_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
-        		}
-        		if (config[iZone]->GetKind_Turb_Model() == SST){
-        		  SetTurbulentSST_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
-        		}        	}
         }
 
         break;
@@ -12398,6 +12393,16 @@ void COutput::SetResult_Files_Parallel(CSolver ****solver_container,
         }
         
       }
+
+      /*--- Write Special Output for with more flow info (originally written for Data assimilaion) ---*/
+  	  if (config[iZone]->GetKind_Solver() == RANS){
+  	    if (config[iZone]->GetKind_Turb_Model() == SA){
+  		  SetTurbulentSA_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
+  	    }
+  	    if (config[iZone]->GetKind_Turb_Model() == SST){
+  		  SetTurbulentSST_CSV(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][FLOW_SOL], solver_container[iZone][MESH_0][TURB_SOL], iExtIter, iZone);
+  	    }
+  	  }
 
       /*--- Clean up the connectivity data that was allocated for output. ---*/
 
