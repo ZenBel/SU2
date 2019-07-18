@@ -821,9 +821,12 @@ void CSingleGridIntegration::SingleGrid_Iteration(CGeometry ***geometry, CSolver
       SetRestricted_EddyVisc(RunTime_EqSystem, solver_container[iZone][iMesh][SolContainer_Position], solver_container[iZone][iMesh+1][SolContainer_Position], geometry[iZone][iMesh], geometry[iZone][iMesh+1], config[iZone]);
     }
 
+    /*---Print Reynolds Stress Matrix (RSM) only if needed, otherwise you'll have memory issues---*/
+    if (config[iZone]->GetBoolOutputRSM()){
     solver_container[iZone][FinestMesh][SolContainer_Position]->ComputeOutputRSM(geometry[iZone][FinestMesh], solver_container[iZone][FinestMesh],
     		                                                                     numerics_container[iZone][FinestMesh][SolContainer_Position][SOURCE_FIRST_TERM],
     		                                                                     config[iZone], FinestMesh);
+    }
   }
 }
 
