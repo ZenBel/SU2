@@ -9455,7 +9455,6 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	    if (geometry->GetnDim() == 3) point_line >> PointID >> x_coord >> y_coord >> z_coord >> pressure >> pressure_coeff;
 
 	    /*--- Loop over all points of a (partitioned) domain ---*/
-
 	    for (iPoint = 0; iPoint < nPointLocal; iPoint++) {
 
 	      /*--- Filter out the Halo nodes ---*/
@@ -9476,6 +9475,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	 		  config->SetTargetPointID(GlobalIndex);
 	 		  config->SetTargetQuantity(pressure_coeff, GlobalIndex);
 	 		  jj +=1 ;
+			  //cout << "The target point index is: " << GlobalIndex << endl;
 	  	    }
 	      }
 	    }
@@ -9486,16 +9486,20 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 
 
     /*--- Loop over all points of a (partitioned) domain ---*/
-
     for (iPoint = 0; iPoint < nPointLocal; iPoint++){
+
       /*--- Filter out the Halo nodes ---*/
 	  if (geometry->node[iPoint]->GetDomain()){
+
 		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+
 		if (config->GetTargetPointID(GlobalIndex) == true){
+
 		  Target = config->GetTargetQuantity(GlobalIndex);
 		  Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
 		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed);
-//		  Buffer_ErrorFunc += (Target - Computed) ; // ONLY FOR HESSIAN APPROXIMATION
+		
+		  //cout << "index = " << GlobalIndex << ", target = " << Target << ",  Computed = " << Computed << endl;
 	    }
 		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
 		if (config->GetBoolDiscrepancyTerm()){
@@ -9504,10 +9508,8 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	  }
     }
 
-	AllBound_ErrorFunc += Buffer_ErrorFunc + lambda * Buffer_Regularization;
-//    AllBound_ErrorFunc += Buffer_ErrorFunc; // ONLY FOR HESSIAN APPROXIMATION
-
-//	cout << "ErrorFunc = " << Buffer_ErrorFunc << ", Regularization = " << Buffer_Regularization << endl;
+    AllBound_ErrorFunc += Buffer_ErrorFunc + lambda * Buffer_Regularization;
+//    cout << "ErrorFunc = " << Buffer_ErrorFunc << ", Regularization = " << Buffer_Regularization << endl;
 
 #ifdef HAVE_MPI
   /*--- Add AllBound information using all the nodes ---*/
@@ -17691,9 +17693,6 @@ void COutput::SpecialOutput_AnalyzeSurface(CSolver *solver, CGeometry *geometry,
   delete [] Surface_Density;
   delete [] Surface_Enthalpy;
   delete [] Surface_NormalVelocity;
-  delete [] Surface_Pressure;
-  delete [] Surface_TotalTemperature;
-  delete [] Surface_TotalPressure;
   delete [] Surface_Area;
   delete [] Vector;
   delete [] Surface_VelocityIdeal;
