@@ -102,12 +102,14 @@ def projection( config, state={}, step = 1e-3 ):
     grad_plotname  = os.path.splitext(grad_filename)[0] + '_' + adj_suffix + plot_extension    
 
     # Run Projection
-    SU2_DOT(konfig)
-    
-    # read raw gradients            
-    raw_gradients = su2io.read_gradients(grad_filename)
-
-    os.remove(grad_filename)
+    if ('DISCREPANCY_DV' in konfig.DV_KIND ):
+        print 'Skipping Projection phase since no GEO DVs are present.'
+        raw_gradients = [0] * n_DV
+    else:
+        SU2_DOT(konfig)
+        # read raw gradients            
+        raw_gradients = su2io.read_gradients(grad_filename)
+        os.remove(grad_filename)
     
     info = su2io.State()
     

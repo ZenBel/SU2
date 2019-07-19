@@ -255,9 +255,8 @@ def aerodynamics( config, state=None ):
         if ('MACH_AOA_FILE' in files ):
             pull.append(files['MACH_AOA_FILE'])
         if any('ANIS_FILE' in key for key in files ): 
-            pull.append( files['ANIS_FILE_1'])  #with the random matrix apporach there is only 1 anis_file.
-#            for i in range(6): #6 is the number of elements in anis_filenames
-#                pull.append( files['ANIS_FILE_%s'%(i+1)])
+            for i in range(6): #6 is the number of elements in anis_filenames
+                pull.append( files['ANIS_FILE_%s'%(i+1)])
         
     if (config.has_key('MARKER_NONUNIFORM')):
         path_nubc  = os.getcwd()
@@ -810,13 +809,16 @@ def update_mesh(config,state=None):
             with redirect_output(log_deform):
                 
                 # # RUN DEFORMATION # #
-                info = su2run.deform(config)
-                state.update(info)
+                if 'DISCREPANCY_DV' in config['DEFINITION_DV']['KIND']:
+                    print 'No GEO DVs found, skipping DEFORMATION step.'
+                else:
+                    info = su2run.deform(config)
+                    state.update(info)
                 
-                # data to push
-                meshname = info.FILES.MESH
-                names = su2io.expand_part( meshname , config )
-                push.extend( names )
+                    # data to push
+                    meshname = info.FILES.MESH
+                    names = su2io.expand_part( meshname , config )
+                    push.extend( names )
         
         #: with redirect output
         
