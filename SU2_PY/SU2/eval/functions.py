@@ -809,13 +809,16 @@ def update_mesh(config,state=None):
             with redirect_output(log_deform):
                 
                 # # RUN DEFORMATION # #
-                info = su2run.deform(config)
-                state.update(info)
+                if 'DISCREPANCY_DV' in config['DEFINITION_DV']['KIND']:
+                    print 'No GEO DVs found, skipping DEFORMATION step.'
+                else:
+                    info = su2run.deform(config)
+                    state.update(info)
                 
-                # data to push
-                meshname = info.FILES.MESH
-                names = su2io.expand_part( meshname , config )
-                push.extend( names )
+                    # data to push
+                    meshname = info.FILES.MESH
+                    names = su2io.expand_part( meshname , config )
+                    push.extend( names )
         
         #: with redirect output
         
