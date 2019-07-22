@@ -1233,7 +1233,7 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 		cout << "WARNING: There is no input file " << input_filename.data() << ". Setting the discrepancy term to UNITY"<< endl;
 	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++){
 		config->SetDiscrTerm1(1.0, GlobalIndex); // No perturbation to production term SA model
-		config->SetDiscrTerm2(1.0, GlobalIndex);
+		config->SetDiscrTerm2(1.0, GlobalIndex); // not used for SA model
 	    config->SetQuaternion_theta(0.0, GlobalIndex); // No rotation of eigenvectors
 	    config->SetQuaternion_n1(1.0, GlobalIndex);
 	    config->SetQuaternion_n2(1.0, GlobalIndex);
