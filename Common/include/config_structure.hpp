@@ -983,7 +983,7 @@ private:
   su2double BlendFactor;
   bool BoolBlendFactor, BoolBlendAdapt;
   su2double *default_blend_adapt, *Blend_AdaptParam;
-
+  bool outputRSM; 
   /*--- all_options is a map containing all of the options. This is used during config file parsing
    to track the options which have not been set (so the default values can be used). Without this map
    there would be no list of all the config file options. ---*/
@@ -1497,6 +1497,8 @@ public:
   bool GetBlend_Adapt(void);
 
   bool GetBoolBlendFactor(void);
+
+  bool GetBoolOutputRSM(void);
 
   /*!
    * \brief Get the values of the CFL adapation.

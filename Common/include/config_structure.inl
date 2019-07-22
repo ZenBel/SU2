@@ -46,6 +46,8 @@ inline bool CConfig::GetCFL_Adapt(void) { return CFL_Adapt; }
 inline bool CConfig::GetBlend_Adapt(void) { return BoolBlendAdapt; }
 inline bool CConfig::GetBoolBlendFactor(void) { return BoolBlendFactor; }
 
+inline bool CConfig::GetBoolOutputRSM(void) { return outputRSM; }
+
 inline bool CConfig::GetHB_Precondition(void) { return HB_Precondition; }
 
 inline void CConfig::SetInflow_Mach(unsigned short val_imarker, su2double val_fanface_mach) { Inflow_Mach[val_imarker] = val_fanface_mach; }

@@ -1223,9 +1223,9 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 	    config->SetDiscrTerm1(0.0, GlobalIndex); // No perturbation to eigenvalues lambda1
 	    config->SetDiscrTerm2(0.0, GlobalIndex); // No perturbation to eigenvalues lambda2
 	    config->SetQuaternion_theta(0.0, GlobalIndex); // No rotation of eigenvectors
-	    config->SetQuaternion_n1(0.0, GlobalIndex); // No rotation of eigenvectors
-	    config->SetQuaternion_n2(0.0, GlobalIndex); // No rotation of eigenvectors
-	    config->SetQuaternion_n3(0.0, GlobalIndex); // No rotation of eigenvectors
+	    config->SetQuaternion_n1(1.0, GlobalIndex);
+	    config->SetQuaternion_n2(1.0, GlobalIndex);
+	    config->SetQuaternion_n3(1.0, GlobalIndex);
 	  }
 	}
 	else{
@@ -1235,9 +1235,9 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 		config->SetDiscrTerm1(1.0, GlobalIndex); // No perturbation to production term SA model
 		config->SetDiscrTerm2(1.0, GlobalIndex);
 	    config->SetQuaternion_theta(0.0, GlobalIndex); // No rotation of eigenvectors
-	    config->SetQuaternion_n1(0.0, GlobalIndex); // No rotation of eigenvectors
-	    config->SetQuaternion_n2(0.0, GlobalIndex); // No rotation of eigenvectors
-	    config->SetQuaternion_n3(0.0, GlobalIndex); // No rotation of eigenvectors
+	    config->SetQuaternion_n1(1.0, GlobalIndex);
+	    config->SetQuaternion_n2(1.0, GlobalIndex);
+	    config->SetQuaternion_n3(1.0, GlobalIndex);
 	  }
 	}
   }
@@ -1311,7 +1311,7 @@ void CTurbSolver::ReadAnisotrpyTensor(CGeometry *geometry, CConfig *config){
 	if (input_file.fail()) {
 	  if (rank == MASTER_NODE)
 	    cout << "WARNING: There is no input file " << input_eigenvector[ii].data() << ". Setting all eigenvectors to ZERO!"<< endl;
-      for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
+	  for (GlobalIndex=0; GlobalIndex < nPointGlobal; GlobalIndex++)
 		config->SetEigenVectors(input_eigenvector[ii], 0.0, 0.0, 0.0, GlobalIndex);
 	}
 	else{

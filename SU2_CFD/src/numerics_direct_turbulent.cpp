@@ -1459,6 +1459,8 @@ void CSourcePieceWise_TurbSST::SetPerturbedRSM(su2double turb_ke, CConfig *confi
     }
   }
 
+
+
   for (iDim = 0; iDim < 3; iDim++){
     delete [] tmp1[iDim];
   }

@@ -1164,7 +1164,8 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
 	  SurfFlow_file << "\"tau_xx\", \"tau_xy\", \"tau_xz\", \"tau_yx\", \"tau_yy\", \"tau_yz\", \"tau_zx\", \"tau_zy\", \"tau_zz\", ";
 	  SurfFlow_file << "\"rsm_xx\", \"rsm_xy\", \"rsm_xz\", \"rsm_yx\", \"rsm_yy\", \"rsm_yz\", \"rsm_zx\", \"rsm_zy\", \"rsm_zz\", ";
 	  SurfFlow_file << "\"pert_rsm_xx\", \"pert_rsm_xy\", \"pert_rsm_xz\", \"pert_rsm_yx\", \"pert_rsm_yy\", \"pert_rsm_yz\", \"pert_rsm_zx\", \"pert_rsm_zy\", \"pert_rsm_zz\", ";
-	  SurfFlow_file << "\"dudx\", \"dudy\", \"dudz\", \"dvdx\", \"dvdy\", \"dvdz\", \"dwdx\", \"dwdy\", \"dwdz\""<< "\n";
+	  SurfFlow_file << "\"dudx\", \"dudy\", \"dudz\", \"dvdx\", \"dvdy\", \"dvdz\", \"dwdx\", \"dwdy\", \"dwdz\", ";
+	  SurfFlow_file << "\"beta1\", \"beta2\", \"theta\", \"quat1\", \"quat2\"" << "\n";
 
 
 	  for (Global_Index = 0; Global_Index < nPointGlobal; Global_Index++ ){
@@ -1182,7 +1183,10 @@ void COutput::SetTurbulentSST_CSV(CConfig *config, CGeometry *geometry,
 		SurfFlow_file	<< pert_rsm[Global_Index][2][0]<< ", " << pert_rsm[Global_Index][2][1] << ", " << pert_rsm[Global_Index][2][2] << ", ";
 		SurfFlow_file	<< Grad_Vel[Global_Index][0][0]<< ", " << Grad_Vel[Global_Index][0][1] << ", " << Grad_Vel[Global_Index][0][2] << ", ";
 		SurfFlow_file	<< Grad_Vel[Global_Index][1][0]<< ", " << Grad_Vel[Global_Index][1][1] << ", " << Grad_Vel[Global_Index][1][2] << ", ";
-		SurfFlow_file	<< Grad_Vel[Global_Index][2][0]<< ", " << Grad_Vel[Global_Index][2][1] << ", " << Grad_Vel[Global_Index][2][2] << "\n";
+		SurfFlow_file	<< Grad_Vel[Global_Index][2][0]<< ", " << Grad_Vel[Global_Index][2][1] << ", " << Grad_Vel[Global_Index][2][2] << ", ";
+		SurfFlow_file	<< config->GetDiscrTerm1(Global_Index) << ", " << config->GetDiscrTerm2(Global_Index) << ", ";
+		SurfFlow_file	<< config->GetQuaternion_theta(Global_Index) << ", " << config->GetQuaternion_n1(Global_Index) << ", ";
+		SurfFlow_file	<< config->GetQuaternion_n2(Global_Index) << "\n";
 	  }
 	  SurfFlow_file.close();
   }
@@ -9523,7 +9527,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	  Surface_file.close();
     }
 
-    /*--- Loop over all points of a (partitioned) domain ---*/
+   /*--- Loop over all points of a (partitioned) domain ---*/
 
     for (iPoint = 0; iPoint < nPointLocal; iPoint++){
       /*--- Filter out the Halo nodes ---*/
