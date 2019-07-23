@@ -992,7 +992,7 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   default_blend_adapt[0] = 0.0; // max value of blend factor.
   default_blend_adapt[1] = 0.0; // max value of iterations after which blend factoris not increased anymore.
   addDoubleArrayOption("BLEND_ADAPT_PARAM", 2, Blend_AdaptParam, default_blend_adapt);
-  /* DESCRIPTION: Actuator disk double surface */
+  /* DESCRIPTION: Output Reynolds Stress Tensor */
   addBoolOption("OUTPUT_RSM", outputRSM, false);
 
   /* DESCRIPTION: Unsteady simulation  */
