@@ -386,7 +386,8 @@ def obj_df(dvs,config,state=None):
             import numpy as np
             for i_dv,dv_scl in enumerate(dv_scales):
                 for i_grd in range(dv_size[i_dv]):
-                    grad[k] = grad[k] * sign * scale * global_factor * dv_scl   #modfication to account NUBC scaling
+		    dv_scl = 1e5	# hard-coded to give a reasonable initial step to the random matrix gradient.
+                    grad[k] = grad[k] * sign * scale * global_factor / dv_scl 
                     k = k + 1
             
             vals_out.append(grad)
