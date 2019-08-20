@@ -9505,6 +9505,10 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 		if (config->GetBoolDiscrepancyTerm()){
 		  Buffer_Regularization += (config->GetDiscrTerm1(GlobalIndex) - 1.0) * (config->GetDiscrTerm1(GlobalIndex) - 1.0);
 		}
+		if (config->GetBoolMachAoaDV()){
+		  Buffer_Regularization += (config->GetMach() - config->GetInitialMach()) * (config->GetMach() - config->GetInitialMach());
+		  Buffer_Regularization += (config->GetAoA() - config->GetInitialAoA()) * (config->GetAoA() - config->GetInitialAoA());
+		}
 	  }
     }
 
