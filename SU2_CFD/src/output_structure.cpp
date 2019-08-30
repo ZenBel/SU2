@@ -9526,11 +9526,12 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
     /*--- Loop over all points of a (partitioned) domain ---*/
     su2double l00, l01, l02, l11, l12, l22;
     su2double sigma_d, s1, s2, s3;
+    unsigned short nDim = geometry->GetnDim();
 
-	sigma_d = delta / 2.0;	// sigma_d = delta/sqrt(d+1), with d=3;
-	s1 = 4.0/(delta*delta); // s_i = d/delta^2+1-i, with d=3;
-	s2 = 4.0/(delta*delta) - 1.0;
-	s3 = 4.0/(delta*delta) - 2.0;
+	sigma_d = delta / sqrt(nDim+1.0);	// sigma_d = delta/sqrt(d+1);
+	s1 = (nDim+1.0)/(delta*delta); 		// s_i = (d+1)/delta^2+1-i;
+	s2 = (nDim+1.0)/(delta*delta) - 1.0;
+	s3 = (nDim+1.0)/(delta*delta) - 2.0;
 
     for (iPoint = 0; iPoint < nPointLocal; iPoint++){
       /*--- Filter out the Halo nodes ---*/
@@ -9550,16 +9551,18 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 		l22 = config->Get_l22(GlobalIndex);
 
 //		// NOTE: log is the natural logarithm in C++; Gamma evaluates the gamma function.
-		tmp_Regularization += (l00*l00 + l01*l01 + l02*l02 + l11*l11 + l12*l12 + l22*l22)/(2.0*sigma_d*sigma_d)
-				              - log( pow(l00, s1-1.0) * pow(l11, s2-1.0) * pow(l22, s3-1.0) );
-//		tmp_Regularization += (exp(2.0*l01)+exp(2.0*l02)+exp(2.0*l12)+exp(2.0*l00)+exp(2.0*l11)+exp(2.0*l22))/(2.0*sigma_d*sigma_d);
-//		tmp_Regularization += -1.0*(l01 + l02 + l12 + s1*l00 + s2*l11 + s3*l22);
+		if (geometry->GetnDim() == 2){
+			tmp_Regularization += (l00*l00 + l01*l01 + l11*l11 )/(2.0*sigma_d*sigma_d)
+				               - log( pow(l00, s1-1.0) * pow(l11, s2-1.0) );
+		}
+		if (geometry->GetnDim() == 3){
+			tmp_Regularization += (l00*l00 + l01*l01 + l02*l02 + l11*l11 + l12*l12 + l22*l22)/(2.0*sigma_d*sigma_d)
+				               - log( pow(l00, s1-1.0) * pow(l11, s2-1.0) * pow(l22, s3-1.0) );
+		}
 	  }
     }
 
 	AllBound_ErrorFunc += tmp_ErrorFunc + tmp_Regularization;
-
-//	cout << "ErrorFunc = " << tmp_ErrorFunc << ", Regularization = " << tmp_Regularization << endl;
 
 #ifdef HAVE_MPI
   /*--- Add AllBound information using all the nodes ---*/
