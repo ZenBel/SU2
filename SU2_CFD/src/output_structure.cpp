@@ -1671,9 +1671,9 @@ void COutput::SetSensNUBC_CSV(CConfig *config, CGeometry *geometry, CSolver *Adj
   for (iPoint=0; iPoint<nPointDomain; iPoint++){
 	  GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
 	  local_gidx[GlobalIndex] = GlobalIndex;
-	  local_xx[GlobalIndex] = geometry->node[iPoint]->GetCoord(geometry->GetnDim()-2);
-	  local_yy[GlobalIndex] = geometry->node[iPoint]->GetCoord(geometry->GetnDim()-1);
-	  if (geometry->GetnDim() == 3) {local_xx[GlobalIndex] = geometry->node[iPoint]->GetCoord(geometry->GetnDim());}
+	  local_xx[GlobalIndex] = geometry->node[iPoint]->GetCoord(0);
+	  local_yy[GlobalIndex] = geometry->node[iPoint]->GetCoord(1);
+	  if (geometry->GetnDim() == 3) {local_zz[GlobalIndex] = geometry->node[iPoint]->GetCoord(2);}
   }
 
 #ifdef HAVE_MPI

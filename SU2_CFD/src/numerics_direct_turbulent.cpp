@@ -1373,7 +1373,7 @@ void CSourcePieceWise_TurbSST::SetPerturbedRSM(su2double turb_ke, CConfig *confi
 
   /*--- Build vector of eigenvalues ---*/
   /* NOTE: The current script follows the EQiPS implementation by Mishra.
-   * However, here Eig_Val[0] > Eig_Val[1] > Eig_Val[1] and
+   * However, here Eig_Val[0] > Eig_Val[1] > Eig_Val[2] and
    * the same holds for the corresponding eigenvectors.
    */
 

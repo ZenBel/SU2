@@ -1255,10 +1255,10 @@ void CTurbSolver::ReadDiscrepancyTerm(CGeometry *geometry, CConfig *config){
 	    point_line >> GlobalIndex >> dTerm1 >> dTerm2 >> quat_theta >> quat_n1 >> quat_n2 >> quat_n3;
 	    config->SetDiscrTerm1(dTerm1, GlobalIndex);
 	    config->SetDiscrTerm2(dTerm2, GlobalIndex);
-	    config->SetQuaternion_theta(quat_theta, GlobalIndex);
+	    config->SetQuaternion_theta(quat_theta, GlobalIndex); // No rotation of eigenvectors
 	    config->SetQuaternion_n1(quat_n1, GlobalIndex);
 	    config->SetQuaternion_n2(quat_n2, GlobalIndex);
-	    config->SetQuaternion_n3(quat_n3, GlobalIndex); // No rotation of eigenvectors
+	    config->SetQuaternion_n3(quat_n3, GlobalIndex);
 	  }
       input_file.close();
     }
