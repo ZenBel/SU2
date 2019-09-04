@@ -411,6 +411,7 @@ inline void CConfig::SetDomainVolume(su2double val_volume) { DomainVolume = val_
 inline void CConfig::SetnExtIter(unsigned long val_niter) { nExtIter = val_niter; }
 
 inline su2double CConfig::GetMach(void) { return Mach; }
+inline su2double CConfig::GetInitialMach(void) { return InitialMach; }
 
 inline su2double CConfig::GetGamma(void) { return Gamma; }
 
@@ -622,6 +623,7 @@ inline void CConfig::SetConductivity_Ref(su2double val_conductivity_ref) { Condu
 inline void CConfig::SetEnergy_Ref(su2double val_energy_ref) { Energy_Ref = val_energy_ref; }
 
 inline su2double CConfig::GetAoA(void) { return AoA; }
+inline su2double CConfig::GetInitialAoA(void) { return InitialAoA; }
 
 inline void CConfig::SetAoA(su2double val_AoA) { AoA = val_AoA; }
 
@@ -1079,6 +1081,8 @@ inline bool CConfig::GetBoolTurbomachinery(void) { return (nMarker_Turbomachiner
 inline bool CConfig::GetBoolNonUniform(void) { return (nMarker_NonUniform !=0);}
 
 inline bool CConfig::GetBoolDiscrepancyTerm(void) { return BoolDiscTerm;}
+
+inline bool CConfig::GetBoolMachAoaDV(void) { return BoolMachAoaDV;}
 
 inline unsigned short CConfig::GetnMarkerNonUniform(void) { return nMarker_NonUniform;}
 

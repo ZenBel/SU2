@@ -291,7 +291,7 @@ private:
   su2double *discTerm1, *discTerm2;
   su2double *quat_theta, *quat_n1, *quat_n2, *quat_n3;
   su2double **eigenvector1, **eigenvector2, **eigenvector3, *eigenvalue1, *eigenvalue2, *eigenvalue3;
-  bool BoolDiscTerm;
+  bool BoolDiscTerm, BoolMachAoaDV;
   bool BoolAnisotropy;
 
   su2double *TargetQuantity;
@@ -984,6 +984,9 @@ private:
   bool BoolBlendFactor, BoolBlendAdapt;
   su2double *default_blend_adapt, *Blend_AdaptParam;
   bool outputRSM; 
+
+  su2double InitialAoA, InitialMach;
+
   /*--- all_options is a map containing all of the options. This is used during config file parsing
    to track the options which have not been set (so the default values can be used). Without this map
    there would be no list of all the config file options. ---*/
@@ -1475,6 +1478,7 @@ public:
    * \return Value of the Mach number.
    */
   su2double GetMach(void);
+  su2double GetInitialMach(void);
   
   /*!
    * \brief Get the value of the Gamma of fluid (ratio of specific heats).
@@ -2337,6 +2341,7 @@ public:
    * \return Value of the angle of attack.
    */
   su2double GetAoA(void);
+  su2double GetInitialAoA(void);
   
   /*!
    * \brief Get the off set angle of attack of the body. The solution and the geometry
@@ -4212,6 +4217,7 @@ public:
   unsigned short GetnMarkerNonUniform(void);
 
   bool GetBoolDiscrepancyTerm(void);
+  bool GetBoolMachAoaDV(void);
 
   /*!
    * \brief number Turbomachinery blades computed using the pitch information.

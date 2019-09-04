@@ -9428,7 +9428,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	char buffer[50], cstr[200];
 	ifstream Surface_file;
 
-	su2double RefVel2, RefDensity, RefPressure, factor, weight, weight_tot=0.0;
+	su2double RefVel2, RefDensity, RefPressure, factor;
 	su2double dist, *Coord, Target, Computed, Buffer_ErrorFunc, Buffer_Regularization, AllBound_ErrorFunc, AllBound_ErrorTerm;
 
     nPointLocal = geometry->GetnPoint(); // Total number of mesh points on the decomposed geometry managed by a single processor
@@ -9488,6 +9488,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 
 	  getline(Surface_file, text_line);
 	  istringstream point_line(text_line);
+	  unsigned long jj=0;
 
 	  while (getline(Surface_file, text_line)) {
 	    for (icommas = 0; icommas < 50; icommas++) {
@@ -9520,24 +9521,32 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 	  	    if (dist < tolerance){
 	 		  config->SetTargetPointID(GlobalIndex);
 	 		  config->SetTargetQuantity(pressure_coeff, GlobalIndex);
+	 		  jj +=1 ;
+			  //cout << "The target point index is: " << GlobalIndex << endl;
 	  	    }
 	      }
 	    }
 	  }
 	  Surface_file.close();
+	  cout << jj << " target points have been set for the OF." << endl;
     }
 
-   /*--- Loop over all points of a (partitioned) domain ---*/
 
+    /*--- Loop over all points of a (partitioned) domain ---*/
     for (iPoint = 0; iPoint < nPointLocal; iPoint++){
+
       /*--- Filter out the Halo nodes ---*/
 	  if (geometry->node[iPoint]->GetDomain()){
+
 		GlobalIndex = geometry->node[iPoint]->GetGlobalIndex();
+
 		if (config->GetTargetPointID(GlobalIndex) == true){
-		  weight = 1.0;
+
 		  Target = config->GetTargetQuantity(GlobalIndex);
 		  Computed = (solver_container->node[iPoint]->GetPressure() - RefPressure) * factor;
-		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed) * weight;
+		  Buffer_ErrorFunc += (Target - Computed) * (Target - Computed);
+
+		  //cout << "index = " << GlobalIndex << ", target = " << Target << ",  Computed = " << Computed << endl;
 	    }
 		/*--- Add Tikhonov regularization (see Singh et al. AIAA 2017 for reference)---*/
 		if (config->GetBoolDiscrepancyTerm()){
@@ -9552,6 +9561,12 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 			Buffer_Regularization += (config->GetQuaternion_n3(GlobalIndex) - 0.0) * (config->GetQuaternion_n3(GlobalIndex) - 0.0);
 		  }
 		}
+
+		if (config->GetBoolMachAoaDV()){
+		  Buffer_Regularization += (config->GetMach() - config->GetInitialMach()) * (config->GetMach() - config->GetInitialMach());
+		  Buffer_Regularization += (config->GetAoA() - config->GetInitialAoA()) * (config->GetAoA() - config->GetInitialAoA());
+		}
+
 	  }
     }
 
