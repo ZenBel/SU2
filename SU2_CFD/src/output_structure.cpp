@@ -9552,12 +9552,16 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
 
 //		// NOTE: log is the natural logarithm in C++; Gamma evaluates the gamma function.
 		if (geometry->GetnDim() == 2){
+//			tmp_Regularization += (l00*l00 + l01*l01 + l11*l11 )/(2.0*sigma_d*sigma_d)
+//				               - log( pow(l00, s1-1.0) * pow(l11, s2-1.0) );
 			tmp_Regularization += (l00*l00 + l01*l01 + l11*l11 )/(2.0*sigma_d*sigma_d)
-				               - log( pow(l00, s1-1.0) * pow(l11, s2-1.0) );
+				               - (s1-1.0)*log(l00) - (s2-1.0)*log(l11);
 		}
 		if (geometry->GetnDim() == 3){
+//			tmp_Regularization += (l00*l00 + l01*l01 + l02*l02 + l11*l11 + l12*l12 + l22*l22)/(2.0*sigma_d*sigma_d)
+//				               - log( pow(l00, s1-1.0) * pow(l11, s2-1.0) * pow(l22, s3-1.0) );
 			tmp_Regularization += (l00*l00 + l01*l01 + l02*l02 + l11*l11 + l12*l12 + l22*l22)/(2.0*sigma_d*sigma_d)
-				               - log( pow(l00, s1-1.0) * pow(l11, s2-1.0) * pow(l22, s3-1.0) );
+								- (s1-1.0)*log(l00) - (s2-1.0)*log(l11) - (s3-1.0)*log(l22);
 		}
 	  }
     }
