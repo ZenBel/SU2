@@ -109,13 +109,18 @@ class Design(object):
         self.folder = folder
         
         self.filename = 'design.pkl'
+        
+        special_cases = su2io.get_specialCases(config)
             
         # initialize folder with files
         pull,link = state.pullnlink(config)
         with redirect_folder(folder,pull,link,force=True):
             # save design, config
             save_data(self.filename,self)
-            config.dump('config_DSN.cfg')
+            if ( 'DATA_ASSIMILATION' in special_cases ):
+                print('Skip writing of config_DSN.cfg')
+            else:
+                config.dump('config_DSN.cfg')
         
     def _eval(self,eval_func,*args):
         """ Evaluates an SU2 Design 
