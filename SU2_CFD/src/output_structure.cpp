@@ -9573,7 +9573,7 @@ void COutput::SetErrorFuncOF(CSolver *solver_container, CGeometry *geometry, CCo
   MyAllBound_ErrorFunc	= AllBound_ErrorFunc;
   SU2_MPI::Allreduce(&MyAllBound_ErrorFunc, &AllBound_ErrorFunc, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-  MyAllBound_ErrorTerm = tmp_ErrorFunc;
+  MyAllBound_ErrorTerm = tmp_ErrorFunc * (2.0 * sigma_exp * sigma_exp);
   SU2_MPI::Allreduce(&MyAllBound_ErrorTerm, &AllBound_ErrorTerm, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
