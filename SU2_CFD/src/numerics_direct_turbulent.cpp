@@ -1445,14 +1445,17 @@ void CSourcePieceWise_TurbSST::SetPerturbedStrainMag(su2double turb_ke, CConfig 
 
   su2double blend = config->GetBlendFactor();
 
+  su2double trace = 0;
+  for (iDim=0; iDim<3; iDim++)
+       trace += MeanPerturbedRSM[iDim][iDim];
+
   /* compute perturbed strain rate tensor */
   for (iDim = 0; iDim < nDim; iDim++){
     for (jDim =0; jDim < nDim; jDim++){
-//      StrainRate[iDim][jDim] = MeanReynoldsStress[iDim][jDim] * (1.0 - blend)
-//    		                   + MeanPerturbedRSM[iDim][jDim] * blend
+      StrainRate[iDim][jDim] = (1.0 - blend) * ( MeanReynoldsStress[iDim][jDim] - TWO3 * turb_ke * delta[iDim][jDim])
+    		                   + blend * (MeanPerturbedRSM[iDim][jDim] - TWO3 * 0.5 * trace * delta[iDim][jDim]);
+//      StrainRate[iDim][jDim] = MeanReynoldsStress[iDim][jDim]
 //                               - TWO3 * turb_ke * delta[iDim][jDim];
-      StrainRate[iDim][jDim] = MeanReynoldsStress[iDim][jDim]
-                               - TWO3 * turb_ke * delta[iDim][jDim];
       StrainRate[iDim][jDim] = - StrainRate[iDim][jDim] * Density_i / (2 * Eddy_Viscosity_i);
     }
   }
