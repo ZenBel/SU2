@@ -254,6 +254,7 @@ def aerodynamics( config, state=None ):
             pull.append(files['DISCREPANCY_FILE'])
         if ('MACH_AOA_FILE' in files ):
             pull.append(files['MACH_AOA_FILE'])
+            pull.append(files['DISCREPANCY_FILE'])
         if any('ANIS_FILE' in key for key in files ): 
             for i in range(6): #6 is the number of elements in anis_filenames
                 pull.append( files['ANIS_FILE_%s'%(i+1)])
@@ -299,7 +300,8 @@ def aerodynamics( config, state=None ):
             i+=1
             
     ### Update discrepancy file (remember that DISCREPANCY_DV must always be defined as the last DV)
-    if 'DISCREPANCY_FILE' in files:
+    # if 'DISCREPANCY_FILE' in files:
+    if 'DISCREPANCY_DV' in config['DEFINITION_DV']['KIND']:
         buf = numpy.loadtxt(state['FILES']['DISCREPANCY_FILE'], skiprows=1)
         nPoint = buf[:,1:].size # same as number of mesh points
         assert buf[:,1:].size == len(dv_new), 'length of design variable vector is different from number of DVs in discrepancyTerm.dat'

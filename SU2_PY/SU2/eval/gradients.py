@@ -287,6 +287,7 @@ def adjoint( func_name, config, state=None ):
             pull.append(files['DISCREPANCY_FILE'])
         if ('MACH_AOA_FILE' in files ):
             pull.append(files['MACH_AOA_FILE'])
+            pull.append(files['DISCREPANCY_FILE'])
         if any('ANIS_FILE' in key for key in files ): 
 
             for i in range(6): #6 is the number of elements in anis_filenames

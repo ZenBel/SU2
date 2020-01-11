@@ -189,7 +189,8 @@ def shape_optimization( filename                           ,
                 x_0.append(elem)
                  
     # Update initial design in case DISCREPANCY_TERM is used 
-    if 'DISCREPANCY_FILE' in state['FILES']:
+    #if 'DISCREPANCY_FILE' in state['FILES']:
+    if 'DISCREPANCY_DV' in config['DEFINITION_DV']['KIND']:  
         buf = numpy.loadtxt(state['FILES']['DISCREPANCY_FILE'], skiprows=1, usecols=(1,2,3,4,5,6))
         for elem in buf.flatten():
             x_0.append(elem)    

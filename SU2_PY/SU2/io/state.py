@@ -314,6 +314,8 @@ class State(ordered_bunch):
             if 'MACH_AOA_INF' in config['DEFINITION_DV']['KIND']:
                 assert mach_aoa_name in os.listdir(os.getcwd()), 'Mach_Aoa.dat not found. Note that it should be defined for optimizations.'
                 register_file('MACH_AOA_FILE', mach_aoa_name)
+                assert discrepancyTerm_name in os.listdir(os.getcwd()), 'discrepancyTerm.dat not found. Note that it should be defined for optimizations.'
+                register_file('DISCREPANCY_FILE', discrepancyTerm_name)
             for i in range(len(anis_filenames)):
                 register_file('ANIS_FILE_%s'%(i+1), anis_filenames[i])  
         
