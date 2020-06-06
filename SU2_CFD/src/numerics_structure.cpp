@@ -3226,82 +3226,82 @@ void CNumerics::SetAnisotropyTensor(CConfig *config, unsigned long val_global_in
 	hj = n2 * sin(theta/2.0);
 	hk = n3 * sin(theta/2.0);
 
-	/*--- Compute the normalized anisotropy tensor ---*/
-	if (config->GetBoolBlendFactor()){
-
-		/*--- Build matrix of eigenvalues ---*/
-
-		eigvals[0][0] = anis_eigval1 + discrepancyTerm1;
-		eigvals[1][1] = anis_eigval2 + discrepancyTerm2;
-	//	eigvals[2][2] = anis_eigval3;
-		eigvals[2][2] = -1.0 * (eigvals[0][0] + eigvals[1][1]);
-
-		/*--- Build matrix of eigenvectors ---*/
-		eigvecs[0][0] = config->GetEigenVector1x(val_global_index);
-		eigvecs[0][1] = config->GetEigenVector2x(val_global_index);
-		eigvecs[0][2] = config->GetEigenVector3x(val_global_index);
-		eigvecs[1][0] = config->GetEigenVector1y(val_global_index);
-		eigvecs[1][1] = config->GetEigenVector2y(val_global_index);
-		eigvecs[1][2] = config->GetEigenVector3y(val_global_index);
-		eigvecs[2][0] = config->GetEigenVector1z(val_global_index);
-		eigvecs[2][1] = config->GetEigenVector2z(val_global_index);
-		eigvecs[2][2] = config->GetEigenVector3z(val_global_index);
-
-		rotation[0][0] = 1.0 - 2.0 * (hj*hj + hk*hk);
-		rotation[0][1] = 2.0 * (hi*hj - hk*hr);
-		rotation[0][2] = 2.0 * (hi*hk + hj*hr);
-		rotation[1][0] = 2.0 * (hi*hj + hk*hr);
-		rotation[1][1] = 1.0 - 2.0 * (hi*hi + hk*hk);
-		rotation[1][2] = 2.0 * (hj*hk - hi*hr);
-		rotation[2][0] = 2.0 * (hi*hk - hj*hr);
-		rotation[2][1] = 2.0 * (hj*hk + hi*hr);
-		rotation[2][2] = 1.0 - 2.0 * (hi*hi + hj*hj);
-
-		/*--- Compute anisotropy tensor bij= Q*V*Lambda*V.T*Q.T ---*/
-
-		/*--- This does Q*V ---*/
-		for (iDim=0; iDim<3; iDim++) {
-		  for (jDim=0; jDim<3; jDim++) {
-			for (kDim=0; kDim<3; kDim++) {
-			  buffer1[iDim][jDim] += rotation[iDim][kDim] * eigvecs[kDim][jDim];
-			}
-		  }
-		}
-
-		/*--- This does Q*V*Lambda ---*/
-		for (iDim=0; iDim<3; iDim++) {
-		  for (jDim=0; jDim<3; jDim++) {
-			for (kDim=0; kDim<3; kDim++) {
-			  buffer2[iDim][jDim] += buffer1[iDim][kDim] * eigvals[kDim][jDim];
-			}
-		  }
-		}
-
-		/*--- This does Q*V*Lambda*V.T ---*/
-		for (iDim=0; iDim<3; iDim++) {
-		  for (jDim=0; jDim<3; jDim++) {
-			for (kDim=0; kDim<3; kDim++) {
-			  buffer3[iDim][jDim] += buffer2[iDim][kDim] * eigvecs[jDim][kDim];
-			}
-		  }
-		}
-
-		/*--- This does Q*V*Lambda*V.T*Q.T ---*/
-		for (iDim=0; iDim<3; iDim++) {
-		  for (jDim=0; jDim<3; jDim++) {
-			for (kDim=0; kDim<3; kDim++) {
-			  bij[iDim][jDim] += buffer3[iDim][kDim] * rotation[jDim][kDim];
-			}
-		  }
-		}
-
-	//	for (iDim=0; iDim<3; iDim++) {
-	//	  for (jDim=0; jDim<3; jDim++) {
-	//		  cout << "bij[" << iDim << "][" << jDim <<  "] = " << bij[iDim][jDim] << endl;
-	//	  }
-	//	}
-
-	}
+//	/*--- Compute the normalized anisotropy tensor ---*/
+//	if (config->GetBoolBlendFactor()){
+//
+//		/*--- Build matrix of eigenvalues ---*/
+//
+//		eigvals[0][0] = anis_eigval1 + discrepancyTerm1;
+//		eigvals[1][1] = anis_eigval2 + discrepancyTerm2;
+//	//	eigvals[2][2] = anis_eigval3;
+//		eigvals[2][2] = -1.0 * (eigvals[0][0] + eigvals[1][1]);
+//
+//		/*--- Build matrix of eigenvectors ---*/
+//		eigvecs[0][0] = config->GetEigenVector1x(val_global_index);
+//		eigvecs[0][1] = config->GetEigenVector2x(val_global_index);
+//		eigvecs[0][2] = config->GetEigenVector3x(val_global_index);
+//		eigvecs[1][0] = config->GetEigenVector1y(val_global_index);
+//		eigvecs[1][1] = config->GetEigenVector2y(val_global_index);
+//		eigvecs[1][2] = config->GetEigenVector3y(val_global_index);
+//		eigvecs[2][0] = config->GetEigenVector1z(val_global_index);
+//		eigvecs[2][1] = config->GetEigenVector2z(val_global_index);
+//		eigvecs[2][2] = config->GetEigenVector3z(val_global_index);
+//
+//		rotation[0][0] = 1.0 - 2.0 * (hj*hj + hk*hk);
+//		rotation[0][1] = 2.0 * (hi*hj - hk*hr);
+//		rotation[0][2] = 2.0 * (hi*hk + hj*hr);
+//		rotation[1][0] = 2.0 * (hi*hj + hk*hr);
+//		rotation[1][1] = 1.0 - 2.0 * (hi*hi + hk*hk);
+//		rotation[1][2] = 2.0 * (hj*hk - hi*hr);
+//		rotation[2][0] = 2.0 * (hi*hk - hj*hr);
+//		rotation[2][1] = 2.0 * (hj*hk + hi*hr);
+//		rotation[2][2] = 1.0 - 2.0 * (hi*hi + hj*hj);
+//
+//		/*--- Compute anisotropy tensor bij= Q*V*Lambda*V.T*Q.T ---*/
+//
+//		/*--- This does Q*V ---*/
+//		for (iDim=0; iDim<3; iDim++) {
+//		  for (jDim=0; jDim<3; jDim++) {
+//			for (kDim=0; kDim<3; kDim++) {
+//			  buffer1[iDim][jDim] += rotation[iDim][kDim] * eigvecs[kDim][jDim];
+//			}
+//		  }
+//		}
+//
+//		/*--- This does Q*V*Lambda ---*/
+//		for (iDim=0; iDim<3; iDim++) {
+//		  for (jDim=0; jDim<3; jDim++) {
+//			for (kDim=0; kDim<3; kDim++) {
+//			  buffer2[iDim][jDim] += buffer1[iDim][kDim] * eigvals[kDim][jDim];
+//			}
+//		  }
+//		}
+//
+//		/*--- This does Q*V*Lambda*V.T ---*/
+//		for (iDim=0; iDim<3; iDim++) {
+//		  for (jDim=0; jDim<3; jDim++) {
+//			for (kDim=0; kDim<3; kDim++) {
+//			  buffer3[iDim][jDim] += buffer2[iDim][kDim] * eigvecs[jDim][kDim];
+//			}
+//		  }
+//		}
+//
+//		/*--- This does Q*V*Lambda*V.T*Q.T ---*/
+//		for (iDim=0; iDim<3; iDim++) {
+//		  for (jDim=0; jDim<3; jDim++) {
+//			for (kDim=0; kDim<3; kDim++) {
+//			  bij[iDim][jDim] += buffer3[iDim][kDim] * rotation[jDim][kDim];
+//			}
+//		  }
+//		}
+//
+//	//	for (iDim=0; iDim<3; iDim++) {
+//	//	  for (jDim=0; jDim<3; jDim++) {
+//	//		  cout << "bij[" << iDim << "][" << jDim <<  "] = " << bij[iDim][jDim] << endl;
+//	//	  }
+//	//	}
+//
+//	}
 
 }
 

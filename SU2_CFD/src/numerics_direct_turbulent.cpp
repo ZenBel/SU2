@@ -1499,6 +1499,16 @@ void CSourcePieceWise_TurbSST::GetRotationMatrix(su2double **RotationMatrix, CCo
   hj = n2 * sin(theta/2.0);
   hk = n3 * sin(theta/2.0);
 
+  /* NOTE: This is a perturbed rotation matrix Q. The initial rotation matrix has theta=0 and
+   * a unit vector n=(n1_,n2_,n2_)/mod(n). Hence the perturbations should be
+   * theta + delta_theta = 0 + quaternion_theta (as it is in this case)
+   * and n1 + delta_n1, etc. so that the perturbed n1 (unnormalized) should be
+   * n1 = n1_+quaternion_n1, and n2 = n2_+quaternion_n2 and n3 = n3_ + quaternion_n3
+   * and finally norm=sqrt(n1*n1+n2*n2+n3*n3) and n1_=n1/norm, n2_=n2/norm, and n3_=n3/norm.
+   * However here we do n1 = quaternion_n1 instead of n1_+quaternion_n1 thus meaning that we
+   * directly assimilate the magnitude of the component. This part of code should be modified
+   * to align it with what we say in the AIAA article. If you do, remember to adapt regularization in OF.*/
+
   RotationMatrix[0][0] = 1.0 - 2.0 * (hj*hj + hk*hk);
   RotationMatrix[0][1] = 2.0 * (hi*hj - hk*hr);
   RotationMatrix[0][2] = 2.0 * (hi*hk + hj*hr);
